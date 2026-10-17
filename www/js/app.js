@@ -1,6 +1,6 @@
 // App shell: game picker, navigation, statistics, settings and updates.
 import { DIFFICULTIES, DIFFICULTY_LABELS } from './sudoku-engine.js';
-import { store, save, resetAll, fmtTime } from './store.js';
+import { store, save, resetAll, fmtTime, todayKey } from './store.js';
 import { icon, logoSvg, brandSvg } from './icons.js';
 import { el, $, $$, sheet, dialog, toast, closeTopOverlay, esc } from './ui.js';
 import { sfx } from './sound.js';
@@ -10,6 +10,16 @@ import { sortHomeScreen, sortGameScreen, sortLevelsScreen, sortHelp, cutie } fro
 import { solitaireScreen, solHelp } from './solitaire-game.js';
 import { treatHomeScreen, treatGameScreen, treatHelp, candySvg } from './treat-game.js';
 import { blockScreen, blockHelp } from './block-game.js';
+import { screen2048, help2048 } from './g2048.js';
+import { minesHomeScreen, minesGameScreen, minesHelp } from './mines-game.js';
+import { guessHomeScreen, guessGameScreen, guessHelp } from './guess-game.js';
+import { nutsHomeScreen, nutsGameScreen, nutsHelp, NUT_COLOURS } from './nuts-game.js';
+import { mahjongHomeScreen, mahjongGameScreen, mahjongHelp } from './mahjong-game.js';
+import { wheelHomeScreen, wheelGameScreen, wheelHelp } from './wheel-game.js';
+import { pipeHomeScreen, pipeGameScreen, pipeHelp } from './pipe-game.js';
+import { kakuroHomeScreen, kakuroGameScreen, kakuroHelp } from './kakuro-game.js';
+import { spiderHomeScreen, spiderGameScreen, spiderHelp } from './spider-game.js';
+import { jigsawHomeScreen, jigsawGameScreen, jigsawHelp } from './jigsaw-game.js';
 import { crossHomeScreen, crossGameScreen, crossHelp } from './crossword-game.js';
 import { wsHomeScreen, wsGameScreen, wsHelp } from './wordsearch-game.js';
 import { meowHomeScreen, meowGameScreen, meowLevelsScreen, meowCatsScreen, loadLevels, meowHelp } from './meow-game.js';
@@ -46,6 +56,11 @@ const SCREENS = {
   solitaire: solitaireScreen,
   treat: treatHomeScreen, treatgame: treatGameScreen, block: blockScreen,
   cross: crossHomeScreen, crossgame: crossGameScreen, ws: wsHomeScreen, wsgame: wsGameScreen,
+  g2048: screen2048, mines: minesHomeScreen, minesgame: minesGameScreen, guess: guessHomeScreen, guessgame: guessGameScreen,
+  nuts: nutsHomeScreen, nutsgame: nutsGameScreen, mahjong: mahjongHomeScreen, mjgame: mahjongGameScreen,
+  wheel: wheelHomeScreen, wheelgame: wheelGameScreen, pipe: pipeHomeScreen, pipegame: pipeGameScreen,
+  kakuro: kakuroHomeScreen, kakurogame: kakuroGameScreen, spider: spiderHomeScreen, spidergame: spiderGameScreen,
+  jigsaw: jigsawHomeScreen, jiggame: jigsawGameScreen,
   sudoku: sudokuScreen, meowgame: meowGameScreen, meowlevels: meowLevelsScreen, meowcats: meowCatsScreen,
   settings: settingsScreen, about: aboutScreen,
 };
@@ -169,47 +184,99 @@ function sudokuRules() {
 // ---------- Game picker (landing page) ----------
 // Each game: where it opens, its artwork, and a short progress line.
 export const GAMES = [];
+const CATEGORIES = ['Numbers', 'Logic', 'Words', 'Cards and tiles', 'Casual'];
 export function registerGame(g) { GAMES.push(g); }
 
 registerGame({
-  id: 'sudoku', screen: 'home', name: 'Sudoku', tag: 'The classic numbers puzzle', theme: 'g-sudoku',
+  id: 'sudoku', cat: 'Numbers', screen: 'home', name: 'Sudoku', tag: 'The classic numbers puzzle', theme: 'g-sudoku',
   art: () => `<div class="art-sudoku">${logoSvg}</div>`,
   progress: () => continueLabel() ? `Game in progress · ${continueLabel()}` : `${DIFFICULTIES.reduce((a, d) => a + store.stats[d].won, 0)} solved`,
 });
 registerGame({
-  id: 'cross', screen: 'cross', name: 'Crosswords', tag: 'Mini to maxi, clued in plain English', theme: 'g-cross',
+  id: 'cross', cat: 'Words', screen: 'cross', name: 'Crosswords', tag: 'Mini to maxi, clued in plain English', theme: 'g-cross',
   art: () => `<div class="art-cross">${'C,A,T,#,O,#,W,#,A,R,#,D,S,U,N,#,#,O,B,#,E,G,G,#,D'.split(',').map((ch) => `<i class="${ch === '#' ? 'blk' : ''}">${ch === '#' ? '' : ch}</i>`).join('')}</div>`,
   progress: () => `${Object.keys(store.cross.done).length} solved`,
 });
 registerGame({
-  id: 'ws', screen: 'ws', name: 'Word Search', tag: 'Find the hidden words', theme: 'g-ws',
+  id: 'ws', cat: 'Words', screen: 'ws', name: 'Word Search', tag: 'Find the hidden words', theme: 'g-ws',
   art: () => `<div class="art-ws"><div class="art-ws-grid">${'PUZCATEWORDLSEAFINDK'.split('').map((ch, i) => `<i class="${[4, 5, 6].includes(i) ? 'hl' : [12, 13, 14, 15].includes(i) ? 'hl2' : ''}">${ch}</i>`).join('')}</div><img src="img/themes/magnifying-glass-tilted-left.png" alt=""></div>`,
   progress: () => `Puzzle ${store.ws.level + 1}`,
 });
 registerGame({
-  id: 'sol', screen: 'solitaire', name: 'Solitaire', tag: 'Classic Klondike, every deal winnable', theme: 'g-sol',
+  id: 'sol', cat: 'Cards and tiles', screen: 'solitaire', name: 'Solitaire', tag: 'Classic Klondike, every deal winnable', theme: 'g-sol',
   art: () => `<div class="art-sol">${[['A', '♠', ''], ['K', '♥', 'red'], ['Q', '♦', 'red']].map(([r, s, c], i) => `<div class="mini-card ${c}" style="transform:rotate(${(i - 1) * 12}deg) translateY(${Math.abs(i - 1) * 6}px)"><b>${r}</b><i>${s}</i></div>`).join('')}</div>`,
   progress: () => store.sol.current ? 'Game in progress' : `${store.sol.stats.won} won`,
 });
 registerGame({
-  id: 'treat', screen: 'treat', name: 'Treat Twist', tag: 'Swap and match the candies', theme: 'g-treat',
+  id: 'treat', cat: 'Casual', screen: 'treat', name: 'Treat Twist', tag: 'Swap and match the candies', theme: 'g-treat',
   art: () => `<div class="art-treat">${[0, 4, 2, 5, 1, 3, 4, 0, 2].map((t) => candySvg(t)).join('')}</div>`,
   progress: () => `Level ${store.treat.level + 1}`,
 });
 registerGame({
-  id: 'block', screen: 'block', name: 'Block Pounce', tag: 'Fit the blocks, clear the lines', theme: 'g-block',
+  id: 'block', cat: 'Casual', screen: 'block', name: 'Block Pounce', tag: 'Fit the blocks, clear the lines', theme: 'g-block',
   art: () => `<div class="art-block">${'1100011101111011001110011'.split('').map((v, i) => `<i style="${v === '1' ? `background:${['#ff5d73', '#38b6ff', '#ffd23f', '#3ddc84', '#8f6bff'][i % 5]}` : ''}"></i>`).join('')}</div>`,
   progress: () => (store.block.best ? `Best ${store.block.best.toLocaleString('en-AU')}` : 'New game'),
 });
 registerGame({
-  id: 'meow', screen: 'meow', name: 'Meowdoku', tag: 'One cat per row, column and colour', theme: 'g-meow',
+  id: 'meow', cat: 'Logic', screen: 'meow', name: 'Meowdoku', tag: 'One cat per row, column and colour', theme: 'g-meow',
   art: () => `<div class="art-meow">${['#e3bb45', '#e8a7c0', '#9b80d6', '#7cc4a4', '#e3bb45', '#7fb2e5', '#e8a7c0', '#f0956a', '#9b80d6'].map((c, i) => `<i style="background:${c}">${i === 4 ? '<img src="img/cats/cat01.png" alt="">' : ''}</i>`).join('')}</div>`,
   progress: () => `Level ${store.meow.level + 1}`,
 });
 registerGame({
-  id: 'sort', screen: 'sort', name: 'Cosy Cat Sort', tag: 'Send matching cats home', theme: 'g-sort',
+  id: 'sort', cat: 'Casual', screen: 'sort', name: 'Cosy Cat Sort', tag: 'Send matching cats home', theme: 'g-sort',
   art: () => `<div class="art-sort">${[1, 0, 4].map((k) => `<div class="cutie">${cutie(k)}</div>`).join('')}<div class="sort-plank"></div></div>`,
   progress: () => `Level ${store.sort.level + 1}`,
+});
+
+registerGame({
+  id: 'kakuro', cat: 'Numbers', screen: 'kakuro', name: 'Kakuro', tag: 'Sudoku meets crossword sums', theme: 'g-kakuro',
+  art: () => '<div class="art-kakuro"><i class="c"><b>16</b></i><i>7</i><i>9</i><i class="c"><b>3</b></i><i>1</i><i>2</i></div>',
+  progress: () => `Puzzle ${store.kakuro.level + 1}`,
+});
+registerGame({
+  id: '2048', cat: 'Numbers', screen: 'g2048', name: '2048', tag: 'Slide and merge the tiles', theme: 'g-2048',
+  art: () => '<div class="art-2048"><i data-v="2">2</i><i data-v="8">8</i><i data-v="128">128</i><i data-v="2048">2048</i></div>',
+  progress: () => (store.g2048.best ? `Best ${store.g2048.best.toLocaleString('en-AU')}` : 'New game'),
+});
+registerGame({
+  id: 'mines', cat: 'Logic', screen: 'mines', name: 'Minesweeper', tag: 'No guessing needed', theme: 'g-mines',
+  art: () => '<div class="art-mines"><i></i><i class="o">1</i><i class="o">2</i><i><img src="img/ui/triangular-flag.png" alt=""></i><i class="o"></i><i class="o">1</i><i class="o">1</i><i><img src="img/ui/bomb.png" alt=""></i><i></i></div>',
+  progress: () => `${Object.values(store.mines.won).reduce((a, b) => a + b, 0)} cleared`,
+});
+registerGame({
+  id: 'pipe', cat: 'Logic', screen: 'pipe', name: 'Pipeline', tag: 'Join the dots, fill the grid', theme: 'g-pipe',
+  art: () => '<svg class="art-pipe" viewBox="0 0 120 80"><path d="M15 15 H60 V45 H105" stroke="#ff3b5c" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 65 H45 V45" stroke="#ffd21f" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="15" cy="15" r="11" fill="#ff3b5c"/><circle cx="105" cy="45" r="11" fill="#ff3b5c"/><circle cx="15" cy="65" r="11" fill="#ffd21f"/><circle cx="45" cy="45" r="11" fill="#ffd21f"/></svg>',
+  progress: () => `Level ${store.pipe.level + 1}`,
+});
+registerGame({
+  id: 'guess', cat: 'Words', screen: 'guess', name: 'Guesswork', tag: 'Five letters, six tries', theme: 'g-guess',
+  art: () => `<div class="art-guess">${'WORDS'.split('').map((ch, i) => `<i class="${['g', 'y', 'x', 'g', 'y'][i]}">${ch}</i>`).join('')}</div>`,
+  progress: () => (store.guess.daily[todayKey()] ? 'Daily done' : 'New daily word'),
+});
+registerGame({
+  id: 'wheel', cat: 'Words', screen: 'wheel', name: 'Word Wheel', tag: 'Swipe letters into words', theme: 'g-wheel',
+  art: () => `<div class="art-wheel">${'PLAYS'.split('').map((ch, i) => `<i style="transform:rotate(${i * 72}deg) translate(0,-30px) rotate(${-i * 72}deg)">${ch}</i>`).join('')}</div>`,
+  progress: () => `Level ${store.wheel.level + 1}`,
+});
+registerGame({
+  id: 'spider', cat: 'Cards and tiles', screen: 'spider', name: 'Spider Solitaire', tag: 'One, two or four suits', theme: 'g-spider',
+  art: () => '<div class="art-sol art-spider"><div class="mini-card"><b>K</b><i>♠</i></div><div class="mini-card"><b>Q</b><i>♠</i></div><img src="img/ui/spider.png" alt=""></div>',
+  progress: () => (store.spider.current ? 'Game in progress' : `${Object.values(store.spider.won).reduce((a, b) => a + b, 0)} won`),
+});
+registerGame({
+  id: 'mahjong', cat: 'Cards and tiles', screen: 'mahjong', name: 'Mahjong Garden', tag: 'Match the free tiles', theme: 'g-mahjong',
+  art: () => '<div class="art-mj"><div class="mj-tile"><img src="img/mahjong/m21.png" alt=""></div><div class="mj-tile"><img src="img/mahjong/m21.png" alt=""></div><div class="mj-tile"><img src="img/mahjong/m27.png" alt=""></div></div>',
+  progress: () => `Board ${store.mahjong.level + 1}`,
+});
+registerGame({
+  id: 'nuts', cat: 'Casual', screen: 'nuts', name: 'Nuts & Bolts', tag: 'Sort the colours onto bolts', theme: 'g-nuts',
+  art: () => `<div class="nuts-hero art-nuts">${[[0, 4, 0], [4, 0, 4]].map((b) => `<div class="nh-bolt">${b.map((x) => `<i class="nut" style="--nc:${NUT_COLOURS[x]}"></i>`).join('')}</div>`).join('')}</div>`,
+  progress: () => `Level ${store.nuts.level + 1}`,
+});
+registerGame({
+  id: 'jigsaw', cat: 'Casual', screen: 'jigsaw', name: 'Jigsaw', tag: 'Piece together cartoon scenes', theme: 'g-jigsaw',
+  art: () => '<div class="art-jig"><img src="img/themes/puzzle-piece.png" alt=""><img src="img/scene/palm-tree.png" alt=""></div>',
+  progress: () => `Puzzle ${store.jigsaw.level + 1}`,
 });
 
 function landingScreen() {
@@ -226,13 +293,13 @@ function landingScreen() {
     body.innerHTML = `
       <div class="brand-row">${brandSvg}<span>Mindnook</span></div>
       <div class="landing-head"><h1>${greeting()}</h1><p>What would you like to play?</p></div>
-      <div class="game-grid">${GAMES.map((g) => `
+      ${CATEGORIES.map((cat) => `<div class="cat-title">${cat}</div><div class="game-grid">${GAMES.filter((g) => g.cat === cat).map((g) => `
         <button class="game-card ${g.theme}" data-game="${g.id}">
           <div class="game-art">${g.art()}</div>
           <div class="game-name">${esc(g.name)}</div>
           <div class="game-tag">${esc(g.tag)}</div>
           <div class="game-progress">${esc(g.progress())}</div>
-        </button>`).join('')}</div>
+        </button>`).join('')}</div>`).join('')}
       <p class="landing-foot">No ads. No interruptions. Just puzzles.</p>`;
   }
   root.addEventListener('click', (e) => {
@@ -310,6 +377,20 @@ function statsScreen() {
         ${row('fire', 'Current win streak', s.streak)}
         ${row('crown', 'Best win streak', s.bestStreak)}
         ${row('gem-stone', 'Best score', s.bestScore.toLocaleString('en-AU'))}
+      </div>
+      <div class="section-title">More games</div>
+      <div class="card stat-group">
+        ${row('crown', '2048 best score', (store.g2048.best || 0).toLocaleString('en-AU'))}
+        ${row('trophy', 'Minesweeper boards cleared', Object.values(store.mines.won).reduce((a, b) => a + b, 0))}
+        ${row('fire', 'Guesswork streak', store.guess.stats.streak)}
+        ${row('star', 'Guesswork words solved', store.guess.stats.won)}
+        ${row('puzzle-piece', 'Kakuro puzzles solved', store.kakuro.level)}
+        ${row('sparkles', 'Pipeline levels', store.pipe.level)}
+        ${row('gem-stone', 'Word Wheel levels', store.wheel.level)}
+        ${row('party-popper', 'Nuts & Bolts levels', store.nuts.level)}
+        ${row('sports-medal', 'Mahjong boards cleared', store.mahjong.level)}
+        ${row('trophy', 'Spider Solitaire games won', Object.values(store.spider.won).reduce((a, b) => a + b, 0))}
+        ${row('star', 'Jigsaws completed', store.jigsaw.level)}
       </div>
       <div class="section-title">Crosswords</div>
       <div class="card stat-group">
@@ -409,6 +490,7 @@ function settingsScreen() {
         <button class="set-row" data-act="meowrules"><div class="txt">How to play Meowdoku</div></button>
         <button class="set-row" data-act="sortrules"><div class="txt">How to play Cosy Cat Sort</div></button>
         <button class="set-row" data-act="solrules"><div class="txt">How to play Solitaire</div></button>
+        <button class="set-row" data-act="rules-more"><div class="txt">How to play the other games</div></button>
         <button class="set-row" data-act="crossrules"><div class="txt">How to play Crosswords</div></button>
         <button class="set-row" data-act="wsrules"><div class="txt">How to play Word Search</div></button>
         <button class="set-row" data-act="treatrules"><div class="txt">How to play Treat Twist</div></button>
@@ -437,11 +519,14 @@ function settingsScreen() {
     else if (a === 'solrules') solHelp();
     else if (a === 'treatrules') treatHelp();
     else if (a === 'crossrules') crossHelp();
+    else if (a === 'rules-more') sheet(`<h2>How to play</h2>${[['2048', '2048'], ['mines', 'Minesweeper'], ['guess', 'Guesswork'], ['wheel', 'Word Wheel'], ['kakuro', 'Kakuro'], ['pipe', 'Pipeline'], ['nuts', 'Nuts & Bolts'], ['mahjong', 'Mahjong Garden'], ['spider', 'Spider Solitaire'], ['jigsaw', 'Jigsaw']].map(([k, n]) => `<button class="sheet-item" data-h="${k}">${n}</button>`).join('')}`, {
+      onMount(node, close) { node.addEventListener('click', (ev) => { const b = ev.target.closest('[data-h]'); if (!b) return; close(); ({ 2048: help2048, mines: minesHelp, guess: guessHelp, wheel: wheelHelp, kakuro: kakuroHelp, pipe: pipeHelp, nuts: nutsHelp, mahjong: mahjongHelp, spider: spiderHelp, jigsaw: jigsawHelp })[b.dataset.h](); }); },
+    });
     else if (a === 'wsrules') wsHelp();
     else if (a === 'blockrules') blockHelp();
     else if (a === 'about') app.go('about');
     else if (a === 'reset') {
-      const ok = await dialog({ title: 'Reset all progress?', text: 'This deletes your statistics, saved games, Meowdoku, Cat Sort, Treat Twist, Block Pounce, Crossword and Word Search progress. Your settings stay. This cannot be undone.',
+      const ok = await dialog({ title: 'Reset all progress?', text: 'This deletes your statistics, saved games, progress in every game. Your settings stay. This cannot be undone.',
         buttons: [{ label: 'Reset everything', value: true, cls: 'danger' }, { label: 'Cancel', value: false, cls: 'ghost' }] });
       if (ok) { resetAll(); toast('Progress reset'); }
     }
@@ -459,7 +544,8 @@ function aboutScreen() {
       <div class="card credits">
         <p>An ad-free collection of logic puzzles. Every Sudoku is generated on your phone with exactly one solution, and every Meowdoku level can be solved with logic alone.</p><br>
         <p>Your progress stays on this device. The app only goes online to check GitHub for updates, which you can turn off in Settings.</p><br>
-        <p><b>Artwork.</b> Cats and icons come from Microsoft Fluent Emoji, used under the MIT licence. Copyright (c) Microsoft Corporation.</p><br>
+        <p><b>Words.</b> Word lists are based on SCOWL, copyright Kevin Atkinson and contributors, used under its permissive licence (see levels/WORDLIST-LICENSE.txt).</p><br>
+        <p><b>Artwork.</b> Cats, icons, Mahjong tiles and Jigsaw pictures come from Microsoft Fluent Emoji, used under the MIT licence. Copyright (c) Microsoft Corporation.</p><br>
         <p><b>Inspiration.</b> Mindnook is an independent app. It is not made by, endorsed by or affiliated with Easybrain, Oakever Games, Easetouch, King, Hungry Studio or any other game maker. Its games are our own takes on popular puzzle styles, with original artwork and names.</p><br>
         <p><a href="#" data-act="src">Source code and releases on GitHub</a></p>
       </div>

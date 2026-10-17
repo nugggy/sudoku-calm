@@ -1,4 +1,4 @@
-/* Sudoku Calm. Clean, calm puzzle styling. */
+/* Mindnook. Clean, calm puzzle styling. */
 
 :root {
   --bg: #ffffff;
@@ -518,6 +518,9 @@ h1, h2, h3, p { margin: 0; }
 
 /* ---------- Game picker ---------- */
 .landing { background: linear-gradient(180deg, color-mix(in srgb, var(--primary) 12%, var(--bg)) 0%, var(--bg) 45%); }
+.brand-row { display: flex; align-items: center; gap: 10px; padding: 0 4px 14px; font-weight: 800; font-size: 20px; letter-spacing: -.3px; }
+.brand-row .brand { width: 38px; height: 38px; }
+.home-hero .brand { width: 108px; height: 108px; }
 .landing-head { padding: 0 4px 16px; }
 .landing-head h1 { font-size: 30px; font-weight: 800; letter-spacing: -.5px; }
 .landing-head p { color: var(--muted); margin-top: 4px; }

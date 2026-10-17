@@ -1,6 +1,8 @@
-<p align="center"><img src="docs/icon.png" width="120" alt="Sudoku Calm icon"></p>
+<p align="center"><img src="docs/icon.png" width="120" alt="Mindnook icon"></p>
 
-# Sudoku Calm
+# Mindnook
+
+A calm corner for your mind.
 
 An ad-free Android puzzle app with seven games, all picked from one landing page:
 
@@ -79,4 +81,4 @@ tools/               tests, level generator and release script
 - Cat and icon artwork: [Microsoft Fluent Emoji](https://github.com/microsoft/fluentui-emoji), MIT licence, copyright (c) Microsoft Corporation. See `www/img/FLUENT-EMOJI-LICENSE.txt`.
 - Cat Sort outfits are original drawings made for this app. Pawgram pictures and Treat Twist treats are also Fluent Emoji.
 
-Sudoku Calm is an independent project. It is not made by, endorsed by or affiliated with Easybrain, Oakever Games, Easetouch, King, Hungry Studio or any other game maker. Meowdoku and Cosy Cat Sort are original takes on those puzzle styles.
+Mindnook is an independent project. It is not made by, endorsed by or affiliated with Easybrain, Oakever Games, Easetouch, King, Hungry Studio or any other game maker. Its games are original takes on popular puzzle styles.

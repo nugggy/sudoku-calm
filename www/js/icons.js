@@ -29,7 +29,21 @@ export const icon = {
   info: s('<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>'),
 };
 
-// App logo: a mini Sudoku grid with a highlighted cell.
+// Mindnook brand mark: four tiles hinting at the games (numbers, cards, blocks, pictures).
+export const brandSvg = `<svg class="brand" viewBox="0 0 120 120" aria-hidden="true">
+  <defs><linearGradient id="bg-brand" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b6cf0"/><stop offset="1" stop-color="#9b5de5"/></linearGradient></defs>
+  <rect x="4" y="4" width="112" height="112" rx="28" fill="url(#bg-brand)"/>
+  <rect x="20" y="20" width="36" height="36" rx="9" fill="#fff"/>
+  <text x="38" y="47" text-anchor="middle" font-family="Roboto, Arial" font-size="26" font-weight="800" fill="#3c6bdc">5</text>
+  <rect x="64" y="20" width="36" height="36" rx="9" fill="#fff"/>
+  <path d="M82 49 l-10-10 a5.5 5.5 0 0 1 10-7 a5.5 5.5 0 0 1 10 7 z" fill="#e5484d"/>
+  <rect x="20" y="64" width="36" height="36" rx="9" fill="#fff" fill-opacity=".18"/>
+  <rect x="24" y="68" width="13" height="13" rx="3" fill="#ffd23f"/><rect x="39" y="68" width="13" height="13" rx="3" fill="#3ddc84"/><rect x="24" y="83" width="13" height="13" rx="3" fill="#38b6ff"/>
+  <rect x="64" y="64" width="36" height="36" rx="9" fill="#fff"/>
+  <g fill="#7a5bd6"><rect x="72" y="72" width="8" height="4"/><rect x="84" y="72" width="8" height="4"/><rect x="69" y="76" width="26" height="8"/><rect x="72" y="84" width="20" height="4"/><rect x="76" y="88" width="12" height="4"/><rect x="80" y="92" width="4" height="3"/></g>
+</svg>`;
+
+// Sudoku logo: a mini Sudoku grid with a highlighted cell.
 export const logoSvg = `<svg class="logo" viewBox="0 0 120 120" aria-hidden="true">
   <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--primary)"/><stop offset="1" stop-color="color-mix(in srgb, var(--primary) 70%, #7a5bd6)"/></linearGradient></defs>
   <rect x="4" y="4" width="112" height="112" rx="28" fill="url(#lg)"/>

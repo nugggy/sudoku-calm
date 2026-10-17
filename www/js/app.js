@@ -1,7 +1,7 @@
 // App shell: game picker, navigation, statistics, settings and updates.
 import { DIFFICULTIES, DIFFICULTY_LABELS } from './sudoku-engine.js';
 import { store, save, resetAll, fmtTime } from './store.js';
-import { icon, logoSvg } from './icons.js';
+import { icon, logoSvg, brandSvg } from './icons.js';
 import { el, $, $$, sheet, dialog, toast, closeTopOverlay, esc } from './ui.js';
 import { sfx } from './sound.js';
 import { native, checkForUpdate, REPO } from './native.js';
@@ -218,6 +218,7 @@ function landingScreen() {
   }
   function render() {
     body.innerHTML = `
+      <div class="brand-row">${brandSvg}<span>Mindnook</span></div>
       <div class="landing-head"><h1>${greeting()}</h1><p>What would you like to play?</p></div>
       <div class="game-grid">${GAMES.map((g) => `
         <button class="game-card ${g.theme}" data-game="${g.id}">
@@ -448,12 +449,12 @@ function aboutScreen() {
   const root = el(`<section class="screen">
     <header class="topbar"><button class="icon-btn" data-act="back" aria-label="Back">${icon.back}</button><div class="title">About</div><div class="spacer"></div></header>
     <div class="scroll">
-      <div class="home-hero">${logoSvg}<div class="app-name">Sudoku <span>Calm</span></div><div class="tagline">Version ${esc(native.versionName())}</div></div>
+      <div class="home-hero">${brandSvg}<div class="app-name">Mindnook</div><div class="tagline">Version ${esc(native.versionName())}</div></div>
       <div class="card credits">
         <p>An ad-free collection of logic puzzles. Every Sudoku is generated on your phone with exactly one solution, and every Meowdoku level can be solved with logic alone.</p><br>
         <p>Your progress stays on this device. The app only goes online to check GitHub for updates, which you can turn off in Settings.</p><br>
         <p><b>Artwork.</b> Cats, icons, treats and the Pawgram pictures come from Microsoft Fluent Emoji, used under the MIT licence. Copyright (c) Microsoft Corporation.</p><br>
-        <p><b>Inspiration.</b> Sudoku Calm is an independent app. It is not made by, endorsed by or affiliated with Easybrain, Oakever Games, Easetouch, King, Hungry Studio or any other game maker. Its games are our own takes on popular puzzle styles, with original artwork and names.</p><br>
+        <p><b>Inspiration.</b> Mindnook is an independent app. It is not made by, endorsed by or affiliated with Easybrain, Oakever Games, Easetouch, King, Hungry Studio or any other game maker. Its games are our own takes on popular puzzle styles, with original artwork and names.</p><br>
         <p><a href="#" data-act="src">Source code and releases on GitHub</a></p>
       </div>
     </div></section>`);

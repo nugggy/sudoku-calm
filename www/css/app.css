@@ -789,8 +789,7 @@ h1, h2, h3, p { margin: 0; }
 .ws-board { position: relative; display: grid; grid-template-columns: repeat(auto-fill, var(--wc)); background: #fff; border-radius: 16px; box-shadow: 0 8px 24px rgba(59, 91, 219, .15); touch-action: none; overflow: hidden; }
 :root[data-theme="dark"] .ws-board { background: #232030; }
 .ws-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-.ws-lines line.temp { opacity: .9; }
-.ws-lines line.found { animation: fade .3s; }
+.ws-lines .found-g line:last-child { animation: fade .3s; }
 .wcell { position: relative; z-index: 1; width: var(--wc); height: var(--wc); display: grid; place-items: center; font-weight: 800; font-size: calc(var(--wc) * .5); color: #2c3e66; user-select: none; }
 :root[data-theme="dark"] .wcell { color: #dfe6ff; }
 .wcell.pop { animation: pop-num .35s ease-out; }

@@ -115,6 +115,7 @@ export function wsGameScreen(app, { level }) {
     board.insertAdjacentHTML('beforeend', puzzle.grid.map((ch, i) => `<div class="wcell" data-i="${i}">${ch}</div>`).join(''));
     const svg = q('lines');
     svg.setAttribute('viewBox', `0 0 ${cell * size} ${cell * size}`);
+    svg.innerHTML = '<g class="found-g"></g><line class="temp" stroke="rgba(120,140,255,.45)" stroke-linecap="round" visibility="hidden"/>';
     q('img').src = `img/themes/${spec.theme.img}.png`;
     q('name').textContent = spec.theme.name;
   }
@@ -124,8 +125,21 @@ export function wsGameScreen(app, { level }) {
     const [x1, y1] = centre(r1, c1), [x2, y2] = centre(r2, c2);
     return `<line class="${cls}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${colour}" stroke-width="${cell * 0.78}" stroke-linecap="round"/>`;
   }
-  function renderLines(temp = '') {
-    q('lines').innerHTML = puzzle.placed.map((p, k) => (found.includes(p.word) ? capsule(p.r, p.c, p.r + p.dr * (p.word.length - 1), p.c + p.dc * (p.word.length - 1), HUES[found.indexOf(p.word) % HUES.length] + 'b3', 'found') : '')).join('') + temp;
+  // Found words live in their own layer and are only redrawn when a word is found, so dragging
+  // never disturbs them. The line you are dragging is a single element that just moves.
+  function renderFound() {
+    q('lines').querySelector('.found-g').innerHTML = found.map((w) => {
+      const p = puzzle.placed.find((x) => x.word === w);
+      return capsule(p.r, p.c, p.r + p.dr * (p.word.length - 1), p.c + p.dc * (p.word.length - 1), HUES[found.indexOf(w) % HUES.length] + 'b3', 'found');
+    }).join('');
+  }
+  function dragLine(r1, c1, r2, c2) {
+    const line = q('lines').querySelector('.temp');
+    if (r1 === null) { line.setAttribute('visibility', 'hidden'); return; }
+    const [x1, y1] = centre(r1, c1), [x2, y2] = centre(r2, c2);
+    line.setAttribute('x1', x1); line.setAttribute('y1', y1); line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+    line.setAttribute('stroke-width', cell * 0.78);
+    line.setAttribute('visibility', 'visible');
   }
   function renderWords() {
     q('words').innerHTML = puzzle.placed.map((p) => `<span class="${found.includes(p.word) ? 'got' : ''}" style="--hue:${HUES[found.indexOf(p.word) % HUES.length]}">${p.word}</span>`).join('');
@@ -151,7 +165,7 @@ export function wsGameScreen(app, { level }) {
     const p = cellAt(e); if (!p) return;
     board.setPointerCapture(e.pointerId);
     start = p; last = p;
-    renderLines(capsule(p[0], p[1], p[0], p[1], 'rgba(255,255,255,.6)', 'temp'));
+    dragLine(p[0], p[1], p[0], p[1]);
     sfx.tap();
   });
   board.addEventListener('pointermove', (e) => {
@@ -161,7 +175,7 @@ export function wsGameScreen(app, { level }) {
     const end = s.cells[s.cells.length - 1];
     if (last && end[0] === last[0] && end[1] === last[1]) return;
     last = end;
-    renderLines(capsule(start[0], start[1], end[0], end[1], 'rgba(255,255,255,.6)', 'temp'));
+    dragLine(start[0], start[1], end[0], end[1]);
     buzz(4);
   });
   const finish = () => {
@@ -177,10 +191,11 @@ export function wsGameScreen(app, { level }) {
       sfx.unit(); buzz(20);
       s.cells.forEach(([r, c], k) => setTimeout(() => { const n = $(`.wcell[data-i="${r * size + c}"]`, root); n.classList.remove('pop'); void n.offsetWidth; n.classList.add('pop'); }, k * 35));
       persist();
+      renderFound();
       renderWords();
       checkWin();
     } else if (s.cells.length > 1) sfx.erase();
-    renderLines();
+    dragLine(null);
   };
   board.addEventListener('pointerup', finish);
   board.addEventListener('pointercancel', finish);
@@ -232,7 +247,7 @@ export function wsGameScreen(app, { level }) {
     const cur = w.current && w.current.level === level ? w.current : null;
     found = cur ? cur.found.filter((x) => puzzle.placed.some((p) => p.word === x)) : [];
     elapsed = cur ? cur.elapsed : 0;
-    requestAnimationFrame(() => { build(); renderLines(); renderWords(); startTimer(); });
+    requestAnimationFrame(() => { build(); renderFound(); renderWords(); startTimer(); });
     if (!w.seenHelp) { w.seenHelp = true; save(); setTimeout(wsHelp, 300); }
   })();
 

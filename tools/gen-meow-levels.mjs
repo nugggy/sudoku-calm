@@ -6,7 +6,7 @@ import { generateLevel, encodeLevel, countSolutions, gradeLevel, decodeLevel } f
 const quick = process.argv.includes('--quick');
 // [board size, number of levels]
 const PLAN = quick ? [[4, 2], [5, 3], [6, 3], [7, 3], [8, 3], [9, 2], [10, 2]]
-  : [[4, 5], [5, 15], [6, 30], [7, 50], [8, 80], [9, 120], [10, 200]];
+  : [[4, 5], [5, 15], [6, 30], [7, 50], [8, 80], [9, 120], [10, 200], [11, 250], [12, 250]];
 const OVERSAMPLE = 4;
 
 const levels = [];
@@ -15,7 +15,8 @@ for (const [n, count] of PLAN) {
   const t0 = Date.now();
   const pool = new Map();
   let attempts = 0;
-  while (pool.size < Math.ceil(count * OVERSAMPLE) && attempts < count * 40) {
+  const over = n >= 12 ? 2 : n >= 11 ? 3 : OVERSAMPLE; // big boards are slow to build
+  while (pool.size < Math.ceil(count * over) && attempts < count * 40) {
     attempts++;
     const lv = generateLevel(n, seed++ * 7919);
     if (lv) pool.set(encodeLevel(lv), lv);

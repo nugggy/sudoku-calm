@@ -1,12 +1,12 @@
-// App shell: navigation, home, daily challenges, statistics, settings and updates.
+// App shell: navigation, home, statistics, settings and updates.
 import { DIFFICULTIES, DIFFICULTY_LABELS } from './sudoku-engine.js';
-import { store, save, resetAll, todayKey, fmtTime } from './store.js';
+import { store, save, resetAll, fmtTime } from './store.js';
 import { icon, logoSvg } from './icons.js';
 import { el, $, $$, sheet, dialog, toast, closeTopOverlay, esc } from './ui.js';
 import { sfx } from './sound.js';
 import { native, checkForUpdate, REPO } from './native.js';
-import { sudokuScreen, startGame, continueLabel, prefetch, dailyDifficulty } from './sudoku-game.js';
-import { sortHomeScreen, sortGameScreen, sortHelp } from './sort-game.js';
+import { sudokuScreen, startGame, continueLabel, prefetch } from './sudoku-game.js';
+import { sortHomeScreen, sortGameScreen, sortLevelsScreen, sortHelp } from './sort-game.js';
 import { meowHomeScreen, meowGameScreen, meowLevelsScreen, meowCatsScreen, loadLevels, meowHelp } from './meow-game.js';
 
 // ---------- Theme ----------
@@ -33,14 +33,13 @@ mq.addEventListener?.('change', applyTheme);
 // ---------- Navigation ----------
 const TABS = [
   { id: 'home', label: 'Main', icon: icon.home },
-  { id: 'daily', label: 'Daily', icon: icon.calendar },
   { id: 'meow', label: 'Meowdoku', img: 'img/cats/cat01.png' },
   { id: 'sort', label: 'Cat Sort', img: 'img/cats/cat12.png' },
   { id: 'me', label: 'Me', icon: icon.chart },
 ];
 const SCREENS = {
-  home: homeScreen, daily: dailyScreen, meow: meowHomeScreen, me: statsScreen,
-  sort: sortHomeScreen, sortgame: sortGameScreen,
+  home: homeScreen, meow: meowHomeScreen, me: statsScreen,
+  sort: sortHomeScreen, sortgame: sortGameScreen, sortlevels: sortLevelsScreen,
   sudoku: sudokuScreen, meowgame: meowGameScreen, meowlevels: meowLevelsScreen, meowcats: meowCatsScreen,
   settings: settingsScreen, about: aboutScreen,
 };
@@ -156,102 +155,23 @@ function homeScreen() {
     <div class="scroll"></div></section>`);
   const body = $('.scroll', root);
   function render() {
-    const today = todayKey();
-    const done = store.daily[today];
     const cont = continueLabel();
     const wins = DIFFICULTIES.reduce((a, d) => a + store.stats[d].won, 0);
     const best = Math.max(...DIFFICULTIES.map((d) => store.stats[d].bestStreak));
-    const dailyCount = Object.keys(store.daily).length;
     body.innerHTML = `
       <div class="home-hero">${logoSvg}<div class="app-name">Sudoku <span>Calm</span></div><div class="tagline">No ads. No interruptions. Just puzzles.</div></div>
-      <div class="card daily-card">
-        <img src="img/ui/${done ? 'glowing-star' : 'spiral-calendar'}.png" alt="">
-        <div class="info"><div class="label">Daily challenge</div><div class="date">${new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long' })}</div></div>
-        <button class="pill-btn ${done ? 'done' : ''}" data-act="daily">${done ? 'Done' : 'Play'}</button>
-      </div>
-      <div class="home-actions">
+      <div class="home-actions" style="margin-top:28px">
         ${cont ? `<button class="btn" data-act="continue">Continue game<small>${esc(cont)}</small></button>` : ''}
         <button class="btn ${cont ? 'secondary' : ''}" data-act="new">New game</button>
       </div>
-      <div class="home-streak"><div><b>${wins}</b>Games won</div><div><b>${best}</b>Best streak</div><div><b>${dailyCount}</b>Daily stars</div></div>`;
+      <div class="home-streak"><div><b>${wins}</b>Games won</div><div><b>${best}</b>Best streak</div><div><b>${DIFFICULTIES.reduce((a, d) => a + store.stats[d].perfect, 0)}</b>Perfect games</div></div>`;
   }
   root.addEventListener('click', (e) => {
     const a = e.target.closest('[data-act]')?.dataset.act;
     if (a === 'continue') app.go('sudoku');
     else if (a === 'new') newGameSheet();
-    else if (a === 'daily') app.reset('daily');
     else if (a === 'settings') app.go('settings');
     else if (a === 'rules') sudokuRules();
-  });
-  render();
-  return { root, refresh: render };
-}
-
-// ---------- Daily challenges ----------
-function dailyScreen() {
-  const now = new Date();
-  let view = new Date(now.getFullYear(), now.getMonth(), 1);
-  let selected = todayKey();
-  const root = el(`<section class="screen with-tabbar">
-    <header class="topbar"><div class="spacer"></div><div class="title">Daily challenges</div><div class="spacer"></div></header>
-    <div class="scroll"></div></section>`);
-  const body = $('.scroll', root);
-  const keyOf = (y, m, d) => todayKey(new Date(y, m, d));
-  const monthDone = (y, m) => {
-    const days = new Date(y, m + 1, 0).getDate();
-    let n = 0;
-    for (let d = 1; d <= days; d++) if (store.daily[keyOf(y, m, d)]) n++;
-    return { n, days };
-  };
-  function render() {
-    const y = view.getFullYear(), m = view.getMonth();
-    const { n, days } = monthDone(y, m);
-    const first = (new Date(y, m, 1).getDay() + 6) % 7; // Monday first
-    const isCurrent = y === now.getFullYear() && m === now.getMonth();
-    const minView = new Date(now.getFullYear() - 1, now.getMonth(), 1);
-    const complete = n === days;
-    let cal = ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d) => `<div class="dow">${d}</div>`).join('') + '<div></div>'.repeat(first);
-    for (let d = 1; d <= days; d++) {
-      const k = keyOf(y, m, d);
-      const future = new Date(y, m, d) > now;
-      cal += `<button data-day="${k}" class="${store.daily[k] ? 'done' : ''} ${k === todayKey() ? 'today' : ''} ${k === selected ? 'sel' : ''}" ${future ? 'disabled' : ''}>${d}</button>`;
-    }
-    const rec = store.daily[selected];
-    const inProg = store.dailyGame && !store.dailyGame.done && store.dailyGame.daily === selected;
-    const [sy, sm, sd] = selected.split('-').map(Number);
-    const selDate = new Date(sy, sm - 1, sd).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
-    // trophies earned in completed months
-    const shelf = [];
-    for (let k = 0; k < 12; k++) {
-      const d = new Date(now.getFullYear(), now.getMonth() - k, 1);
-      const md = monthDone(d.getFullYear(), d.getMonth());
-      if (md.n === md.days) shelf.push(d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' }));
-    }
-    body.innerHTML = `
-      <div class="card month-card">
-        <img src="img/ui/${complete ? 'trophy' : 'crown'}.png" class="${complete ? '' : 'locked'}" alt="">
-        <div class="month-nav">
-          <button class="icon-btn" data-nav="-1" ${view <= minView ? 'disabled style="opacity:.3"' : ''} aria-label="Previous month">${icon.chevL}</button>
-          <h2>${view.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}</h2>
-          <button class="icon-btn" data-nav="1" ${isCurrent ? 'disabled style="opacity:.3"' : ''} aria-label="Next month">${icon.chevR}</button>
-        </div>
-        <div class="progress"><i style="width:${(n / days) * 100}%"></i></div>
-        <div class="progress-label">${n} of ${days} days complete${complete ? '. Trophy earned' : '. Finish every day to win this month\'s trophy'}</div>
-      </div>
-      <div class="cal">${cal}</div>
-      <button class="btn" data-act="play" ${rec ? 'disabled style="opacity:.6"' : ''}>${rec ? `Solved in ${fmtTime(rec.time)}` : inProg ? 'Continue' : 'Play'}<small>${selDate} · ${DIFFICULTY_LABELS[dailyDifficulty(selected)]}</small></button>
-      <div class="section-title">Trophy cabinet</div>
-      ${shelf.length ? `<div class="trophy-shelf">${shelf.map((s) => `<div class="t"><img src="img/ui/trophy.png" alt="">${s}</div>`).join('')}</div>` : '<p style="color:var(--muted);font-size:14px;padding:0 4px">Complete every daily challenge in a month to earn its trophy.</p>'}`;
-  }
-  root.addEventListener('click', (e) => {
-    const nav = e.target.closest('[data-nav]');
-    if (nav && !nav.disabled) { view = new Date(view.getFullYear(), view.getMonth() + +nav.dataset.nav, 1); sfx.tap(); render(); return; }
-    const day = e.target.closest('[data-day]');
-    if (day) { selected = day.dataset.day; sfx.tap(); render(); return; }
-    if (e.target.closest('[data-act="play"]') && !store.daily[selected]) {
-      if (store.dailyGame && !store.dailyGame.done && store.dailyGame.daily === selected) app.go('sudoku', { daily: true });
-      else app.startSudoku(dailyDifficulty(selected), selected);
-    }
   });
   render();
   return { root, refresh: render };
@@ -287,10 +207,6 @@ function statsScreen() {
         ${row('fire', 'Current win streak', s.streak)}
         ${row('crown', 'Best win streak', s.bestStreak)}
         ${row('gem-stone', 'Best score', s.bestScore.toLocaleString('en-AU'))}
-      </div>
-      <div class="section-title">Daily challenges</div>
-      <div class="card stat-group">
-        ${row('glowing-star', 'Days completed', Object.keys(store.daily).length)}
       </div>
       <div class="section-title">Cosy Cat Sort</div>
       <div class="card stat-group">
@@ -386,7 +302,7 @@ function settingsScreen() {
     else if (a === 'sortrules') sortHelp();
     else if (a === 'about') app.go('about');
     else if (a === 'reset') {
-      const ok = await dialog({ title: 'Reset all progress?', text: 'This deletes your statistics, daily stars, saved games, Meowdoku levels and Cat Sort levels. Your settings stay. This cannot be undone.',
+      const ok = await dialog({ title: 'Reset all progress?', text: 'This deletes your statistics, saved games, Meowdoku levels and Cat Sort levels. Your settings stay. This cannot be undone.',
         buttons: [{ label: 'Reset everything', value: true, cls: 'danger' }, { label: 'Cancel', value: false, cls: 'ghost' }] });
       if (ok) { resetAll(); toast('Progress reset'); }
     }

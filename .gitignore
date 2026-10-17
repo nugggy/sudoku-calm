@@ -15,7 +15,7 @@ android/.idea/
 captures/
 
 # Local testing
-www/_phone.html
+www/_*.html
 dist/
 node_modules/
 .DS_Store

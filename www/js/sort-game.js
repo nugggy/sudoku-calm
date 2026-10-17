@@ -1,5 +1,5 @@
 // Cosy Cat Sort: home tab and game screen.
-import { newLevel, move, isWon, isStuck, shuffleCats, freeSlots, clone, recipe, SLOTS } from './sort-engine.js';
+import { newLevel, move, isWon, isStuck, shuffleCats, clone, recipe, topRun, topIndex, count, encodeLevel, decodeLevel } from './sort-engine.js';
 import { store, save } from './store.js';
 import { icon } from './icons.js';
 import { el, $, $$, dialog, confetti, toast, sheet } from './ui.js';
@@ -17,6 +17,10 @@ export const COSTUME = [
   { name: 'Panda', col: '#f4f4f2', dark: '#c9c9c4', face: 'cat07', deco: 'panda' },
   { name: 'Dino', col: '#3fb8a8', dark: '#23877a', face: 'cat10', deco: 'dino' },
   { name: 'Pumpkin', col: '#f3923a', dark: '#c96a1c', face: 'cat13', deco: 'pumpkin' },
+  { name: 'Unicorn', col: '#e6d4ff', dark: '#a98bd6', face: 'cat02', deco: 'unicorn' },
+  { name: 'Bee', col: '#3b3b3b', dark: '#1f1f1f', face: 'cat14', deco: 'bee' },
+  { name: 'Penguin', col: '#2c3e66', dark: '#1b2a4a', face: 'cat09', deco: 'penguin' },
+  { name: 'Elephant', col: '#9aa5b1', dark: '#6b7785', face: 'cat05', deco: 'elephant' },
 ];
 
 function deco(c) {
@@ -32,6 +36,10 @@ function deco(c) {
     case 'panda': return { back: `<circle cx="24" cy="20" r="10" fill="#2b2b2b"/><circle cx="76" cy="20" r="10" fill="#2b2b2b"/>`, front: '' };
     case 'dino': return { back: `<path d="M30 14 l6 -12 6 10 M44 9 l6 -12 6 12 M58 10 l6 -10 6 12" fill="${dark}" stroke="${dark}" stroke-width="2" stroke-linejoin="round"/>`, front: '' };
     case 'pumpkin': return { back: '', front: `<rect x="47" y="2" width="6" height="12" rx="2" fill="#6d4c2f"/><path d="M53 6 Q64 0 66 8 Q58 10 53 9 Z" fill="#4caf50"/>` };
+    case 'unicorn': return { back: `<circle cx="18" cy="34" r="7" fill="#ff9ccf"/><circle cx="16" cy="48" r="6" fill="#8fd3ff"/><circle cx="82" cy="34" r="7" fill="#ffe08a"/><circle cx="84" cy="48" r="6" fill="#a5e8b5"/>`, front: `<path d="M44 14 L50 -8 L56 14 Z" fill="#ffd54a" stroke="#e0a91e" stroke-width="1.5"/><path d="M46 7 L54 5 M45 11 L55 9" stroke="#e0a91e" stroke-width="1.5"/>` };
+    case 'bee': return { back: `<path d="M38 12 Q32 0 26 -2" stroke="#1f1f1f" stroke-width="2.5" fill="none"/><path d="M62 12 Q68 0 74 -2" stroke="#1f1f1f" stroke-width="2.5" fill="none"/><circle cx="26" cy="-2" r="5" fill="#ffd43b"/><circle cx="74" cy="-2" r="5" fill="#ffd43b"/>`, mid: `<path d="M18 78 Q50 70 82 78 L83 85 Q50 77 17 85 Z" fill="#ffd43b"/><path d="M16 91 Q50 83 84 91 L84 97 Q50 89 16 97 Z" fill="#ffd43b"/>`, front: '' };
+    case 'penguin': return { back: '', mid: `<ellipse cx="50" cy="84" rx="20" ry="14" fill="#fff"/>`, front: `<path d="M44 12 Q50 2 56 12 Z" fill="#ff9f2e"/><circle cx="50" cy="5" r="4" fill="#ff5a5a"/>` };
+    case 'elephant': return { back: `<ellipse cx="14" cy="46" rx="14" ry="20" fill="${col}" stroke="${dark}" stroke-width="2"/><ellipse cx="86" cy="46" rx="14" ry="20" fill="${col}" stroke="${dark}" stroke-width="2"/><ellipse cx="14" cy="46" rx="8" ry="13" fill="#f4b8c8"/><ellipse cx="86" cy="46" rx="8" ry="13" fill="#f4b8c8"/>`, front: '' };
   }
   return { back: '', front: '' };
 }
@@ -44,6 +52,7 @@ export function cutie(k) {
     ${d.back}
     <path d="M16 100 Q14 64 50 62 Q86 64 84 100 Z" fill="${c.col}" stroke="${c.dark}" stroke-width="2"/>
     <ellipse cx="50" cy="86" rx="16" ry="12" fill="#fff" fill-opacity=".35"/>
+    ${d.mid || ''}
     <circle cx="50" cy="44" r="35" fill="${c.col}" stroke="${c.dark}" stroke-width="2"/>
     <image href="img/cats/${c.face}.png" x="19" y="15" width="62" height="62"/>
     <ellipse cx="34" cy="97" rx="8" ry="5.5" fill="#fff4e6" stroke="${c.dark}" stroke-width="1.5"/>
@@ -71,7 +80,8 @@ export function sortHomeScreen(app) {
         <h1 class="sort-title">Cosy Cat Sort</h1>
         <p>Match four cats in the same outfit and send them home</p>
       </div>
-      <button class="sort-btn" data-act="play">${s.current && s.current.level === s.level ? 'Continue' : 'Play'} level ${s.level + 1}<small>${r.k} outfits · ${r.shelves} shelves</small></button>
+      <button class="sort-btn ${r.hard ? 'hard' : ''}" data-act="play">${s.current && s.current.level === s.level ? 'Continue' : 'Play'} level ${s.level + 1}<small>${r.hard ? 'Hard level · ' : ''}${r.k} outfits · ${r.shelves} shelves</small></button>
+      <button class="meow-btn alt" data-act="levels" style="margin-top:12px">Levels<small>Replay any finished level</small></button>
       <div class="sort-card">
         <div class="boost-row">
           <div><span class="boost-ic">${icon.undo}</span><b>${s.boosters.undo}</b>Undo</div>
@@ -85,6 +95,7 @@ export function sortHomeScreen(app) {
   root.addEventListener('click', (e) => {
     const a = e.target.closest('[data-act]')?.dataset.act;
     if (a === 'play') app.go('sortgame', { level: store.sort.level });
+    else if (a === 'levels') app.go('sortlevels');
     else if (a === 'help') sortHelp();
     else if (a === 'settings') app.go('settings');
   });
@@ -94,30 +105,60 @@ export function sortHomeScreen(app) {
 
 export function sortHelp() {
   sheet(`<h2>How to play</h2><div class="help-body">
-    <p>Tap a cat to pick it up, then tap a shelf with a free spot to put it there.</p>
+    <p>Shelves face the aisle down the middle. You can only pick up the cat nearest the aisle. If the cats next to it wear the same outfit, they come along too.</p>
+    <p>Tap a shelf to pick up its cats, then tap another shelf with room to put them there.</p>
     <p>Get four cats in the same outfit onto one shelf and they head home together.</p>
-    <p>Grey boxes hide a cat. Move a cat next to a box, or away from it, to open it.</p>
+    <p>Grey boxes hide a cat. A box opens once it is the cat nearest the aisle.</p>
     <p>Some shelves have more cats waiting behind. Clear the shelf and the next row drops in.</p>
     <p>The two baskets at the bottom hold any cat while you make room. Boosters help when you get stuck: Undo, Shuffle and an Extra spot.</p>
   </div><button class="sort-btn" data-x>Let's sort</button>`, { onMount: (n, close) => { $('[data-x]', n).onclick = close; } });
 }
 
+// ---------- Level supply (pre-built file, then a background worker for endless levels) ----------
+let levelList = null;
+async function loadSortLevels() {
+  if (levelList) return levelList;
+  try { levelList = (await (await fetch('levels/sort-levels.json')).json()).levels; } catch { levelList = []; }
+  return levelList;
+}
+let worker = null, wid = 0;
+const waiting = new Map(), built = new Map();
+function buildInWorker(level) {
+  if (built.has(level)) return Promise.resolve(built.get(level));
+  try {
+    if (!worker) {
+      worker = new Worker(new URL('./sort-worker.js', import.meta.url), { type: 'module' });
+      worker.onmessage = (e) => { built.set(e.data.level, e.data.data); const r = waiting.get(e.data.id); if (r) { waiting.delete(e.data.id); r(e.data.data); } };
+    }
+    return new Promise((res) => { const id = ++wid; waiting.set(id, res); worker.postMessage({ id, level }); });
+  } catch {
+    return Promise.resolve(encodeLevel(newLevel(level)));
+  }
+}
+async function getLevel(level) {
+  const list = await loadSortLevels();
+  if (level < list.length) return decodeLevel(level, list[level]);
+  return decodeLevel(level, await buildInWorker(level));
+}
+// Warm up the next endless level while the current one is played.
+function prefetchLevel(level) { loadSortLevels().then((list) => { if (level >= list.length) buildInWorker(level); }); }
+
 // ---------- Game ----------
 export function sortGameScreen(app, { level }) {
   const s = store.sort;
-  let st = s.current && s.current.level === level ? s.current.state : newLevel(level);
+  let st = null;
   const history = [];
-  let selected = null; // {shelf, slot} or {hold}
-  let busy = false;
+  let selected = null; // {shelf} or {hold}
+  let busy = true;
 
   const root = el(`<section class="screen sort-theme sort-game">
     <header class="sort-header">
       <button class="sort-round" data-act="back" aria-label="Back">${icon.back}</button>
-      <div class="sort-level">Level ${level + 1}</div>
+      <div class="sort-level" data-el="title">Level ${level + 1}</div>
       <button class="sort-round" data-act="help" aria-label="How to play">${icon.help}</button>
     </header>
     <div class="houses" data-el="houses"></div>
-    <div class="shelves" data-el="shelves"></div>
+    <div class="shelves" data-el="shelves"><div class="sort-loading"><div class="spinner"></div>Setting up the shelves</div></div>
     <div class="holds" data-el="holds"></div>
     <div class="boosters">
       <button class="sort-boost" data-act="undo" aria-label="Undo">${icon.undo}<span class="plus" data-b="undo"></span></button>
@@ -128,122 +169,122 @@ export function sortGameScreen(app, { level }) {
   const q = (k) => $(`[data-el="${k}"]`, root);
 
   function persist() { s.current = { level, state: st }; save(); }
-
-  const same = (a, b) => a && b && a.hold === b.hold && a.shelf === b.shelf && a.slot === b.slot;
-  const catAt = (p) => (p.hold != null ? st.hold[p.hold] : st.shelves[p.shelf].slots[p.slot]);
+  const sameSel = (p) => selected && p && selected.hold === p.hold && selected.shelf === p.shelf;
+  const side = (si) => (si % 2 === 0 ? 'left' : 'right');
 
   function render() {
-    // houses: one per outfit in the level, filled when that outfit has gone home
+    q('title').innerHTML = `Level ${level + 1}${st.hard ? '<span class="hard-badge">Hard</span>' : ''}`;
     q('houses').innerHTML = `<div class="house-track">${[...Array(st.k)].map((_, i) => {
       const k = st.home[i];
       return `<div class="house ${k != null ? 'full' : ''}" data-house="${i}"><div class="roof"></div><div class="door">${k != null ? cutie(k) : ''}</div></div>`;
     }).join('')}</div>`;
     const sh = q('shelves');
     sh.style.setProperty('--rows', Math.ceil(st.shelves.length / 2));
-    sh.innerHTML = st.shelves.map((shelf, si) => `<div class="shelf" data-shelf="${si}">
+    sh.innerHTML = st.shelves.map((shelf, si) => {
+      const run = sameSel({ shelf: si }) ? topRun(shelf) : { n: 0 };
+      const top = topIndex(shelf);
+      return `<div class="shelf ${side(si)}" data-shelf="${si}">
         <div class="slots">${shelf.slots.map((c, i) => {
-          const p = { shelf: si, slot: i };
           if (c === null) return `<div class="slot empty" data-slot="${i}"></div>`;
           if (shelf.hidden[i]) return `<div class="slot" data-slot="${i}"><div class="mystery">?</div></div>`;
-          return `<div class="slot" data-slot="${i}"><div class="cutie ${same(p, selected) ? 'lifted' : ''}">${cutie(c)}</div></div>`;
+          const lifted = run.n && i > top - run.n;
+          return `<div class="slot" data-slot="${i}"><div class="cutie ${lifted ? 'lifted' : ''}">${cutie(c)}</div></div>`;
         }).join('')}</div>
         <div class="plank">${shelf.layers.length ? `<span class="layers">+${shelf.layers.reduce((a, l) => a + l.length, 0)}</span>` : ''}</div>
-      </div>`).join('');
-    q('holds').innerHTML = st.hold.map((c, i) => `<div class="basket" data-hold="${i}">${c !== null ? `<div class="cutie ${same({ hold: i }, selected) ? 'lifted' : ''}">${cutie(c)}</div>` : ''}</div>`).join('')
+      </div>`;
+    }).join('');
+    q('holds').innerHTML = st.hold.map((c, i) => `<div class="basket" data-hold="${i}">${c !== null ? `<div class="cutie ${sameSel({ hold: i }) ? 'lifted' : ''}">${cutie(c)}</div>` : ''}</div>`).join('')
       + (st.hold.length < 3 ? '<div class="basket locked" data-act="slot">+</div>' : '');
     $$('[data-b]', root).forEach((b) => { const n = s.boosters[b.dataset.b]; b.textContent = n > 0 ? n : '+'; b.classList.toggle('none', n <= 0); });
   }
 
-  function rectOf(p) {
-    const node = p.hold != null ? $(`[data-hold="${p.hold}"]`, root) : $(`[data-shelf="${p.shelf}"] [data-slot="${p.slot}"]`, root);
-    return node && node.getBoundingClientRect();
-  }
+  const nodeAt = (p) => (p.hold != null ? $(`[data-hold="${p.hold}"]`, root) : $(`[data-shelf="${p.shelf}"] [data-slot="${p.slot}"]`, root));
+  const rectOf = (p) => nodeAt(p)?.getBoundingClientRect();
 
-  function ghost(k, rect) {
+  async function fly(k, fromRect, toRect, duration = 280) {
     const g = el(`<div class="cutie ghost">${cutie(k)}</div>`);
-    Object.assign(g.style, { left: rect.left + 'px', top: rect.top + 'px', width: rect.width + 'px', height: rect.height + 'px' });
+    Object.assign(g.style, { left: fromRect.left + 'px', top: fromRect.top + 'px', width: fromRect.width + 'px', height: fromRect.height + 'px' });
     document.body.appendChild(g);
-    return g;
-  }
-
-  async function fly(k, fromRect, toRect, duration = 260) {
-    const g = ghost(k, fromRect);
     const dx = toRect.left - fromRect.left, dy = toRect.top - fromRect.top;
     const lift = Math.min(-30, dy / 2 - 40);
-    await g.animate([
+    const anim = g.animate([
       { transform: 'translate(0,0) scale(1.05)' },
       { transform: `translate(${dx / 2}px, ${dy / 2 + lift / 2}px) scale(1.12)`, offset: 0.5 },
       { transform: `translate(${dx}px, ${dy}px) scale(1)` },
-    ], { duration, easing: 'ease-in-out' }).finished;
+    ], { duration, easing: 'ease-in-out' });
+    // never leave the board locked if the animation is paused (for example, the app goes to the background)
+    await Promise.race([anim.finished, new Promise((r) => setTimeout(r, duration + 150))]).catch(() => {});
     g.remove();
   }
 
   async function doMove(from, to) {
-    const cat = catAt(from);
-    const fromRect = rectOf(from);
     const before = clone(st);
-    const events = move(st, from, to);
-    if (!events) { buzz(20); return; }
+    const preview = clone(st);
+    const events = move(preview, from, to);
+    if (!events) return false;
     busy = true;
+    selected = null;
+    const mv = events[0];
+    const fromRects = mv.moves.map((m) => rectOf(m.from));
+    st = preview;
     history.push(before);
     if (history.length > 60) history.shift();
     // save the settled board now, before the animation temporarily rearranges things
-    store.sort.current = { level, state: clone(st) }; save(true);
-    selected = null;
-    const mv = events[0];
+    s.current = { level, state: clone(st) }; save(true);
+
     const homeEv = events.find((e) => e.type === 'home');
-    // draw the destination with the cat present but hidden, so we can fly to it
     const homeShelf = homeEv ? homeEv.shelf : -1;
     const dropped = events.filter((e) => e.type === 'drop').map((e) => e.shelf);
-    const savedLayers = dropped.map((si) => ({ si, slots: st.shelves[si].slots.slice() }));
-    // hide dropped rows until their moment, and show the completed set until it walks home
-    savedLayers.forEach(({ si }) => { st.shelves[si].slots = st.shelves[si].slots.map(() => null); });
-    if (homeEv) { st.shelves[homeShelf].slots.fill(homeEv.cat); st.shelves[homeShelf].hidden.fill(false); }
+    const saved = dropped.map((si) => ({ si, slots: st.shelves[si].slots.slice(), hidden: st.shelves[si].hidden.slice() }));
+    saved.forEach(({ si }) => { st.shelves[si].slots = st.shelves[si].slots.map(() => null); });
+    if (homeEv) { st.shelves[homeShelf].slots.fill(homeEv.cat); st.shelves[homeShelf].hidden.fill(false); st.home.pop(); }
     render();
-    const toRect = rectOf(mv.to);
-    const dstNode = mv.to.hold != null ? $(`[data-hold="${mv.to.hold}"] .cutie`, root) : $(`[data-shelf="${mv.to.shelf}"] [data-slot="${mv.to.slot}"] .cutie`, root);
-    if (dstNode) dstNode.style.visibility = 'hidden';
+    const targets = mv.moves.map((m) => nodeAt(m.to)?.querySelector('.cutie'));
+    targets.forEach((n) => n && (n.style.visibility = 'hidden'));
     sfx.place();
-    await fly(cat, fromRect, toRect);
-    if (dstNode) dstNode.style.visibility = '';
+    await Promise.all(mv.moves.map((m, i) => new Promise((res) => setTimeout(() => {
+      fly(mv.cat, fromRects[i], rectOf(m.to)).then(() => { if (targets[i]) targets[i].style.visibility = ''; res(); });
+    }, i * 70))));
     if (homeEv) {
-      // the four friends hop, then walk home together
       sfx.cat(); buzz(25);
-      const slotNodes = $$(`[data-shelf="${homeShelf}"] .cutie`, root);
-      slotNodes.forEach((n) => n.classList.add('cheer'));
+      const nodes = $$(`[data-shelf="${homeShelf}"] .cutie`, root);
+      nodes.forEach((n) => n.classList.add('cheer'));
       await new Promise((r) => setTimeout(r, 450));
-      const house = $(`[data-house="${st.home.length - 1}"]`, root).getBoundingClientRect();
+      const house = $(`[data-house="${st.home.length}"]`, root).getBoundingClientRect();
       const target = { left: house.left + house.width * 0.2, top: house.top + house.height * 0.35, width: house.width * 0.6, height: house.width * 0.6 };
-      const rects = slotNodes.map((n) => n.getBoundingClientRect());
+      const rects = nodes.map((n) => n.getBoundingClientRect());
       st.shelves[homeShelf].slots.fill(null);
-      const keepHome = st.home.pop();
       render();
       await Promise.all(rects.map((r, i) => new Promise((res) => setTimeout(() => fly(homeEv.cat, r, target, 420).then(res), i * 70))));
-      st.home.push(keepHome);
+      st.home.push(homeEv.cat);
       sfx.unit();
     }
-    savedLayers.forEach(({ si, slots }) => { st.shelves[si].slots = slots; });
+    saved.forEach(({ si, slots, hidden }) => { st.shelves[si].slots = slots; st.shelves[si].hidden = hidden; });
     render();
     for (const si of dropped) $$(`[data-shelf="${si}"] .cutie`, root).forEach((n, i) => { n.classList.add('drop-in'); n.style.animationDelay = i * 60 + 'ms'; });
+    for (const e of events) if (e.type === 'reveal') nodeAt({ shelf: e.shelf, slot: e.slot })?.querySelector('.cutie')?.classList.add('drop-in');
     if (homeEv) $(`[data-house="${st.home.length - 1}"]`, root)?.classList.add('pulse');
     busy = false;
     persist();
     if (isWon(st)) win();
     else if (isStuck(st)) stuck();
+    return true;
   }
 
   async function stuck() {
     const opts = [];
     if (s.boosters.slot > 0 && st.hold.length < 3) opts.push({ label: `Add an extra spot (${s.boosters.slot} left)`, value: 'slot' });
-    if (s.boosters.undo > 0) opts.push({ label: `Undo last move (${s.boosters.undo} left)`, value: 'undo' });
+    if (s.boosters.undo > 0 && history.length) opts.push({ label: `Undo last move (${s.boosters.undo} left)`, value: 'undo' });
     if (s.boosters.shuffle > 0) opts.push({ label: `Shuffle cats (${s.boosters.shuffle} left)`, value: 'shuffle' });
     opts.push({ label: 'Restart level', value: 'restart', cls: opts.length ? 'secondary' : '' });
-    const v = await dialog({ hero: 'img/cats/cat08.png', title: 'Out of room', text: 'Every spot is full. Use a booster or start the level again.', buttons: opts, dismissible: false });
+    const v = await dialog({ hero: 'img/cats/cat08.png', title: 'No moves left', text: 'Every cat is blocked. Use a booster or start the level again.', buttons: opts, dismissible: false });
     if (v === 'restart') restart(); else useBooster(v);
   }
 
-  function restart() {
-    st = newLevel(level); history.length = 0; selected = null;
+  async function restart() {
+    busy = true;
+    st = await getLevel(level); history.length = 0; selected = null;
+    busy = false;
     persist(); render();
   }
 
@@ -272,6 +313,7 @@ export function sortGameScreen(app, { level }) {
     if (level >= s.level) s.level = level + 1;
     s.current = null;
     save(true);
+    prefetchLevel(level + 1);
     sfx.meowWin();
     confetti();
     const names = { undo: 'Undo', shuffle: 'Shuffle', slot: 'Extra spot' };
@@ -294,35 +336,62 @@ export function sortGameScreen(app, { level }) {
     }, 500);
   }
 
-  root.addEventListener('click', (e) => {
-    if (busy) return;
+  function shake(node) { if (!node) return; node.classList.remove('shake'); void node.offsetWidth; node.classList.add('shake'); buzz(20); }
+
+  root.addEventListener('click', async (e) => {
     const a = e.target.closest('[data-act]')?.dataset.act;
     if (a === 'back') return app.back();
     if (a === 'help') return sortHelp();
+    if (busy) return;
     if (a === 'undo' || a === 'shuffle' || a === 'slot') return useBooster(a);
-    const hold = e.target.closest('[data-hold]');
+    const holdEl = e.target.closest('[data-hold]');
     const shelfEl = e.target.closest('[data-shelf]');
-    const slotEl = e.target.closest('[data-slot]');
-    let p = null;
-    if (hold) p = { hold: +hold.dataset.hold };
-    else if (shelfEl && slotEl) p = { shelf: +shelfEl.dataset.shelf, slot: +slotEl.dataset.slot };
-    const c = p ? catAt(p) : null;
-    const hidden = p && p.shelf != null && st.shelves[p.shelf].hidden[p.slot];
-    if (p && c !== null && !hidden) {
-      // tapping a cat picks it up (or puts it back down)
-      selected = same(p, selected) ? null : p;
-      if (selected) sfx.cat(); else sfx.tap();
-      render();
+    const p = holdEl ? { hold: +holdEl.dataset.hold } : shelfEl ? { shelf: +shelfEl.dataset.shelf } : null;
+    if (!p) { if (selected) { selected = null; render(); } return; }
+    const canPick = p.hold != null ? st.hold[p.hold] !== null : topRun(st.shelves[p.shelf]).n > 0;
+    if (sameSel(p)) { selected = null; sfx.tap(); render(); return; }
+    if (selected) {
+      if (await doMove(selected, p)) return;
+      // the destination is full: pick up from it instead, if possible
+      if (canPick) { selected = p; sfx.cat(); render(); } else shake(shelfEl || holdEl);
       return;
     }
-    if (hidden) { toast('Move a cat next to the box to open it'); return; }
-    if (!selected) return;
-    if (hold) doMove(selected, { hold: +hold.dataset.hold });
-    else if (shelfEl) doMove(selected, slotEl ? { shelf: +shelfEl.dataset.shelf, slot: +slotEl.dataset.slot } : { shelf: +shelfEl.dataset.shelf });
+    if (canPick) { selected = p; sfx.cat(); render(); return; }
+    if (p.shelf != null && count(st.shelves[p.shelf]) > 0) toast('That box opens when it is the cat nearest the aisle');
   });
 
-  render();
-  persist();
-  if (level === 0 && !s.seenHelp) { s.seenHelp = true; save(); setTimeout(sortHelp, 300); }
+  (async () => {
+    st = s.current && s.current.level === level ? s.current.state : await getLevel(level);
+    root.style.setProperty('--hcount', st.k > 10 ? Math.ceil(st.k / 2) : st.k);
+    root.style.setProperty('--hrows', st.k > 10 ? 2 : 1);
+    busy = false;
+    render();
+    persist();
+    prefetchLevel(level + 1);
+    if (level === 0 && !s.seenHelp) { s.seenHelp = true; save(); setTimeout(sortHelp, 300); }
+  })();
+
   return { root, destroy() { $$('.ghost').forEach((g) => g.remove()); save(true); } };
+}
+
+// ---------- Level map ----------
+export function sortLevelsScreen(app) {
+  const root = el(`<section class="screen sort-theme">
+    <header class="sort-header"><button class="sort-round" data-act="back" aria-label="Back">${icon.back}</button><div class="sort-level">Levels</div><div class="spacer"></div></header>
+    <div class="scroll"><div class="level-grid"></div></div></section>`);
+  const done = store.sort.level;
+  const show = Math.max(30, Math.ceil((done + 20) / 5) * 5);
+  let html = '';
+  for (let i = 0; i < show; i++) {
+    const r = recipe(i);
+    html += `<button class="level-dot ${i < done ? 'done' : ''} ${i === done ? 'current' : ''} ${r.hard ? 'hard' : ''}" data-idx="${i}" ${i > done ? 'disabled' : ''}>${i + 1}</button>`;
+  }
+  $('.level-grid', root).innerHTML = html;
+  setTimeout(() => $('.level-dot.current', root)?.scrollIntoView({ block: 'center' }), 0);
+  root.addEventListener('click', (e) => {
+    if (e.target.closest('[data-act="back"]')) return app.back();
+    const b = e.target.closest('[data-idx]');
+    if (b) app.go('sortgame', { level: +b.dataset.idx });
+  });
+  return { root };
 }

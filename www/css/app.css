@@ -441,9 +441,9 @@ h1, h2, h3, p { margin: 0; }
   text-shadow: 0 2px 0 #9c6233, 2px 0 0 #9c6233, -2px 0 0 #9c6233, 0 -2px 0 #9c6233, 0 4px 6px rgba(80, 40, 10, .3); }
 
 .houses { flex-shrink: 0; padding: 2px 10px 8px; }
-.house-track { display: flex; justify-content: center; gap: 4px; }
-.house { width: min(calc((100vw - 64px) / 10), 46px); position: relative; transition: transform .3s; }
-.house .roof { height: calc(min(calc((100vw - 64px) / 10), 46px) * .42); background: #d9825b; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.house-track { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px; margin: 0 auto; max-width: calc(var(--hcount, 10) * (min(calc((100vw - 64px) / var(--hcount, 10)), 46px) + 4px)); }
+.house { width: min(calc((100vw - 64px) / var(--hcount, 10)), 46px); position: relative; transition: transform .3s; }
+.house .roof { height: calc(min(calc((100vw - 64px) / var(--hcount, 10)), 46px) * .42); background: #d9825b; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
 .house .door { position: relative; aspect-ratio: 1; background: repeating-linear-gradient(90deg, #f3c39e 0 4px, #eeb68c 4px 8px); border-radius: 0 0 8px 8px; margin: 0 8%; display: grid; place-items: end center; overflow: hidden; box-shadow: inset 0 0 0 2px #c96f45; }
 .house .door::before { content: ""; position: absolute; width: 40%; height: 34%; bottom: 0; left: 30%; border-radius: 40% 40% 0 0; background: #8a4f2c; opacity: .55; }
 .house.full .door::before { display: none; }
@@ -451,8 +451,19 @@ h1, h2, h3, p { margin: 0; }
 .house.pulse { animation: house-pulse .6s; }
 @keyframes house-pulse { 40% { transform: scale(1.25) translateY(-4px); } }
 
-.shelves { flex: 1; display: grid; grid-template-columns: auto auto; justify-content: center; align-content: space-evenly; column-gap: 16px; padding: 0 8px; min-height: 0;
-  --cw: min(calc((100vw - 56px) / 8), calc((100vh - var(--safe-top) - 340px) / var(--rows) / 1.5), 64px); }
+.shelves { position: relative; flex: 1; display: grid; grid-template-columns: auto auto; justify-content: space-between; align-content: space-evenly; column-gap: 0; padding: 0 2px; min-height: 0;
+  --aisle: max(48px, 13vw);
+  --cw: min(calc((100vw - 4px - var(--aisle) - 16px) / 8), calc((100vh - var(--safe-top) - 340px - (var(--hrows, 1) - 1) * 50px) / var(--rows) / 1.5), 64px); }
+/* the aisle: a soft knitted path down the middle */
+.shelves::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: calc(var(--aisle) - 10px); transform: translateX(-50%); border-radius: 20px;
+  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, .28) 0 6px, rgba(255, 255, 255, .12) 6px 12px); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .25); pointer-events: none; }
+.shelf.left .plank { border-radius: 0 8px 8px 0; }
+.shelf.right .plank { border-radius: 8px 0 0 8px; }
+.shelf.right .slots { direction: rtl; }
+.shelf.left .layers { right: auto; left: -2px; }
+.shelf.right .layers { right: -2px; }
+.shelf.shake, .basket.shake { animation: shake .35s; }
+.sort-loading { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; gap: 12px; font-weight: 600; }
 .shelf { position: relative; }
 .shelf .slots { display: grid; grid-template-columns: repeat(4, var(--cw)); align-items: end; height: calc(var(--cw) * 1.1); padding: 0 4px; }
 .slot { height: 100%; display: flex; align-items: flex-end; justify-content: center; }
@@ -496,6 +507,10 @@ h1, h2, h3, p { margin: 0; }
 .sort-note { font-size: 13px; opacity: .75; text-align: center; margin-top: 10px; }
 .sort-win .sort-hero-cats .cutie { width: 50px; }
 .sort-win h2 { margin-top: 10px; }
+.hard-badge { display: inline-block; vertical-align: middle; margin-left: 8px; font-size: 13px; font-weight: 800; letter-spacing: .5px; color: #fff; background: #e5484d; padding: 3px 9px; border-radius: 10px; text-shadow: none; box-shadow: 0 2px 0 #a52a2e; }
+.sort-btn.hard { background: linear-gradient(#ff7a6b, #e5484d); box-shadow: 0 5px 0 #a52a2e; }
+.level-dot.hard { box-shadow: inset 0 0 0 3px #e5484d, 0 2px 0 rgba(90, 74, 66, .12); }
+.sort-theme .level-dot.current { background: #4fb33a; box-shadow: 0 3px 0 #3a8a2a; }
 
 @media (min-height: 760px) { .num { height: 72px; } }
 @media (max-height: 640px) { .tool .ic { width: 42px; height: 42px; } .num { height: 54px; } .game-info { padding-bottom: 4px; } }

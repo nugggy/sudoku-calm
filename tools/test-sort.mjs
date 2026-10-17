@@ -1,20 +1,42 @@
-import { newLevel, recipe, move, isWon, solvable, clone, totalCats } from '../www/js/sort-engine.js';
-import { mulberry32 } from '../www/js/sudoku-engine.js';
+import { newLevel, recipe, move, isWon, totalCats, topRun } from '../www/js/sort-engine.js';
 let fail = 0, worst = 0;
-for (let L = 0; L < 120; L++) {
+const check = (ok, msg) => { if (!ok) { fail++; console.log('FAIL', msg); } };
+const shelf = (slots, hidden = [false, false, false, false]) => ({ slots, hidden, layers: [] });
+
+for (let L = 0; L < 300; L++) {
   const t0 = performance.now();
   let st;
-  try { st = newLevel(L); } catch (e) { fail++; console.log('FAIL build', L, e.message); continue; }
+  try { st = newLevel(L); } catch (e) { check(false, `build ${L}: ${e.message}`); continue; }
   const ms = performance.now() - t0; worst = Math.max(worst, ms);
   const cats = st.shelves.reduce((a, s) => a + s.slots.filter((c) => c !== null).length + s.layers.flat().length, 0);
-  if (cats !== totalCats(st)) { fail++; console.log('FAIL count', L); }
-  if (L % 15 === 0) { const r = recipe(L); console.log(`L${L + 1}: k=${r.k} shelves=${r.shelves} spare=${r.spare} layers=${st.shelves.reduce((a, s) => a + s.layers.length, 0)} boxes=${st.shelves.reduce((a, s) => a + s.hidden.filter(Boolean).length, 0)} ${ms.toFixed(0)}ms`); }
+  check(cats === totalCats(st), `count ${L}`);
+  // shelves fill from the wall: no gaps before the last cat
+  check(st.shelves.every((s) => s.slots.every((c, i) => c !== null || s.slots.slice(i).every((x) => x === null))), `packing ${L}`);
+  // the cat nearest the aisle is never hidden
+  check(st.shelves.every((s) => { const t = s.slots.filter((c) => c !== null).length - 1; return t < 0 || !s.hidden[t]; }), `top hidden ${L}`);
+  if (L % 30 === 0 || L === 9) { const r = recipe(L); console.log(`L${L + 1}${r.hard ? ' HARD' : ''}: k=${r.k} shelves=${r.shelves} spare=${r.spare} layers=${st.shelves.reduce((a, s) => a + s.layers.length, 0)} boxes=${st.shelves.reduce((a, s) => a + s.hidden.filter(Boolean).length, 0)} ${ms.toFixed(0)}ms`); }
 }
-// deterministic
-if (JSON.stringify(newLevel(20)) !== JSON.stringify(newLevel(20))) { fail++; console.log('FAIL determinism'); }
-// a shelf completes and goes home
-const st = { level: 0, k: 1, shelves: [{ slots: [0, 0, 0, null], hidden: [false, false, false, false], layers: [] }, { slots: [0, null, null, null], hidden: [false, false, false, false], layers: [] }], hold: [null, null], home: [], moves: 0 };
-const ev = move(st, { shelf: 1, slot: 0 }, { shelf: 0 });
-if (!ev.some((e) => e.type === 'home') || !isWon(st)) { fail++; console.log('FAIL home'); }
+check(JSON.stringify(newLevel(20)) === JSON.stringify(newLevel(20)), 'determinism');
+
+// only the aisle-end run can move, and a matching run moves together
+let st = { k: 2, shelves: [shelf([1, 0, 0, null]), shelf([null, null, null, null]), shelf([1, 1, 1, null])], hold: [null, null], home: [], moves: 0 };
+check(topRun(st.shelves[0]).n === 2 && topRun(st.shelves[0]).cat === 0, 'top run');
+let ev = move(st, { shelf: 0 }, { shelf: 1 });
+check(ev && ev[0].moves.length === 2 && st.shelves[1].slots.join() === '0,0,,' && st.shelves[0].slots.join() === '1,,,', 'multi move');
+ev = move(st, { shelf: 0 }, { shelf: 2 });
+check(ev && ev.some((e) => e.type === 'home') && st.home.length === 1, 'set goes home');
+// a run only moves as many as fit
+st = { k: 2, shelves: [shelf([0, 0, 0, null]), shelf([1, 1, 1, null])], hold: [null, null], home: [], moves: 0 };
+ev = move(st, { shelf: 0 }, { shelf: 1 });
+check(ev && ev[0].moves.length === 1 && st.shelves[0].slots.join() === '0,0,,', 'partial move');
+// a box opens when it reaches the aisle end
+st = { k: 2, shelves: [shelf([1, 0, null, null], [true, false, false, false]), shelf([null, null, null, null])], hold: [null, null], home: [], moves: 0 };
+ev = move(st, { shelf: 0 }, { shelf: 1 });
+check(ev && ev.some((e) => e.type === 'reveal') && !st.shelves[0].hidden[0], 'reveal');
+// winning
+st = { k: 1, shelves: [shelf([0, 0, 0, null]), shelf([0, null, null, null])], hold: [null, null], home: [], moves: 0 };
+move(st, { shelf: 1 }, { shelf: 0 });
+check(isWon(st), 'win');
+
 console.log('worst build ms', worst.toFixed(0));
 console.log(fail ? `${fail} FAILURES` : 'ALL PASS');

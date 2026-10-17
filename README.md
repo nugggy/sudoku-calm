@@ -4,9 +4,9 @@
 
 An ad-free Android puzzle app with three games:
 
-- **Sudoku.** Six difficulty levels from Easy to Extreme, notes, smart hints that explain the next move, mistake checking, scoring with row, column and box bonuses, daily challenges with monthly trophies, statistics, and light and dark themes with five accent colours.
-- **Meowdoku.** Place one cat in every row, column and colour region, with no two cats touching. 500 hand-checked levels from 4×4 to 10×10 that get harder as you go, then endless generated levels. Hints teach the logic rather than just giving answers. Collect 14 cats as you progress.
-- **Cosy Cat Sort.** Move cats in matching outfits onto the same shelf to send them home. Mystery boxes, hidden back rows, holding baskets, and Undo, Shuffle and Extra spot boosters that you earn by playing.
+- **Sudoku.** Six difficulty levels from Easy to Extreme, notes, smart hints that explain the next move, mistake checking, scoring with row, column and box bonuses, statistics, and light and dark themes with five accent colours.
+- **Meowdoku.** Place one cat in every row, column and colour region, with no two cats touching. 1,000 hand-checked levels from 4×4 to 12×12 that get harder as you go, then endless generated levels. Hints teach the logic rather than just giving answers. Collect 14 cats as you progress.
+- **Cosy Cat Sort.** Shelves line both sides of a centre aisle. Pick up the cat nearest the aisle (matching neighbours come too) and gather four in the same outfit on one shelf to send them home. 14 outfits, 600 pre-checked levels and endless levels after that, a Hard level every tenth, a level map for replays, mystery boxes, hidden back rows, holding baskets, and Undo, Shuffle and Extra spot boosters that you earn by playing.
 
 No ads, no accounts, no tracking. Progress stays on the phone.
 
@@ -49,6 +49,7 @@ Updates only install over the existing app if every release is signed with the s
 node tools/test-sudoku.mjs              # Sudoku generator, grader and hints
 node tools/test-sort.mjs                # Cat Sort level generator
 node tools/gen-meow-levels.mjs          # rebuild the Meowdoku level set
+node tools/gen-sort-levels.mjs 600      # rebuild the Cat Sort level set
 cd android && ./gradlew assembleRelease # build the APK
 ```
 

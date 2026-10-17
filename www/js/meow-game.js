@@ -16,7 +16,7 @@ const UNLOCK_EVERY = 10; // a new cat every 10 levels
 export const catUnlocked = (k) => store.meow.level >= k * UNLOCK_EVERY;
 export const catSrc = (k = store.meow.cat) => `img/cats/${CATS[k].img}`;
 
-const COLOURS = ['#e3bb45', '#e8a7c0', '#9b80d6', '#c4678c', '#7cc4a4', '#7fb2e5', '#f0956a', '#b5cf6b', '#d9a374', '#a9a9d9', '#6fc3c9'];
+const COLOURS = ['#e3bb45', '#e8a7c0', '#9b80d6', '#c4678c', '#7cc4a4', '#7fb2e5', '#f0956a', '#b5cf6b', '#a0764e', '#a9a9d9', '#6fc3c9', '#e35d5b', '#90a4ae'];
 
 let levelList = null;
 export async function loadLevels() {
@@ -27,10 +27,10 @@ export async function loadLevels() {
   } catch { levelList = []; }
   return levelList;
 }
-export const TOTAL_LEVELS_LABEL = () => (levelList ? levelList.length : 500);
+export const TOTAL_LEVELS_LABEL = () => (levelList ? levelList.length : 1000);
 export function sizeOfLevel(idx) {
   if (levelList && idx < levelList.length) return +levelList[idx].split(':')[0];
-  return idx < 800 ? 10 : 11;
+  return 11; // endless levels after the pre-built set
 }
 function getLevel(idx) {
   if (levelList && idx < levelList.length) return decodeLevel(levelList[idx]);
@@ -122,7 +122,7 @@ export function meowGameScreen(app, { idx }) {
       <button class="round-btn" data-act="settings" aria-label="Settings">${icon.gear}</button>
     </header>
     <div class="rules"><div>1 cat in each colour region</div><div>1 cat in every row and column</div><div>Cats can't touch, even diagonally</div></div>
-    <div class="mboard-wrap"><div class="mboard" style="grid-template-columns:repeat(${n},minmax(0,1fr));grid-template-rows:repeat(${n},minmax(0,1fr));--mgap:${n > 8 ? 3 : n > 6 ? 4 : 6}px;--mrad:${n > 8 ? 5 : 8}px"></div></div>
+    <div class="mboard-wrap"><div class="mboard" style="grid-template-columns:repeat(${n},minmax(0,1fr));grid-template-rows:repeat(${n},minmax(0,1fr));--mgap:${n > 10 ? 2 : n > 8 ? 3 : n > 6 ? 4 : 6}px;--mrad:${n > 10 ? 4 : n > 8 ? 5 : 8}px"></div></div>
     <div class="meow-hint" data-el="hint"><img src="img/ui/light-bulb.png" alt=""><span data-el="hint-text"></span><button class="pill-btn" data-act="apply" style="flex-shrink:0;background:#f08a4b">Do it</button></div>
     <div class="meow-tools">
       <button class="round-btn" data-act="undo" aria-label="Undo">${icon.undo}</button>

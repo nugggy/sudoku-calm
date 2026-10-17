@@ -1,0 +1,62 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Release signing comes from android/keystore.properties locally, or environment variables in CI.
+def keystoreProps = new Properties()
+def keystoreFile = rootProject.file('keystore.properties')
+if (keystoreFile.exists()) keystoreFile.withInputStream { keystoreProps.load(it) }
+def signValue = { String key, String env -> keystoreProps.getProperty(key) ?: System.getenv(env) }
+
+android {
+    namespace 'au.nugggy.sudokucalm'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'au.nugggy.sudokucalm'
+        minSdk 26
+        targetSdk 36
+        versionCode Integer.parseInt(project.property('VERSION_CODE').toString())
+        versionName project.property('VERSION_NAME').toString()
+    }
+
+    signingConfigs {
+        release {
+            def path = signValue('storeFile', 'SC_KEYSTORE_PATH')
+            if (path) {
+                storeFile rootProject.file(path)
+                storePassword signValue('storePassword', 'SC_KEYSTORE_PASSWORD')
+                keyAlias signValue('keyAlias', 'SC_KEY_ALIAS')
+                keyPassword signValue('keyPassword', 'SC_KEY_PASSWORD')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (signingConfigs.release.storeFile) signingConfig signingConfigs.release
+        }
+    }
+
+    // The game itself lives in ../../www and is bundled as app assets.
+    sourceSets {
+        main { assets.srcDirs = ['../../www'] }
+    }
+    androidResources {
+        ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~:_*'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.activity:activity:1.10.1'
+    implementation 'androidx.core:core:1.16.0'
+    implementation 'androidx.webkit:webkit:1.14.0'
+}

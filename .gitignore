@@ -1,0 +1,23 @@
+# Signing secrets: never commit these
+keystore/
+*.jks
+*.keystore
+android/keystore.properties
+
+# Android / Gradle build output
+android/local.properties
+android/.gradle/
+android/build/
+android/app/build/
+android/.idea/
+*.iml
+.gradle/
+captures/
+
+# Local testing
+www/_phone.html
+dist/
+node_modules/
+.DS_Store
+Thumbs.db
+desktop.ini

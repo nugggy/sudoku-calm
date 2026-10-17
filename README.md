@@ -4,11 +4,13 @@
 
 A calm corner for your mind.
 
-An ad-free Android puzzle app with six games, all picked from one landing page:
+An ad-free Android puzzle app with eight games, all picked from one landing page:
 
 - **Sudoku.** Six difficulty levels from Easy to Extreme, notes, smart hints that explain the next move, mistake checking, scoring with row, column and box bonuses, statistics, and light and dark themes with five accent colours.
 - **Meowdoku.** Place one cat in every row, column and colour region, with no two cats touching. 1,000 hand-checked levels from 4×4 to 12×12 that get harder as you go, then endless generated levels.
 - **Cosy Cat Sort.** Shelves line both sides of a centre aisle. Pick up the cat nearest the aisle (matching neighbours come too), only place cats next to the same outfit, and gather four on one shelf to send them home. 600 pre-checked levels plus endless levels, Hard levels, boosters and a hint button.
+- **Crosswords.** 150 freeform crosswords from quick 7×7 minis to 11×11, with clues written in plain Australian English, an on-screen keyboard, and Letter, Check and Reveal helpers.
+- **Word Search.** 32 picture themes (Animals, Ocean, Australia, Space and more). Grids grow from 8×8 to 12×12 and words run across and down, then diagonally, then backwards.
 - **Solitaire.** Classic Klondike with draw one or draw three. Every deal has been proven winnable by a solver. Tap or drag to move, unlimited undo and hints, auto finish, and the bouncing-cards finale.
 - **Treat Twist.** A match-3 game with hand-drawn candies in six shapes and colours. Swap candies to make lines, create striped, wrapped and sprinkle-ball specials, and meet each level's goal (points, collecting treats or clearing jelly) within the move limit.
 - **Block Pounce.** Drag blocks onto an 8×8 board and clear full rows and columns. Combos score big; the game ends when nothing fits.
@@ -56,6 +58,7 @@ node tools/test-sort.mjs                # Cat Sort level generator
 node tools/gen-meow-levels.mjs          # rebuild the Meowdoku level set
 node tools/gen-sort-levels.mjs 600      # rebuild the Cat Sort level set
 node tools/gen-solitaire-deals.mjs 500  # find winnable Solitaire deals
+node tools/gen-crosswords.mjs 150       # build crosswords from tools/crossword-bank.txt
 cd android && ./gradlew assembleRelease # build the APK
 ```
 
@@ -76,6 +79,6 @@ tools/               tests, level generator and release script
 ## Credits
 
 - Cat and icon artwork: [Microsoft Fluent Emoji](https://github.com/microsoft/fluentui-emoji), MIT licence, copyright (c) Microsoft Corporation. See `www/img/FLUENT-EMOJI-LICENSE.txt`.
-- Cat Sort outfits are original drawings made for this app. Treat Twist candies are original drawings too.
+- Word Search theme pictures are Fluent Emoji. Cat Sort outfits are original drawings made for this app. Treat Twist candies are original drawings too.
 
 Mindnook is an independent project. It is not made by, endorsed by or affiliated with Easybrain, Oakever Games, Easetouch, King, Hungry Studio or any other game maker. Its games are original takes on popular puzzle styles.

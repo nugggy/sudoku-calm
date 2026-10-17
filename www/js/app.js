@@ -10,6 +10,8 @@ import { sortHomeScreen, sortGameScreen, sortLevelsScreen, sortHelp, cutie } fro
 import { solitaireScreen, solHelp } from './solitaire-game.js';
 import { treatHomeScreen, treatGameScreen, treatHelp, candySvg } from './treat-game.js';
 import { blockScreen, blockHelp } from './block-game.js';
+import { crossHomeScreen, crossGameScreen, crossHelp } from './crossword-game.js';
+import { wsHomeScreen, wsGameScreen, wsHelp } from './wordsearch-game.js';
 import { meowHomeScreen, meowGameScreen, meowLevelsScreen, meowCatsScreen, loadLevels, meowHelp } from './meow-game.js';
 
 // ---------- Theme ----------
@@ -43,6 +45,7 @@ const SCREENS = {
   sort: sortHomeScreen, sortgame: sortGameScreen, sortlevels: sortLevelsScreen,
   solitaire: solitaireScreen,
   treat: treatHomeScreen, treatgame: treatGameScreen, block: blockScreen,
+  cross: crossHomeScreen, crossgame: crossGameScreen, ws: wsHomeScreen, wsgame: wsGameScreen,
   sudoku: sudokuScreen, meowgame: meowGameScreen, meowlevels: meowLevelsScreen, meowcats: meowCatsScreen,
   settings: settingsScreen, about: aboutScreen,
 };
@@ -174,6 +177,16 @@ registerGame({
   progress: () => continueLabel() ? `Game in progress · ${continueLabel()}` : `${DIFFICULTIES.reduce((a, d) => a + store.stats[d].won, 0)} solved`,
 });
 registerGame({
+  id: 'cross', screen: 'cross', name: 'Crosswords', tag: 'Mini to maxi, clued in plain English', theme: 'g-cross',
+  art: () => `<div class="art-cross">${'C,A,T,#,O,#,W,#,A,R,#,D,S,U,N,#,#,O,B,#,E,G,G,#,D'.split(',').map((ch) => `<i class="${ch === '#' ? 'blk' : ''}">${ch === '#' ? '' : ch}</i>`).join('')}</div>`,
+  progress: () => `${Object.keys(store.cross.done).length} solved`,
+});
+registerGame({
+  id: 'ws', screen: 'ws', name: 'Word Search', tag: 'Find the hidden words', theme: 'g-ws',
+  art: () => `<div class="art-ws"><div class="art-ws-grid">${'PUZCATEWORDLSEAFINDK'.split('').map((ch, i) => `<i class="${[4, 5, 6].includes(i) ? 'hl' : [12, 13, 14, 15].includes(i) ? 'hl2' : ''}">${ch}</i>`).join('')}</div><img src="img/themes/magnifying-glass-tilted-left.png" alt=""></div>`,
+  progress: () => `Puzzle ${store.ws.level + 1}`,
+});
+registerGame({
   id: 'sol', screen: 'solitaire', name: 'Solitaire', tag: 'Classic Klondike, every deal winnable', theme: 'g-sol',
   art: () => `<div class="art-sol">${[['A', '♠', ''], ['K', '♥', 'red'], ['Q', '♦', 'red']].map(([r, s, c], i) => `<div class="mini-card ${c}" style="transform:rotate(${(i - 1) * 12}deg) translateY(${Math.abs(i - 1) * 6}px)"><b>${r}</b><i>${s}</i></div>`).join('')}</div>`,
   progress: () => store.sol.current ? 'Game in progress' : `${store.sol.stats.won} won`,
@@ -298,6 +311,15 @@ function statsScreen() {
         ${row('crown', 'Best win streak', s.bestStreak)}
         ${row('gem-stone', 'Best score', s.bestScore.toLocaleString('en-AU'))}
       </div>
+      <div class="section-title">Crosswords</div>
+      <div class="card stat-group">
+        ${row('trophy', 'Crosswords solved', Object.keys(store.cross.done).length)}
+      </div>
+      <div class="section-title">Word Search</div>
+      <div class="card stat-group">
+        ${row('trophy', 'Puzzles solved', store.ws.level)}
+        ${row('star', 'Words found', store.ws.words || 0)}
+      </div>
       <div class="section-title">Treat Twist</div>
       <div class="card stat-group">
         ${row('trophy', 'Levels finished', store.treat.level)}
@@ -387,6 +409,8 @@ function settingsScreen() {
         <button class="set-row" data-act="meowrules"><div class="txt">How to play Meowdoku</div></button>
         <button class="set-row" data-act="sortrules"><div class="txt">How to play Cosy Cat Sort</div></button>
         <button class="set-row" data-act="solrules"><div class="txt">How to play Solitaire</div></button>
+        <button class="set-row" data-act="crossrules"><div class="txt">How to play Crosswords</div></button>
+        <button class="set-row" data-act="wsrules"><div class="txt">How to play Word Search</div></button>
         <button class="set-row" data-act="treatrules"><div class="txt">How to play Treat Twist</div></button>
         <button class="set-row" data-act="blockrules"><div class="txt">How to play Block Pounce</div></button>
         <button class="set-row" data-act="about"><div class="txt">About and credits</div></button>
@@ -412,10 +436,12 @@ function settingsScreen() {
     else if (a === 'sortrules') sortHelp();
     else if (a === 'solrules') solHelp();
     else if (a === 'treatrules') treatHelp();
+    else if (a === 'crossrules') crossHelp();
+    else if (a === 'wsrules') wsHelp();
     else if (a === 'blockrules') blockHelp();
     else if (a === 'about') app.go('about');
     else if (a === 'reset') {
-      const ok = await dialog({ title: 'Reset all progress?', text: 'This deletes your statistics, saved games, Meowdoku, Cat Sort, Treat Twist and Block Pounce progress. Your settings stay. This cannot be undone.',
+      const ok = await dialog({ title: 'Reset all progress?', text: 'This deletes your statistics, saved games, Meowdoku, Cat Sort, Treat Twist, Block Pounce, Crossword and Word Search progress. Your settings stay. This cannot be undone.',
         buttons: [{ label: 'Reset everything', value: true, cls: 'danger' }, { label: 'Cancel', value: false, cls: 'ghost' }] });
       if (ok) { resetAll(); toast('Progress reset'); }
     }

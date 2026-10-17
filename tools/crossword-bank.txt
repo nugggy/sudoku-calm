@@ -1,0 +1,514 @@
+ACE|Top card in the deck
+ACT|Do something, or part of a play
+ADD|Put together, as numbers
+AGE|How old you are
+AID|Help or assistance
+AIM|Point at a target
+AIR|What we breathe
+ANT|Tiny insect that lives in a colony
+APE|Large primate such as a gorilla
+ARC|Curved line, like part of a circle
+ARM|Limb between shoulder and hand
+ART|Painting, sculpture and drawing
+ASH|What is left after a fire
+ATE|Had a meal
+AXE|Tool for chopping wood
+BAG|Something to carry shopping in
+BAT|Cricket gear, or a flying mammal
+BED|Where you sleep
+BEE|Insect that makes honey
+BIN|Place for rubbish
+BOW|Ribbon knot, or bend at the waist
+BOX|Cardboard container
+BUG|Small insect, or a glitch
+BUS|Public transport with many seats
+CAB|Taxi
+CAP|Hat with a peak
+CAT|Pet that purrs
+COW|Farm animal that gives milk
+CRY|Shed tears
+CUB|Young bear or lion
+CUP|Mug for a hot drink
+DAM|Wall that holds back water
+DEN|Animal lair, or a cosy room
+DEW|Morning moisture on the grass
+DIG|Use a spade
+DOG|Pet that barks
+DOT|Small round mark
+DRY|Not wet
+EAR|You hear with it
+EAT|Have a meal
+EGG|Laid by a hen
+ELF|Santa's helper
+EMU|Large flightless Australian bird
+END|The finish
+EYE|You see with it
+FAN|Keeps you cool on a hot day
+FIG|Sweet fruit full of seeds
+FIN|Part of a fish used for swimming
+FOG|Thick low cloud
+FOX|Sly animal with a bushy tail
+FUN|Enjoyment
+GEM|Precious stone
+GUM|Eucalyptus tree, or chewy sweet
+HAT|You wear it on your head
+HEN|Female chicken
+HOP|Jump on one leg
+HUG|Wrap your arms around someone
+ICE|Frozen water
+INK|Liquid in a pen
+JAM|Fruit spread for toast
+JAR|Glass container with a lid
+JET|Fast plane
+JOY|Great happiness
+KEY|Opens a lock
+KID|Young goat, or a child
+LAP|One circuit of a track
+LEG|Limb you stand on
+LID|Top of a jar
+LOG|Piece of a tree trunk
+MAP|Shows you the way
+MAT|Wipe your feet on it
+MUD|Wet soil
+MUG|Large cup
+NAP|Short sleep
+NET|Used to catch fish
+NUT|Almond or cashew
+OAK|Tree that grows acorns
+OAR|Paddle for rowing
+OWL|Night bird that hoots
+PAN|Used for frying
+PAW|Animal's foot
+PEA|Small green vegetable in a pod
+PEN|Writing tool with ink
+PET|Animal kept at home
+PIE|Pastry with a filling
+PIG|Farm animal that oinks
+POT|Used for cooking soup
+RAM|Male sheep
+RAT|Rodent with a long tail
+RED|Colour of a ripe tomato
+ROW|Line of seats, or use oars
+RUG|Small carpet
+RUN|Move faster than walking
+SAD|Unhappy
+SEA|Large body of salt water
+SKY|Where clouds float
+SPY|Secret agent
+SUN|Star at the centre of our solar system
+TAP|Turn it on for water
+TEA|Hot drink, often with milk
+TEN|Number after nine
+TOE|One of five on your foot
+TOY|Something to play with
+TUB|Bath
+VAN|Small delivery vehicle
+WEB|Spider's trap
+WIG|False hair
+YAK|Hairy ox of the Himalayas
+ZIP|Fastener on a jacket
+ZOO|Place to see wild animals
+ABLE|Having the skill to do something
+ACHE|Dull pain
+ACRE|Unit of land area
+ARCH|Curved structure over a doorway
+ATOM|Tiny building block of matter
+AUNT|Your parent's sister
+BAKE|Cook in the oven
+BALL|Round thing you kick or throw
+BAND|Group of musicians
+BARK|Dog's sound, or tree skin
+BATH|Tub to wash in
+BEAD|Small ball threaded on a necklace
+BEAN|Seed in a pod, such as a broad one
+BEAR|Large furry animal
+BELL|It rings
+BIKE|Two wheels and pedals
+BIRD|Animal with feathers
+BOAT|It floats on water
+BONE|Part of a skeleton
+BOOK|Something to read
+BOOT|Sturdy shoe, or car storage
+BOWL|Dish for cereal
+BUSH|Shrub, or the Australian countryside
+CAKE|Birthday treat with candles
+CALM|Peaceful and relaxed
+CAMP|Stay in a tent
+CAPE|Superhero's cloak
+CARD|Used to play snap
+CAVE|Hollow in a cliff
+CHEF|Cook in a restaurant
+CHIN|Bottom of your face
+CITY|Large town
+CLAP|Applaud
+CLAY|Soft earth for pottery
+COAT|Warm outer garment
+CODE|Secret message system
+COIN|Round piece of money
+COOK|Make a meal
+CORN|Yellow vegetable on a cob
+CRAB|Sideways-walking sea creature
+CROW|Black bird
+CUBE|Six-sided shape like a die
+DART|Thrown at a board
+DAWN|Sunrise
+DEER|Animal with antlers
+DESK|Table for working
+DICE|Rolled in board games
+DISH|Plate or bowl
+DIVE|Jump headfirst into water
+DOLL|Toy figure
+DOOR|You open it to enter
+DOVE|Bird of peace
+DRUM|Instrument you hit
+DUCK|Bird that quacks
+DUNE|Hill of sand
+DUST|Fine dirt
+EDGE|Border or rim
+EXIT|Way out
+FACE|Front of your head
+FARM|Where crops and animals are raised
+FERN|Leafy plant of shady gullies
+FILM|Movie
+FIRE|Flames
+FISH|Swims and has gills
+FLAG|National banner
+FOAL|Young horse
+FORK|Used with a knife
+FROG|Green hopper
+GAME|Something you play
+GATE|Opening in a fence
+GIFT|Present
+GOAL|Score in soccer
+GOLD|Precious yellow metal
+GOLF|Sport with clubs and holes
+HAIL|Icy rain
+HAND|It has five fingers
+HARP|Stringed instrument for angels
+HIKE|Long walk in nature
+HILL|Small mountain
+HIVE|Home for bees
+HOOK|Used for fishing
+HORN|Car's warning sound
+IDEA|A thought or plan
+INCH|Imperial unit of length
+IRON|Smooths clothes
+ISLE|Small island
+JUMP|Leap
+KING|Royal ruler
+KITE|Flies on a string
+KIWI|Fuzzy green fruit
+KNOT|Tie in a rope
+LAKE|Body of fresh water
+LAMB|Young sheep
+LAMP|Gives light
+LEAF|Green part of a tree
+LIME|Small green citrus
+LION|King of the jungle
+LOOP|Circle in a rope
+MAIL|Letters and parcels
+MASK|Face covering
+MEAL|Breakfast, lunch or dinner
+MILK|White drink from a cow
+MINT|Fresh herb
+MOON|It orbits the Earth
+MOTH|Night-flying insect
+NAIL|Hammered into wood
+NEST|Bird's home
+NOSE|You smell with it
+OVEN|You bake in it
+PARK|Green space with swings
+PEAR|Fruit shaped like a bell
+PINK|Light red colour
+PLAN|Scheme or idea
+PLUM|Purple stone fruit
+POEM|Verse that may rhyme
+POND|Small pool for ducks
+POOL|Place to swim
+PUMA|Mountain lion
+QUIZ|Set of questions
+RAIN|Water from clouds
+REEF|Coral ridge in the sea
+RICE|Grain eaten with curry
+RING|Worn on a finger
+ROAD|Cars drive on it
+ROBE|Dressing gown
+ROCK|Stone
+ROOF|Top of a house
+ROPE|Thick cord
+ROSE|Thorny flower
+SAIL|Catches the wind on a boat
+SALT|Seasoning from the sea
+SAND|Found on the beach
+SEAL|Ocean mammal that barks
+SEED|Grows into a plant
+SHIP|Large boat
+SHOE|Footwear
+SILK|Smooth fabric from worms
+SING|Use your voice musically
+SNOW|White flakes in winter
+SOAP|Used to wash
+SOCK|Worn inside a shoe
+SOFA|Couch
+SOUP|Hot liquid meal
+STAR|Twinkles at night
+SWAN|Graceful water bird
+TAIL|Dog wags it
+TENT|Shelter when camping
+TIDE|Rise and fall of the sea
+TOAD|Warty frog relative
+TREE|Has a trunk and branches
+TUNA|Fish in a tin
+VASE|Holds flowers
+VEST|Sleeveless garment
+WAVE|Surfer rides it
+WIND|Moving air
+WING|Bird uses it to fly
+WOLF|Wild dog that howls
+WOOL|From a sheep
+WORM|Wriggles in the soil
+YARN|Knitting thread, or a tall story
+ZERO|Nothing
+ACORN|Seed of an oak
+ADULT|Grown-up
+ALARM|Wakes you up
+ALIEN|Being from another planet
+ANGEL|Heavenly being with wings
+ANGRY|Cross or mad
+APPLE|Fruit that keeps the doctor away
+APRON|Worn while cooking
+ARROW|Shot from a bow
+BACON|Breakfast meat
+BADGE|Pin-on emblem
+BAGEL|Ring-shaped bread roll
+BANJO|Stringed instrument
+BEACH|Sandy shore
+BENCH|Long seat in a park
+BERRY|Small juicy fruit
+BLOCK|Solid piece of wood
+BOARD|Plank, or game surface
+BRAIN|Organ you think with
+BREAD|Sliced for sandwiches
+BRICK|Building block of clay
+BRUSH|Used to paint
+CABIN|Small wooden house
+CAMEL|Desert animal with humps
+CANOE|Narrow paddled boat
+CANDY|Lolly
+CHAIR|Seat with a back
+CHALK|Used on a blackboard
+CHEST|Treasure box
+CHILD|Young person
+CLOCK|Tells the time
+CLOUD|Fluffy and white in the sky
+COAST|Seaside
+CORAL|Reef builder
+CRANE|Tall bird, or building machine
+CROWN|Worn by a queen
+DAISY|White and yellow flower
+DANCE|Move to music
+DREAM|Happens while you sleep
+DRESS|One-piece garment
+DRILL|Makes holes
+EAGLE|Large bird of prey
+EARTH|Our planet
+FAIRY|Tiny winged sprite
+FEAST|Big meal
+FENCE|Barrier around a yard
+FIELD|Open grassy land
+FLAME|Part of a fire
+FLOUR|Used to make bread
+FLUTE|Woodwind instrument
+FROST|Icy coating on a cold morning
+FRUIT|Apple or orange
+GHOST|Spooky spirit
+GIANT|Very large person
+GLASS|You drink from it
+GLOBE|Model of the Earth
+GRAPE|Grows in bunches on a vine
+GRASS|Lawn
+HEART|Pumps blood
+HONEY|Made by bees
+HORSE|Animal you ride
+HOTEL|Place to stay on holiday
+HOUSE|Home
+JELLY|Wobbly dessert
+JUICE|Drink squeezed from fruit
+KOALA|Australian marsupial that eats gum leaves
+LADLE|Big spoon for soup
+LEMON|Sour yellow fruit
+LIGHT|Opposite of dark
+LLAMA|Woolly South American animal
+MANGO|Sweet tropical fruit
+MAPLE|Tree with syrup
+MARSH|Wetland
+MELON|Large juicy fruit
+MONEY|Cash
+MOUSE|Small rodent, or computer device
+MUSIC|Songs and tunes
+NIGHT|When the sun has set
+NURSE|Works in a hospital
+OCEAN|Pacific or Indian, for example
+OLIVE|Small fruit pressed for oil
+ONION|Makes you cry when you chop it
+ORBIT|Path around a planet
+OTTER|Playful river mammal
+PAINT|Colour a wall
+PANDA|Black and white bear
+PAPER|You write on it
+PARTY|Celebration
+PASTA|Spaghetti or penne
+PEACH|Fuzzy stone fruit
+PEARL|Gem from an oyster
+PIANO|Instrument with black and white keys
+PILOT|Flies a plane
+PIZZA|Italian dish with toppings
+PLANE|Flies in the sky
+PLANT|Grows in soil
+PLATE|You eat off it
+POLAR|Like a white bear of the Arctic
+PRIZE|Award for winning
+QUEEN|Royal ruler
+QUIET|Not noisy
+RADIO|Plays music over the air
+RAVEN|Large black bird
+RIVER|Flows to the sea
+ROBIN|Small red-breasted bird
+ROBOT|Mechanical helper
+SALAD|Leafy dish
+SAUCE|Tomato ___ on a pie
+SCARF|Worn around the neck
+SCONE|Eaten with jam and cream
+SEVEN|Days in a week
+SHARK|Ocean predator with fins
+SHEEP|Animal that gives wool
+SHELL|Found on the beach
+SKATE|Glide on ice
+SLIDE|Playground ride
+SMILE|Happy expression
+SNAIL|Slow creature with a shell
+SNAKE|Slithering reptile
+SPOON|Used for soup
+STORM|Thunder and lightning
+SUGAR|Sweet crystals
+SWING|Playground seat on chains
+TABLE|Furniture to eat at
+TEETH|You brush them
+TIGER|Striped big cat
+TOAST|Grilled bread
+TORCH|Portable light
+TOWEL|Dries you after a shower
+TOWER|Tall building
+TRAIN|Runs on tracks
+TRUCK|Large road vehicle
+TULIP|Spring flower from Holland
+UNCLE|Your parent's brother
+VIOLA|Slightly larger violin
+WATER|You drink it
+WHALE|Largest sea mammal
+WHEAT|Grain for flour
+WHEEL|Round part of a car
+WITCH|Has a broomstick
+WORLD|The Earth
+ZEBRA|Striped horse-like animal
+ANCHOR|Holds a ship in place
+ANIMAL|Creature
+BANANA|Long yellow fruit
+BASKET|Woven carrier for a picnic
+BEAVER|Dam-building rodent
+BRIDGE|Crosses a river
+BUTTER|Spread on toast
+CACTUS|Prickly desert plant
+CAMERA|Takes photos
+CANDLE|Wax light with a wick
+CARROT|Orange vegetable
+CASTLE|Fortress with towers
+CEREAL|Breakfast in a bowl
+CHEESE|Made from milk
+CHERRY|Small red fruit with a stone
+CIRCLE|Round shape
+COFFEE|Morning brew
+COOKIE|Biscuit
+DESERT|Dry sandy region
+DINNER|Evening meal
+DOCTOR|Treats patients
+DONKEY|Animal that brays
+DRAGON|Fire-breathing beast
+FEATHER|Covers a bird
+FLOWER|Bloom
+FOREST|Lots of trees
+FRIDGE|Keeps food cold
+GARDEN|Where flowers grow
+GUITAR|Six-stringed instrument
+HAMMER|Tool for nails
+ISLAND|Land surrounded by water
+JACKET|Short coat
+JUNGLE|Tropical forest
+KETTLE|Boils water
+KITTEN|Young cat
+LADDER|Climb it to the roof
+LIZARD|Small reptile
+MAGNET|Attracts iron
+MARKET|Place to buy fresh food
+MIRROR|Shows your reflection
+MONKEY|Swings through trees
+MUFFIN|Small cake
+ORANGE|Citrus fruit
+PARROT|Colourful talking bird
+PENCIL|Writes with lead
+PEPPER|Spicy seasoning
+PICNIC|Meal outdoors
+PIRATE|Sails under a skull flag
+PLANET|Mars or Venus
+POTATO|Made into chips
+PUZZLE|Brain teaser
+RABBIT|Long-eared hopper
+ROCKET|Blasts off into space
+SADDLE|Seat on a horse
+SCHOOL|Where you learn
+SHADOW|Dark shape cast by light
+SISTER|Female sibling
+SPIDER|Has eight legs
+SPRING|Season after winter
+SQUARE|Four equal sides
+SUMMER|Hottest season
+TEAPOT|Pours a hot drink
+TICKET|Lets you on the train
+TOMATO|Red fruit used in salads
+TURTLE|Reptile with a shell
+WALLET|Holds your money
+WINDOW|Glass in a wall
+WINTER|Coldest season
+WOMBAT|Burrowing Australian marsupial
+BALLOON|Filled with helium
+BICYCLE|Pedal-powered ride
+BLANKET|Keeps you warm in bed
+CAPTAIN|In charge of a ship
+CHICKEN|Bird that lays eggs
+CRICKET|Summer sport with a bat
+DIAMOND|Hardest gemstone
+DOLPHIN|Clever sea mammal
+FOOTBALL|Game with goals
+GIRAFFE|Tallest animal
+HOLIDAY|Time off work or school
+KITCHEN|Room for cooking
+LIBRARY|Borrow books here
+MAGPIE|Black and white Australian bird
+MORNING|Start of the day
+OCTOPUS|Has eight arms
+PANCAKE|Flat breakfast treat
+PENGUIN|Flightless bird in a tuxedo
+PICTURE|Image or photo
+POSTMAN|Delivers letters
+PUMPKIN|Large orange squash
+RAINBOW|Arc of colours
+SANDWICH|Bread with a filling
+SCOOTER|Two wheels and a handlebar
+TEACHER|Works in a classroom
+THUNDER|Boom in a storm
+TRUMPET|Brass instrument
+VOLCANO|Erupting mountain
+WEATHER|Sun, rain or wind
+KANGAROO|Hopping Australian animal
+ELEPHANT|Has a trunk
+UMBRELLA|Keeps the rain off

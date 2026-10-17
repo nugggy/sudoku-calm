@@ -20,7 +20,7 @@ Android 8.0 or newer is required.
 
 ## Updates
 
-The app checks this repository's Releases for new versions (at most every six hours, and only if **Settings > Updates** allows it). When there is one, it offers to download and install it. You can also tap **Check for updates now** in Settings.
+The app checks this repository's Releases for new versions (at most once an hour, and only if **Settings > Updates** allows it). When there is one, it offers to download and install it. You can also tap **Check for updates now** in Settings.
 
 There are two channels:
 

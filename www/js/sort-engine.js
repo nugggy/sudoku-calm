@@ -1,6 +1,7 @@
 // Cosy Cat Sort engine.
 // Shelves sit on either side of a centre aisle. Each shelf holds 4 cats, filled from the wall end,
 // so only the cat nearest the aisle can be picked up (a run of matching cats at that end moves together).
+// A cat can only go onto an empty shelf or next to a cat in the same outfit. Baskets take any cat.
 // Four matching cats on one shelf go home. Mystery boxes open when they become the cat nearest the aisle.
 // When a shelf is emptied, its back row (if any) drops in.
 // Pure functions, shared by the game and the Node tests.
@@ -13,18 +14,22 @@ export const COSTUMES = 14;
 const shuffle = (a, rng) => { for (let i = a.length - 1; i > 0; i--) { const j = (rng() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const clone = (s) => JSON.parse(JSON.stringify(s));
 
-// Level recipe. Outfits are added every three levels until all 14 are in play, then shelves get
-// scarcer (so more cats wait in back rows). Every tenth level is a Hard level with fewer free spots.
+// Level recipe. Like classic sort puzzles there is about two shelves' worth of free space, so every
+// level has room to manoeuvre under the same-outfit rule. Outfits are added every three levels up to 12,
+// then levels get harder through more mystery boxes and more cats waiting in back rows.
+// Every tenth level is a Hard level with less free space and extra boxes.
+export const MAX_OUTFITS = 12;
 export function recipe(level) {
   const L = level + 1;
   const hard = L >= 10 && L % 10 === 0;
-  const k = Math.min(COSTUMES, 3 + Math.floor((L - 1) / 3));
-  let spare = Math.max(4, 6 - Math.floor(L / 15));
-  let shelves = Math.min(10, k + 2);
-  if (L > 60) shelves = Math.max(9, 10 - Math.floor((L - 60) / 60));
-  let boxRate = L < 4 ? 0 : Math.min(0.35, (L - 3) * 0.02);
-  if (hard) { spare = Math.max(3, spare - 1); boxRate = Math.min(0.45, boxRate + 0.1); }
-  return { k, spare, shelves, boxRate, hold: 2, hard };
+  const k = Math.min(MAX_OUTFITS, 3 + Math.floor((L - 1) / 3));
+  const back = L <= 30 ? Math.min(Math.floor(L / 6), 4) : Math.min(16, 4 + Math.floor((L - 30) / 10) * 2); // cats in back rows
+  // free spots on the shelves at the start: fewer as levels go on, fewest on Hard levels
+  const free = hard ? 5 : L < 15 ? 8 : L < 40 ? 7 : 6;
+  const shelves = Math.ceil((k * SLOTS - back + free) / SLOTS);
+  let boxRate = L < 4 ? 0 : Math.min(0.35, (L - 3) * 0.015);
+  if (hard) boxRate = Math.min(0.45, boxRate + 0.1);
+  return { k, shelves, back, boxRate, hold: 2, hard };
 }
 
 // ---------- Shelf helpers (slot 0 is at the wall, higher slots are nearer the aisle) ----------
@@ -39,6 +44,8 @@ export function topRun(s) {
   while (t - n >= 0 && !s.hidden[t - n] && s.slots[t - n] === s.slots[t]) n++;
   return { cat: s.slots[t], n };
 }
+// Allowed onto a shelf: it has room and is empty, or its aisle-end cat wears the same outfit.
+export const canPlace = (s, cat) => space(s) > 0 && (count(s) === 0 || (!s.hidden[topIndex(s)] && s.slots[topIndex(s)] === cat));
 export const isComplete = (s) => count(s) === SLOTS && s.slots.every((c, i) => !s.hidden[i] && c === s.slots[0]);
 export const freeSlots = (st) => st.shelves.reduce((a, s) => a + space(s), 0) + st.hold.filter((c) => c === null).length;
 export const totalCats = (st) => st.k * SLOTS;
@@ -48,8 +55,10 @@ export function newLevel(level, seed = 7777 + level * 104729) {
   const rng = mulberry32(seed);
   const r = recipe(level);
   for (let attempt = 0; attempt < 300; attempt++) {
-    const cats = shuffle([...Array(r.k)].flatMap((_, c) => [c, c, c, c]), rng);
-    const frontCount = Math.min(cats.length, r.shelves * SLOTS - r.spare);
+    // early levels use the first outfits; from level 10 each level draws its own mix of all 14
+    const outfits = level < 9 ? [...Array(r.k).keys()] : shuffle([...Array(COSTUMES).keys()], rng).slice(0, r.k);
+    const cats = shuffle(outfits.flatMap((c) => [c, c, c, c]), rng);
+    const frontCount = Math.min(cats.length - r.back, r.shelves * SLOTS);
     const front = cats.slice(0, frontCount), back = cats.slice(frontCount);
     // share the front cats out between shelves, each filled from the wall
     const fill = new Array(r.shelves).fill(0);
@@ -120,6 +129,7 @@ export function move(st, from, to) {
     }
   } else {
     const d = st.shelves[to.shelf];
+    if (!canPlace(d, cat)) return null;
     n = Math.min(n, space(d));
     if (!n) return null;
     for (let k = 0; k < n; k++) {
@@ -145,13 +155,13 @@ export function move(st, from, to) {
 export function isStuck(st) {
   if (isWon(st)) return false;
   const holdFree = st.hold.some((c) => c === null);
-  const shelfSpace = st.shelves.map(space);
   const sources = [];
   st.shelves.forEach((s, i) => { if (topRun(s).n) sources.push({ shelf: i }); });
   st.hold.forEach((c, i) => { if (c !== null) sources.push({ hold: i }); });
   for (const src of sources) {
+    const cat = src.shelf != null ? topRun(st.shelves[src.shelf]).cat : st.hold[src.hold];
     if (src.shelf != null && holdFree) return false;
-    if (shelfSpace.some((sp, i) => sp > 0 && i !== src.shelf)) return false;
+    if (st.shelves.some((d, i) => i !== src.shelf && canPlace(d, cat))) return false;
   }
   return true;
 }
@@ -177,8 +187,12 @@ function legalMoves(st) {
   st.hold.forEach((c, i) => { if (c !== null) srcs.push({ from: { hold: i }, cat: c, n: 1 }); });
   const holdFree = st.hold.indexOf(null);
   for (const src of srcs) {
+    const fromShelf0 = src.from.shelf != null ? st.shelves[src.from.shelf] : null;
+    // moving a whole tidy shelf somewhere empty achieves nothing
+    const tidy = fromShelf0 && src.n === count(fromShelf0) && !fromShelf0.layers.length;
     st.shelves.forEach((d, j) => {
-      if (src.from.shelf === j || space(d) === 0) return;
+      if (src.from.shelf === j || !canPlace(d, src.cat)) return;
+      if (tidy && count(d) === 0) return;
       const r = topRun(d);
       const fromShelf = src.from.shelf != null ? st.shelves[src.from.shelf] : null;
       const moved = Math.min(src.n, space(d));
@@ -186,7 +200,6 @@ function legalMoves(st) {
       if (r.cat === src.cat && r.n === count(d) && count(d) + moved === SLOTS) score += 200; // completes a set
       if (count(d) && r.cat === src.cat) score += 40 + 10 * r.n;
       if (!count(d)) score += src.n >= 2 ? 25 : 5;
-      if (count(d) && r.cat !== src.cat) score -= 25;
       if (fromShelf) {
         const left = count(fromShelf) - moved;
         if (left > 0 && fromShelf.hidden[left - 1]) score += 30;      // opens a box
@@ -195,7 +208,7 @@ function legalMoves(st) {
       } else score += 15; // clearing a basket is good
       out.push({ from: src.from, to: { shelf: j }, score });
     });
-    if (src.from.shelf != null && holdFree >= 0) out.push({ from: src.from, to: { hold: holdFree }, score: -10 });
+    if (src.from.shelf != null && holdFree >= 0 && !tidy) out.push({ from: src.from, to: { hold: holdFree }, score: -10 });
   }
   return out;
 }
@@ -224,9 +237,29 @@ function playout(st, rng) {
   return false;
 }
 
-export function solvable(state, rng, tries = 16) {
+// Depth-first search with good moves first and no repeated positions.
+function search(start, limit) {
+  const seen = new Set();
+  let nodes = 0;
+  function dfs(st, depth) {
+    if (isWon(st)) return true;
+    const k = key(st);
+    if (seen.has(k) || ++nodes > limit || depth > 400) return false;
+    seen.add(k);
+    const ms = legalMoves(st).sort((a, b) => b.score - a.score);
+    for (const m of ms) {
+      const t = clone(st);
+      if (move(t, m.from, m.to) && dfs(t, depth + 1)) return true;
+      if (nodes > limit) return false;
+    }
+    return false;
+  }
+  return dfs(clone(start), 0);
+}
+
+export function solvable(state, rng, tries = 6) {
   for (let t = 0; t < tries; t++) if (playout(clone(state), rng)) return true;
-  return false;
+  return search(state, 30000);
 }
 
 // Compact level format for the pre-built level file: cats are letters a..n, '?' marks a box.

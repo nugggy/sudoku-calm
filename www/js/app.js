@@ -292,7 +292,7 @@ function settingsScreen() {
       S[k] = k === 'fontScale' ? +sb.dataset.v : sb.dataset.v;
       save(); applyTheme(); render(); return;
     }
-    const sw = e.target.closest('[data-accent]');
+    const sw = e.target.closest('.swatch[data-accent]');
     if (sw) { S.accent = sw.dataset.accent; save(); applyTheme(); render(); return; }
     const a = e.target.closest('[data-act]')?.dataset.act;
     if (a === 'back') app.back();
@@ -348,6 +348,7 @@ async function runUpdateCheck(manual = false) {
       text: `Version ${u.version}${u.prerelease ? ' beta' : ''} is ready to install${mb}.`,
       notes: u.notes,
       buttons: [{ label: 'Update now', value: 'go' }, { label: 'Later', value: 'later', cls: 'secondary' }, { label: 'Skip this version', value: 'skip', cls: 'ghost' }],
+      backdrop: false, // a stray tap outside should not throw the update away (back still closes it)
     });
     if (v === 'go') {
       window.__scUpdateProgress = (p) => toast(p >= 100 ? 'Download complete. Opening the installer' : `Downloading update ${p}%`, p >= 100 ? 3000 : 6000);
@@ -368,7 +369,7 @@ loadLevels();
 prefetch('easy');
 setTimeout(() => {
   const S = store.settings;
-  if (native.isApp && S.autoUpdate && Date.now() - store.meta.lastUpdateCheck > 6 * 3600 * 1000) runUpdateCheck(false);
+  if (native.isApp && S.autoUpdate && Date.now() - store.meta.lastUpdateCheck > 3600 * 1000) runUpdateCheck(false);
 }, 2500);
 // Resume audio context on first touch (browsers require a gesture).
 document.addEventListener('pointerdown', () => sfx.tap && null, { once: true });

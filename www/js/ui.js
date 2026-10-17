@@ -13,14 +13,16 @@ export const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', 
 
 // Overlay stack, so the Android back button closes the top-most sheet or dialog first.
 const overlays = [];
+// Returns true when the back press is fully handled. Blocking dialogs (game over and the like)
+// close and let the back press carry on, so the player leaves the game as expected.
 export function closeTopOverlay() {
   const top = overlays[overlays.length - 1];
   if (!top) return false;
-  if (top.dismissible !== false) top.close();
-  return true;
+  top.close();
+  return top.dismissible !== false;
 }
 
-function mountOverlay(node, { dismissible = true, onClose } = {}) {
+function mountOverlay(node, { dismissible = true, backdrop = dismissible, onClose } = {}) {
   const root = document.getElementById('overlay-root');
   root.appendChild(node);
   const entry = {
@@ -33,7 +35,7 @@ function mountOverlay(node, { dismissible = true, onClose } = {}) {
     },
   };
   overlays.push(entry);
-  if (dismissible) node.addEventListener('click', (e) => { if (e.target === node) entry.close(); });
+  if (backdrop) node.addEventListener('click', (e) => { if (e.target === node) entry.close(); });
   return entry;
 }
 
@@ -45,7 +47,7 @@ export function sheet(innerHtml, { onMount, onClose } = {}) {
 }
 
 // buttons: [{label, value, cls}] -> resolves with the chosen value (or null if dismissed)
-export function dialog({ hero = '', title = '', text = '', notes = '', buttons = [{ label: 'OK', value: true }], dismissible = true }) {
+export function dialog({ hero = '', title = '', text = '', notes = '', buttons = [{ label: 'OK', value: true }], dismissible = true, backdrop = dismissible }) {
   return new Promise((resolve) => {
     let chosen = null;
     const node = el(`<div class="backdrop center"><div class="dialog">
@@ -55,7 +57,7 @@ export function dialog({ hero = '', title = '', text = '', notes = '', buttons =
       ${notes ? `<div class="dlg-notes">${esc(notes)}</div>` : ''}
       <div class="stack">${buttons.map((b, i) => `<button class="btn ${b.cls || ''}" data-i="${i}">${esc(b.label)}</button>`).join('')}</div>
     </div></div>`);
-    const o = mountOverlay(node, { dismissible, onClose: () => resolve(chosen) });
+    const o = mountOverlay(node, { dismissible, backdrop, onClose: () => resolve(chosen) });
     node.querySelectorAll('[data-i]').forEach((b) => b.addEventListener('click', () => {
       chosen = buttons[+b.dataset.i].value;
       o.close();

@@ -1,5 +1,5 @@
 // Cosy Cat Sort: home tab and game screen.
-import { newLevel, move, isWon, isStuck, shuffleCats, clone, recipe, topRun, topIndex, count, encodeLevel, decodeLevel } from './sort-engine.js';
+import { newLevel, move, isWon, isStuck, shuffleCats, clone, recipe, topRun, topIndex, count, space, canPlace, encodeLevel, decodeLevel } from './sort-engine.js';
 import { store, save } from './store.js';
 import { icon } from './icons.js';
 import { el, $, $$, dialog, confetti, toast, sheet } from './ui.js';
@@ -106,7 +106,7 @@ export function sortHomeScreen(app) {
 export function sortHelp() {
   sheet(`<h2>How to play</h2><div class="help-body">
     <p>Shelves face the aisle down the middle. You can only pick up the cat nearest the aisle. If the cats next to it wear the same outfit, they come along too.</p>
-    <p>Tap a shelf to pick up its cats, then tap another shelf with room to put them there.</p>
+    <p>Tap a shelf to pick up its cats, then tap where they should go. Cats only sit on an empty shelf or next to a cat in the same outfit. The baskets take any cat.</p>
     <p>Get four cats in the same outfit onto one shelf and they head home together.</p>
     <p>Grey boxes hide a cat. A box opens once it is the cat nearest the aisle.</p>
     <p>Some shelves have more cats waiting behind. Clear the shelf and the next row drops in.</p>
@@ -150,6 +150,7 @@ export function sortGameScreen(app, { level }) {
   const history = [];
   let selected = null; // {shelf} or {hold}
   let busy = true;
+  let hinted = false;
 
   const root = el(`<section class="screen sort-theme sort-game">
     <header class="sort-header">
@@ -278,7 +279,7 @@ export function sortGameScreen(app, { level }) {
     if (s.boosters.shuffle > 0) opts.push({ label: `Shuffle cats (${s.boosters.shuffle} left)`, value: 'shuffle' });
     opts.push({ label: 'Restart level', value: 'restart', cls: opts.length ? 'secondary' : '' });
     const v = await dialog({ hero: 'img/cats/cat08.png', title: 'No moves left', text: 'Every cat is blocked. Use a booster or start the level again.', buttons: opts, dismissible: false });
-    if (v === 'restart') restart(); else useBooster(v);
+    if (v === 'restart') restart(); else if (v) useBooster(v); // no choice means back was pressed
   }
 
   async function restart() {
@@ -352,6 +353,13 @@ export function sortGameScreen(app, { level }) {
     if (sameSel(p)) { selected = null; sfx.tap(); render(); return; }
     if (selected) {
       if (await doMove(selected, p)) return;
+      const cat = selected.hold != null ? st.hold[selected.hold] : topRun(st.shelves[selected.shelf]).cat;
+      if (p.shelf != null && space(st.shelves[p.shelf]) > 0 && !canPlace(st.shelves[p.shelf], cat)) {
+        // room, but the wrong outfit at the aisle end
+        shake(shelfEl);
+        if (!hinted) { hinted = true; toast('Cats only sit next to a cat in the same outfit, or on an empty shelf'); }
+        return;
+      }
       // the destination is full: pick up from it instead, if possible
       if (canPick) { selected = p; sfx.cat(); render(); } else shake(shelfEl || holdEl);
       return;

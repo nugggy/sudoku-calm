@@ -337,8 +337,9 @@ export function sudokuScreen(app, params = {}) {
         Object.assign(g, newGameState({ puzzle: g.puzzle, solution: g.solution }, g.difficulty, g.daily));
         save(true); app.replace('sudoku', params);
       } else {
+        // 'new', or back pressed: the game is lost
         g.done = true; save(true);
-        app.newGameSheet();
+        if (v === 'new') app.newGameSheet();
       }
     }
   }

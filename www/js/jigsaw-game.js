@@ -28,7 +28,7 @@ export const sceneFor = (level) => SCENES[level % SCENES.length];
 
 export const jigsawHelp = () => helpSheet('How to play Jigsaw', [
   'Drag pieces from the tray onto the board. When a piece is close to its spot it clicks into place.',
-  'Tap the eye button to see a faint copy of the picture on the board.',
+  'Tap the grid button at the top to see a faint copy of the picture on the board.',
   'Each new round of pictures has more pieces, from 9 up to 49.',
 ], 'jig-btn');
 

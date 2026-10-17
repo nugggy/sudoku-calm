@@ -481,11 +481,15 @@ h1, h2, h3, p { margin: 0; }
 .basket .cutie { width: 78%; }
 .basket.locked { opacity: .55; color: #fff; font-size: 30px; font-weight: 900; place-items: center; padding: 0; }
 
-.boosters { display: flex; justify-content: center; gap: 26px; padding: 8px 0 calc(14px + var(--safe-bottom)); flex-shrink: 0; }
+.boosters { display: flex; justify-content: center; gap: 20px; padding: 8px 0 calc(14px + var(--safe-bottom)); flex-shrink: 0; }
 .sort-boost { position: relative; width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: radial-gradient(circle at 35% 30%, #d39a63, #9c6233); box-shadow: 0 4px 0 #6f4322, inset 0 0 0 3px rgba(255, 255, 255, .2); }
 .sort-boost svg { width: 30px; height: 30px; }
 .sort-boost .plus { position: absolute; top: -4px; right: -4px; min-width: 24px; height: 24px; padding: 0 6px; border-radius: 12px; background: #4fbf3f; color: #fff; font-size: 13px; font-weight: 800; display: grid; place-items: center; border: 2px solid #fff; }
 .sort-boost .plus.none { background: #9aa0a6; }
+.sort-boost.hint-btn { background: radial-gradient(circle at 35% 30%, #ffe08a, #f2b631); box-shadow: 0 4px 0 #b9821a, inset 0 0 0 3px rgba(255, 255, 255, .3); }
+.sort-boost.hint-btn img { width: 34px; height: 34px; }
+.shelf.hint-dst .plank, .basket.hint-dst { animation: hint-glow 1s ease-in-out infinite; }
+@keyframes hint-glow { 50% { box-shadow: 0 0 0 4px #fff, 0 0 18px 8px #ffcb47; } }
 .sort-boost:active, .sort-round:active { transform: translateY(2px); box-shadow: 0 2px 0 #6f4322; }
 
 .sort-hero { text-align: center; padding: 10px 0 4px; }

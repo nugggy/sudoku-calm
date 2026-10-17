@@ -1,7 +1,8 @@
-// Builds endless Cat Sort levels off the main thread (some take a few seconds).
-import { newLevel, encodeLevel } from './sort-engine.js';
+// Cat Sort background work: builds endless levels and finds hint plans (both can take a few seconds).
+import { newLevel, encodeLevel, solvePath } from './sort-engine.js';
 
 self.onmessage = (e) => {
-  const { id, level } = e.data;
-  self.postMessage({ id, level, data: encodeLevel(newLevel(level)) });
+  const { id, type, level, state } = e.data;
+  if (type === 'hint') self.postMessage({ id, path: solvePath(state) });
+  else self.postMessage({ id, level, data: encodeLevel(newLevel(level)) });
 };

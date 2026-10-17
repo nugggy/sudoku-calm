@@ -246,8 +246,11 @@ function playout(st, rng) {
 }
 
 // Depth-first search with good moves first and no repeated positions.
+// Depth-first search with good moves first and no repeated positions.
+// Returns the list of moves that finishes the level, or null.
 function search(start, limit) {
   const seen = new Set();
+  const path = [];
   let nodes = 0;
   function dfs(st, depth) {
     if (isWon(st)) return true;
@@ -257,18 +260,25 @@ function search(start, limit) {
     const ms = legalMoves(st).sort((a, b) => b.score - a.score);
     for (const m of ms) {
       const t = clone(st);
-      if (move(t, m.from, m.to) && dfs(t, depth + 1)) return true;
+      if (!move(t, m.from, m.to)) continue;
+      path.push({ from: m.from, to: m.to });
+      if (dfs(t, depth + 1)) return true;
+      path.pop();
       if (nodes > limit) return false;
     }
     return false;
   }
-  return dfs(clone(start), 0);
+  return dfs(clone(start), 0) ? path : null;
 }
 
 export function solvable(state, rng, tries = 6) {
   for (let t = 0; t < tries; t++) if (playout(clone(state), rng)) return true;
-  return search(state, 30000);
+  return !!search(state, 30000);
 }
+
+// Hint plan: every move of a way to finish from here, or null if none was found.
+export function solvePath(state, limit = 80000) { return search(state, limit); }
+export const stateKey = key;
 
 // Compact level format for the pre-built level file: cats are letters a..n, '?' marks a box.
 export function encodeLevel(st) {

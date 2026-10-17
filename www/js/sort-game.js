@@ -1,5 +1,5 @@
 // Cosy Cat Sort: home tab and game screen.
-import { newLevel, move, isWon, isStuck, shuffleCats, clone, recipe, topRun, topIndex, count, space, canPlace, encodeLevel, decodeLevel, SAVE_VERSION, isValidBoard } from './sort-engine.js';
+import { newLevel, move, isWon, isStuck, shuffleCats, clone, recipe, topRun, topIndex, count, space, canPlace, encodeLevel, decodeLevel, SAVE_VERSION, isValidBoard, stateKey } from './sort-engine.js';
 import { store, save } from './store.js';
 import { icon } from './icons.js';
 import { el, $, $$, dialog, confetti, toast, sheet } from './ui.js';
@@ -116,7 +116,7 @@ export function sortHelp() {
     <p>Get four cats in the same outfit onto one shelf and they head home together.</p>
     <p>Grey boxes hide a cat. A box opens once it is the cat nearest the aisle.</p>
     <p>Some shelves have more cats waiting behind. Clear the shelf and the next row drops in.</p>
-    <p>The two baskets at the bottom hold any cat while you make room. Boosters help when you get stuck: Undo, Shuffle and an Extra spot.</p>
+    <p>The two baskets at the bottom hold any cat while you make room. Boosters help when you get stuck: Undo, Shuffle and an Extra spot. The light bulb shows you a good next move, as often as you like.</p>
   </div><button class="sort-btn" data-x>Let's sort</button>`, { onMount: (n, close) => { $('[data-x]', n).onclick = close; } });
 }
 
@@ -129,17 +129,24 @@ async function loadSortLevels() {
 }
 let worker = null, wid = 0;
 const waiting = new Map(), built = new Map();
+function askWorker(msg) {
+  if (!worker) {
+    worker = new Worker(new URL('./sort-worker.js', import.meta.url), { type: 'module' });
+    worker.onmessage = (e) => { const r = waiting.get(e.data.id); if (r) { waiting.delete(e.data.id); r(e.data); } };
+  }
+  return new Promise((res) => { const id = ++wid; waiting.set(id, res); worker.postMessage({ id, ...msg }); });
+}
 function buildInWorker(level) {
   if (built.has(level)) return Promise.resolve(built.get(level));
   try {
-    if (!worker) {
-      worker = new Worker(new URL('./sort-worker.js', import.meta.url), { type: 'module' });
-      worker.onmessage = (e) => { built.set(e.data.level, e.data.data); const r = waiting.get(e.data.id); if (r) { waiting.delete(e.data.id); r(e.data.data); } };
-    }
-    return new Promise((res) => { const id = ++wid; waiting.set(id, res); worker.postMessage({ id, level }); });
+    return askWorker({ level }).then((r) => { built.set(level, r.data); return r.data; });
   } catch {
     return Promise.resolve(encodeLevel(newLevel(level)));
   }
+}
+function findPlan(state) {
+  try { return askWorker({ type: 'hint', state }).then((r) => r.path); }
+  catch { return import('./sort-engine.js').then((m) => m.solvePath(state)); }
 }
 async function getLevel(level) {
   const list = await loadSortLevels();
@@ -171,9 +178,12 @@ export function sortGameScreen(app, { level }) {
       <button class="sort-boost" data-act="undo" aria-label="Undo">${icon.undo}<span class="plus" data-b="undo"></span></button>
       <button class="sort-boost" data-act="shuffle" aria-label="Shuffle">${icon.refresh}<span class="plus" data-b="shuffle"></span></button>
       <button class="sort-boost" data-act="slot" aria-label="Extra spot">${icon.plus}<span class="plus" data-b="slot"></span></button>
+      <button class="sort-boost hint-btn" data-act="hint" aria-label="Hint"><img src="img/ui/light-bulb.png" alt=""></button>
     </div>
   </section>`);
   const q = (k) => $(`[data-el="${k}"]`, root);
+  let plan = null;      // {path, idx, expect}: a known way to finish, followed step by step
+  let hintDst = null;   // where the hinted cats should go
 
   function persist() { s.current = { level, v: SAVE_VERSION, state: st }; save(); }
   const sameSel = (p) => selected && p && selected.hold === p.hold && selected.shelf === p.shelf;
@@ -190,7 +200,7 @@ export function sortGameScreen(app, { level }) {
     sh.innerHTML = st.shelves.map((shelf, si) => {
       const run = sameSel({ shelf: si }) ? topRun(shelf) : { n: 0 };
       const top = topIndex(shelf);
-      return `<div class="shelf ${side(si)}" data-shelf="${si}">
+      return `<div class="shelf ${side(si)} ${hintDst && hintDst.shelf === si ? 'hint-dst' : ''}" data-shelf="${si}">
         <div class="slots">${shelf.slots.map((c, i) => {
           if (c === null) return `<div class="slot empty" data-slot="${i}"></div>`;
           if (shelf.hidden[i]) return `<div class="slot" data-slot="${i}"><div class="mystery">?</div></div>`;
@@ -200,7 +210,7 @@ export function sortGameScreen(app, { level }) {
         <div class="plank">${shelf.layers.length ? `<span class="layers">+${shelf.layers.reduce((a, l) => a + l.length, 0)}</span>` : ''}</div>
       </div>`;
     }).join('');
-    q('holds').innerHTML = st.hold.map((c, i) => `<div class="basket" data-hold="${i}">${c !== null ? `<div class="cutie ${sameSel({ hold: i }) ? 'lifted' : ''}">${cutie(c)}</div>` : ''}</div>`).join('')
+    q('holds').innerHTML = st.hold.map((c, i) => `<div class="basket ${hintDst && hintDst.hold != null && st.hold[i] === null && i === firstFreeHold() ? 'hint-dst' : ''}" data-hold="${i}">${c !== null ? `<div class="cutie ${sameSel({ hold: i }) ? 'lifted' : ''}">${cutie(c)}</div>` : ''}</div>`).join('')
       + (st.hold.length < 3 ? '<div class="basket locked" data-act="slot">+</div>' : '');
     $$('[data-b]', root).forEach((b) => { const n = s.boosters[b.dataset.b]; b.textContent = n > 0 ? n : '+'; b.classList.toggle('none', n <= 0); });
   }
@@ -231,6 +241,11 @@ export function sortGameScreen(app, { level }) {
     if (!events) return false;
     busy = true;
     selected = null;
+    hintDst = null;
+    // keep following the hint plan if this was its next step, otherwise forget it
+    const step = plan && stateKey(st) === plan.expect ? plan.path[plan.idx] : null;
+    const sameEnd = (a, b) => (a.hold != null && b.hold != null) || (a.shelf != null && a.shelf === b.shelf);
+    if (step && sameEnd(step.from, from) && sameEnd(step.to, to)) { plan.idx++; plan.expect = stateKey(preview); } else plan = null;
     const mv = events[0];
     const fromRects = mv.moves.map((m) => rectOf(m.from));
     st = preview;
@@ -290,6 +305,7 @@ export function sortGameScreen(app, { level }) {
 
   async function restart() {
     busy = true;
+    plan = null; hintDst = null;
     st = await getLevel(level); history.length = 0; selected = null;
     busy = false;
     persist(); render();
@@ -297,6 +313,7 @@ export function sortGameScreen(app, { level }) {
 
   function useBooster(kind) {
     if (busy) return;
+    plan = null; hintDst = null;
     if (s.boosters[kind] <= 0) { toast('Finish a level to earn more boosters'); return; }
     if (kind === 'undo') {
       if (!history.length) { toast('Nothing to undo'); return; }
@@ -343,6 +360,28 @@ export function sortGameScreen(app, { level }) {
     }, 500);
   }
 
+  const firstFreeHold = () => st.hold.indexOf(null);
+
+  async function showHint() {
+    hintDst = null;
+    if (!plan || stateKey(st) !== plan.expect) {
+      busy = true;
+      const slow = setTimeout(() => toast('Thinking'), 400);
+      const path = await findPlan(clone(st));
+      clearTimeout(slow);
+      busy = false;
+      if (!path || !path.length) { plan = null; toast('No way forward from here. Try Undo or a booster.', 3500); sfx.error(); return; }
+      plan = { path, idx: 0, expect: stateKey(st) };
+    }
+    const m = plan.path[plan.idx];
+    selected = m.from;
+    hintDst = m.to;
+    sfx.hint();
+    render();
+    const n = m.from.hold != null ? 1 : topRun(st.shelves[m.from.shelf]).n;
+    toast(`Move ${n > 1 ? 'the lifted cats' : 'the lifted cat'} ${m.to.hold != null ? 'into a basket' : 'to the glowing shelf'}`, 3000);
+  }
+
   function shake(node) { if (!node) return; node.classList.remove('shake'); void node.offsetWidth; node.classList.add('shake'); buzz(20); }
 
   root.addEventListener('click', async (e) => {
@@ -351,6 +390,7 @@ export function sortGameScreen(app, { level }) {
     if (a === 'help') return sortHelp();
     if (busy) return;
     if (a === 'undo' || a === 'shuffle' || a === 'slot') return useBooster(a);
+    if (a === 'hint') return showHint();
     const holdEl = e.target.closest('[data-hold]');
     const shelfEl = e.target.closest('[data-shelf]');
     const p = holdEl ? { hold: +holdEl.dataset.hold } : shelfEl ? { shelf: +shelfEl.dataset.shelf } : null;

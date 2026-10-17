@@ -1,5 +1,5 @@
 // Cosy Cat Sort: home tab and game screen.
-import { newLevel, move, isWon, isStuck, shuffleCats, clone, recipe, topRun, topIndex, count, space, canPlace, encodeLevel, decodeLevel } from './sort-engine.js';
+import { newLevel, move, isWon, isStuck, shuffleCats, clone, recipe, topRun, topIndex, count, space, canPlace, encodeLevel, decodeLevel, SAVE_VERSION, isValidBoard } from './sort-engine.js';
 import { store, save } from './store.js';
 import { icon } from './icons.js';
 import { el, $, $$, dialog, confetti, toast, sheet } from './ui.js';
@@ -64,6 +64,12 @@ export function cutie(k) {
 
 const BOOSTER_REWARD = ['undo', 'shuffle', 'slot'];
 
+// Only resume a saved board made under the current rules (older saves could have gaps between cats).
+function resumable(level) {
+  const c = store.sort.current;
+  return !!c && c.level === level && c.v === SAVE_VERSION && isValidBoard(c.state);
+}
+
 // ---------- Home tab ----------
 export function sortHomeScreen(app) {
   const root = el(`<section class="screen sort-theme with-tabbar">
@@ -80,7 +86,7 @@ export function sortHomeScreen(app) {
         <h1 class="sort-title">Cosy Cat Sort</h1>
         <p>Match four cats in the same outfit and send them home</p>
       </div>
-      <button class="sort-btn ${r.hard ? 'hard' : ''}" data-act="play">${s.current && s.current.level === s.level ? 'Continue' : 'Play'} level ${s.level + 1}<small>${r.hard ? 'Hard level · ' : ''}${r.k} outfits · ${r.shelves} shelves</small></button>
+      <button class="sort-btn ${r.hard ? 'hard' : ''}" data-act="play">${resumable(s.level) ? 'Continue' : 'Play'} level ${s.level + 1}<small>${r.hard ? 'Hard level · ' : ''}${r.k} outfits · ${r.shelves} shelves</small></button>
       <button class="meow-btn alt" data-act="levels" style="margin-top:12px">Levels<small>Replay any finished level</small></button>
       <div class="sort-card">
         <div class="boost-row">
@@ -169,7 +175,7 @@ export function sortGameScreen(app, { level }) {
   </section>`);
   const q = (k) => $(`[data-el="${k}"]`, root);
 
-  function persist() { s.current = { level, state: st }; save(); }
+  function persist() { s.current = { level, v: SAVE_VERSION, state: st }; save(); }
   const sameSel = (p) => selected && p && selected.hold === p.hold && selected.shelf === p.shelf;
   const side = (si) => (si % 2 === 0 ? 'left' : 'right');
 
@@ -231,7 +237,7 @@ export function sortGameScreen(app, { level }) {
     history.push(before);
     if (history.length > 60) history.shift();
     // save the settled board now, before the animation temporarily rearranges things
-    s.current = { level, state: clone(st) }; save(true);
+    s.current = { level, v: SAVE_VERSION, state: clone(st) }; save(true);
 
     const homeEv = events.find((e) => e.type === 'home');
     const homeShelf = homeEv ? homeEv.shelf : -1;
@@ -369,7 +375,7 @@ export function sortGameScreen(app, { level }) {
   });
 
   (async () => {
-    st = s.current && s.current.level === level ? s.current.state : await getLevel(level);
+    st = resumable(level) ? s.current.state : await getLevel(level);
     root.style.setProperty('--hcount', st.k > 10 ? Math.ceil(st.k / 2) : st.k);
     root.style.setProperty('--hrows', st.k > 10 ? 2 : 1);
     busy = false;

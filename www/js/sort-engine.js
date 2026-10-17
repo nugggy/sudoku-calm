@@ -46,6 +46,14 @@ export function topRun(s) {
 }
 // Allowed onto a shelf: it has room and is empty, or its aisle-end cat wears the same outfit.
 export const canPlace = (s, cat) => space(s) > 0 && (count(s) === 0 || (!s.hidden[topIndex(s)] && s.slots[topIndex(s)] === cat));
+// Saves from before version 1.1.0 used different rules and could leave gaps between cats.
+// A board is only resumed if every shelf is packed against the wall with no gaps.
+export const SAVE_VERSION = 3;
+export function isValidBoard(st) {
+  if (!st || !Array.isArray(st.shelves) || !Array.isArray(st.hold)) return false;
+  return st.shelves.every((s) => Array.isArray(s.slots) && s.slots.length === SLOTS && Array.isArray(s.hidden) && Array.isArray(s.layers)
+    && s.slots.every((c, i) => c !== null || s.slots.slice(i).every((x) => x === null)));
+}
 export const isComplete = (s) => count(s) === SLOTS && s.slots.every((c, i) => !s.hidden[i] && c === s.slots[0]);
 export const freeSlots = (st) => st.shelves.reduce((a, s) => a + space(s), 0) + st.hold.filter((c) => c === null).length;
 export const totalCats = (st) => st.k * SLOTS;

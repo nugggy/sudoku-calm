@@ -1,4 +1,4 @@
-import { newLevel, recipe, move, isWon, totalCats, topRun } from '../www/js/sort-engine.js';
+import { newLevel, recipe, move, isWon, totalCats, topRun, isValidBoard } from '../www/js/sort-engine.js';
 let fail = 0, worst = 0;
 const check = (ok, msg) => { if (!ok) { fail++; console.log('FAIL', msg); } };
 const shelf = (slots, hidden = [false, false, false, false]) => ({ slots, hidden, layers: [] });
@@ -39,6 +39,9 @@ check(move(st, { shelf: 0 }, { shelf: 1 }) === null, 'blocked by different outfi
 check(move(st, { shelf: 0 }, { shelf: 2 }) !== null, 'empty shelf allowed');
 check(move(st, { shelf: 1 }, { hold: 0 }) !== null, 'basket takes any cat');
 check(move(st, { hold: 0 }, { shelf: 0 }) === null, 'basket cat still needs a match');
+// boards with a gap between cats (old saves) are rejected; packed boards are accepted
+check(!isValidBoard({ shelves: [shelf([0, null, 1, 1])], hold: [null, null] }), 'gap board rejected');
+check(isValidBoard({ shelves: [shelf([0, 1, 1, null])], hold: [null, null] }), 'packed board accepted');
 // winning
 st = { k: 1, shelves: [shelf([0, 0, 0, null]), shelf([0, null, null, null])], hold: [null, null], home: [], moves: 0 };
 move(st, { shelf: 1 }, { shelf: 0 });

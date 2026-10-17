@@ -77,7 +77,7 @@ export function deal(level) {
 export function mahjongHomeScreen(app) {
   return levelHome({
     app, cls: 'mj-theme', title: 'Mahjong Garden', help: mahjongHelp,
-    hero: `<div class="mj-hero">${[0, 8, 22, 29].map((f, i) => `<div class="mj-tile" style="transform:rotate(${(i - 1.5) * 8}deg)"><img src="img/mahjong/m${String(f).padStart(2, '0')}.png" alt=""></div>`).join('')}</div>`,
+    hero: `<div class="mj-hero">${[0, 13, 22, 31].map((f, i) => `<div class="mj-tile" style="transform:rotate(${(i - 1.5) * 8}deg)"><img src="img/art/mahjong/m${String(f).padStart(2, '0')}.svg" alt=""></div>`).join('')}</div>`,
     play: () => ({ label: `Play board ${MJ().level + 1}`, sub: LAYOUTS[MJ().level % LAYOUTS.length].name }),
     onPlay: () => app.go('mjgame', { level: MJ().level }),
     levels: () => ({ heading: 'Boards', count: Math.max(24, Math.ceil((MJ().level + 12) / 6) * 6), current: MJ().level, done: (i) => i < MJ().level }),
@@ -98,7 +98,7 @@ export function mahjongGameScreen(app, { level }) {
     <div class="mj-area" data-el="area"><div class="mj-board" data-el="board"></div></div>
     <div class="mj-bar">
       <button class="sort-boost" data-act="undo" aria-label="Undo">${icon.undo}</button>
-      <button class="sort-boost hint-btn" data-act="hint" aria-label="Hint"><img src="img/ui/light-bulb.png" alt=""></button>
+      <button class="sort-boost hint-btn" data-act="hint" aria-label="Hint"><img src="img/art/ui/light-bulb.svg" alt=""></button>
       <button class="sort-boost" data-act="shuffle" aria-label="Shuffle">${icon.refresh}</button>
     </div>
   </section>`);
@@ -121,7 +121,7 @@ export function mahjongGameScreen(app, { level }) {
     board.innerHTML = live.slice().sort((a, b) => a.z - b.z || a.y - b.y || b.x - a.x).map((t) => {
       const free = isFree(t, live);
       const x = t.x * tw + (maxZ - t.z) * depth, y = t.y * th + (maxZ - t.z) * depth;
-      return `<div class="mj-tile ${free ? 'free' : 'blocked'} ${sel === t ? 'sel' : ''}" data-id="${t.id}" style="left:${x}px;top:${y}px;z-index:${t.z * 100 + Math.round(t.y * 2) * 5 + Math.round(10 - t.x)}"><img src="img/mahjong/m${String(t.f).padStart(2, '0')}.png" alt=""></div>`;
+      return `<div class="mj-tile ${free ? 'free' : 'blocked'} ${sel === t ? 'sel' : ''}" data-id="${t.id}" style="left:${x}px;top:${y}px;z-index:${t.z * 100 + Math.round(t.y * 2) * 5 + Math.round(10 - t.x)}"><img src="img/art/mahjong/m${String(t.f).padStart(2, '0')}.svg" alt=""></div>`;
     }).join('');
     q('left').textContent = `${live.length} tiles left`;
     q('pairs').textContent = `${movesAvailable().length} matches available`;
@@ -155,7 +155,7 @@ export function mahjongGameScreen(app, { level }) {
   }
 
   async function stuck() {
-    const v = await dialog({ hero: 'img/ui/thinking-face.png', title: 'No matches left', text: 'Shuffle the remaining tiles, or undo your last move.', buttons: [{ label: 'Shuffle', value: 'shuffle' }, { label: 'Undo', value: 'undo', cls: 'secondary' }] });
+    const v = await dialog({ hero: 'img/art/ui/thinking-face.svg', title: 'No matches left', text: 'Shuffle the remaining tiles, or undo your last move.', buttons: [{ label: 'Shuffle', value: 'shuffle' }, { label: 'Undo', value: 'undo', cls: 'secondary' }] });
     if (v === 'shuffle') shuffle(); else if (v === 'undo') undo();
   }
 
@@ -186,7 +186,7 @@ export function mahjongGameScreen(app, { level }) {
     if (!mj.best[level] || elapsed < mj.best[level]) mj.best[level] = elapsed;
     save(true);
     sfx.win(); confetti();
-    const v = await dialog({ hero: 'img/mahjong/m21.png', title: 'Garden cleared!', dismissible: false, text: `${layout.name} in ${fmtTime(elapsed)}`, buttons: [{ label: 'Next board', value: 'next' }, { label: 'Back', value: 'back', cls: 'ghost' }] });
+    const v = await dialog({ hero: 'img/art/mahjong/m34.svg', title: 'Garden cleared!', dismissible: false, text: `${layout.name} in ${fmtTime(elapsed)}`, buttons: [{ label: 'Next board', value: 'next' }, { label: 'Back', value: 'back', cls: 'ghost' }] });
     if (v === 'next') app.replace('mjgame', { level: level + 1 }); else app.back();
   }
 

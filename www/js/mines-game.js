@@ -73,7 +73,7 @@ export function minesHomeScreen(app) {
   const body = $('.scroll', root);
   function render() {
     const m = M();
-    body.innerHTML = `<div class="kit-hero"><img src="img/ui/bomb.png" alt=""><img class="tilt" src="img/ui/triangular-flag.png" alt=""></div><h1 class="kit-title">Minesweeper</h1>
+    body.innerHTML = `<div class="kit-hero"><img src="img/art/ui/bomb.svg" alt=""><img class="tilt" src="img/art/ui/triangular-flag.svg" alt=""></div><h1 class="kit-title">Minesweeper</h1>
       ${Object.entries(LEVELS).map(([k, L]) => `<button class="mines-level" data-lv="${k}"><b>${L.label}</b><span>${L.w}×${L.h} · ${L.m} mines</span><em>${m.best[k] ? 'Best ' + fmtTime(m.best[k]) : 'Not cleared yet'}</em></button>`).join('')}
       <p class="word-sub">Every board can be cleared without guessing.</p>`;
   }
@@ -94,11 +94,11 @@ export function minesGameScreen(app, { lv }) {
   const { w, h } = L;
   const root = el(`<section class="screen mines-theme mines-game">
     <header class="topbar"><button class="icon-btn" data-act="back" aria-label="Back">${icon.back}</button>
-      <div class="mines-hud"><span><img src="img/ui/triangular-flag.png" alt=""><b data-el="left">${L.m}</b></span><span><img src="img/ui/calendar.png" alt=""><b data-el="time">00:00</b></span></div>
+      <div class="mines-hud"><span><img src="img/art/ui/triangular-flag.svg" alt=""><b data-el="left">${L.m}</b></span><span><img src="img/art/ui/calendar.svg" alt=""><b data-el="time">00:00</b></span></div>
       <button class="icon-btn" data-act="help" aria-label="How to play">${icon.help}</button></header>
     <div class="mines-wrap"><div class="mines-board" data-el="board" style="grid-template-columns:repeat(${w}, var(--mc))"></div></div>
     <div class="mines-bar">
-      <button class="mines-mode" data-act="mode"><span class="dig on">⛏ Dig</span><span class="flg"><img src="img/ui/triangular-flag.png" alt=""> Flag</span></button>
+      <button class="mines-mode" data-act="mode"><span class="dig on"><img src="img/art/ui/shovel.svg" alt=""> Dig</span><span class="flg"><img src="img/art/ui/triangular-flag.svg" alt=""> Flag</span></button>
       <button class="btn small mines-btn" data-act="new">New board</button>
     </div>
   </section>`);
@@ -153,7 +153,7 @@ export function minesGameScreen(app, { lv }) {
   function toggleFlag(i) {
     if (done || open.has(i)) return;
     if (flags.has(i)) { flags.delete(i); cellEl(i).innerHTML = ''; cellEl(i).classList.remove('flag'); }
-    else { flags.add(i); cellEl(i).innerHTML = '<img src="img/ui/triangular-flag.png" alt="flag">'; cellEl(i).classList.add('flag'); }
+    else { flags.add(i); cellEl(i).innerHTML = '<img src="img/art/ui/triangular-flag.svg" alt="flag">'; cellEl(i).classList.add('flag'); }
     q('left').textContent = L.m - flags.size;
     sfx.note(); buzz(20);
   }
@@ -164,11 +164,11 @@ export function minesGameScreen(app, { lv }) {
     sfx.error(); buzz([60, 40, 60]);
     cellEl(i).classList.add('hit');
     const list = [...mines].sort((a, b) => Math.hypot(Math.floor(a / w) - Math.floor(i / w), a % w - i % w) - Math.hypot(Math.floor(b / w) - Math.floor(i / w), b % w - i % w));
-    list.forEach((k, n) => setTimeout(() => { const c = cellEl(k); if (!flags.has(k)) { c.classList.add('mine'); c.innerHTML = '<img src="img/ui/bomb.png" alt="mine">'; } if (n % 3 === 0) sfx.cross(); }, 120 + n * 60));
+    list.forEach((k, n) => setTimeout(() => { const c = cellEl(k); if (!flags.has(k)) { c.classList.add('mine'); c.innerHTML = '<img src="img/art/ui/bomb.svg" alt="mine">'; } if (n % 3 === 0) sfx.cross(); }, 120 + n * 60));
     flags.forEach((k) => { if (!mines.has(k)) cellEl(k).classList.add('wrong'); });
     root.querySelector('.mines-wrap').classList.add('quake');
     await new Promise((r) => setTimeout(r, 800 + list.length * 60));
-    const v = await dialog({ hero: 'img/ui/collision.png', title: 'Boom!', dismissible: false, text: 'You hit a mine. Every board can be solved by logic, so try again.', buttons: [{ label: 'Try a new board', value: 'new' }, { label: 'Back', value: 'back', cls: 'ghost' }] });
+    const v = await dialog({ hero: 'img/art/ui/collision.svg', title: 'Boom!', dismissible: false, text: 'You hit a mine. Every board can be solved by logic, so try again.', buttons: [{ label: 'Try a new board', value: 'new' }, { label: 'Back', value: 'back', cls: 'ghost' }] });
     if (v === 'new') build(); else app.back();
   }
 
@@ -180,10 +180,10 @@ export function minesGameScreen(app, { lv }) {
     const best = !m.best[lv] || elapsed < m.best[lv];
     if (best) m.best[lv] = elapsed;
     save(true);
-    mines.forEach((k) => { if (!flags.has(k)) { flags.add(k); cellEl(k).innerHTML = '<img src="img/ui/triangular-flag.png" alt="flag">'; cellEl(k).classList.add('flag'); } });
+    mines.forEach((k) => { if (!flags.has(k)) { flags.add(k); cellEl(k).innerHTML = '<img src="img/art/ui/triangular-flag.svg" alt="flag">'; cellEl(k).classList.add('flag'); } });
     sfx.win(); setTimeout(confetti, 300);
     await new Promise((r) => setTimeout(r, 900));
-    const v = await dialog({ hero: 'img/ui/trophy.png', title: 'Board cleared!', dismissible: false, text: `${L.label} in ${fmtTime(elapsed)}${best ? '\nNew best time!' : ''}`, buttons: [{ label: 'Play again', value: 'new' }, { label: 'Back', value: 'back', cls: 'ghost' }] });
+    const v = await dialog({ hero: 'img/art/ui/trophy.svg', title: 'Board cleared!', dismissible: false, text: `${L.label} in ${fmtTime(elapsed)}${best ? '\nNew best time!' : ''}`, buttons: [{ label: 'Play again', value: 'new' }, { label: 'Back', value: 'back', cls: 'ghost' }] });
     if (v === 'new') build(); else app.back();
   }
 

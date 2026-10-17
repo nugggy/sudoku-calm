@@ -168,7 +168,7 @@ h1, h2, h3, p { margin: 0; }
 
 .dialog { width: 100%; max-width: 380px; background: var(--card); border-radius: 22px; padding: 24px 20px 18px; text-align: center; animation: pop .22s cubic-bezier(.2, 1.3, .4, 1); box-shadow: var(--shadow-lg); }
 @keyframes pop { from { transform: scale(.85); opacity: 0; } }
-.dialog img.hero { width: 84px; height: 84px; margin-bottom: 8px; }
+.dialog img.hero { width: 84px; height: 84px; object-fit: contain; margin-bottom: 8px; }
 .dialog h2 { font-size: 22px; margin-bottom: 8px; }
 .dialog p { color: var(--muted); line-height: 1.45; margin-bottom: 18px; white-space: pre-line; }
 .dialog .stack { display: flex; flex-direction: column; gap: 10px; }
@@ -285,7 +285,7 @@ h1, h2, h3, p { margin: 0; }
 .cal button:disabled { color: var(--faint); opacity: .5; }
 .cal button.today { box-shadow: inset 0 0 0 2px var(--primary); }
 .cal button.sel { background: var(--primary); color: #fff; }
-.cal button.done::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: url(../img/ui/star.png) center/72% no-repeat; }
+.cal button.done::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: url(../img/art/ui/star.svg) center/72% no-repeat; }
 .cal button.done { color: transparent; }
 .cal button.done.sel { background-color: var(--primary-soft); }
 .trophy-shelf { display: flex; gap: 10px; overflow-x: auto; padding: 4px 0 8px; }
@@ -569,7 +569,7 @@ h1, h2, h3, p { margin: 0; }
 .pcard .face-art { position: absolute; left: 50%; top: 57%; width: 66%; transform: translate(-50%, -50%); }
 .pcard .face-crown { position: absolute; left: 50%; top: 24%; width: 38%; transform: translate(-50%, -50%) rotate(-8deg); }
 .pcard .back { display: none; border: 3px solid #fff; background:
-  url(../img/ui/paw-prints.png) center / 55% no-repeat,
+  url(../img/art/ui/paw-prints.svg) center / 55% no-repeat,
   repeating-linear-gradient(45deg, rgba(255, 255, 255, .12) 0 4px, transparent 4px 9px),
   linear-gradient(150deg, #7a5bd6, #4b3aa6); box-shadow: 0 1px 2px rgba(0, 0, 0, .35); }
 .pcard.down .back { display: block; }

@@ -99,7 +99,7 @@ export function sudokuScreen(app, params = {}) {
       <div class="board" role="grid" aria-label="Sudoku board"></div>
       <div class="pause-cover"><button class="play" data-act="resume" aria-label="Resume">${icon.play}</button><div>Paused</div></div>
     </div>
-    <div class="hint-banner" data-el="hint"><img src="img/ui/light-bulb.png" alt=""><span data-el="hint-text"></span><button data-act="hint-ok">Got it</button></div>
+    <div class="hint-banner" data-el="hint"><img src="img/art/ui/light-bulb.svg" alt=""><span data-el="hint-text"></span><button data-act="hint-ok">Got it</button></div>
     <div class="tools">
       <button class="tool" data-act="undo"><span class="ic">${icon.undo}</span>Undo</button>
       <button class="tool" data-act="erase"><span class="ic">${icon.erase}</span>Erase</button>
@@ -287,7 +287,7 @@ export function sudokuScreen(app, params = {}) {
   function hint() {
     if (g.done || paused) return;
     if (!S.unlimitedHints && g.hintsUsed >= FREE_HINTS) {
-      dialog({ hero: 'img/ui/light-bulb.png', title: 'No hints left', text: `You have used all ${FREE_HINTS} hints for this game. You can turn on unlimited hints in Settings.`,
+      dialog({ hero: 'img/art/ui/light-bulb.svg', title: 'No hints left', text: `You have used all ${FREE_HINTS} hints for this game. You can turn on unlimited hints in Settings.`,
         buttons: [{ label: 'Turn on unlimited hints', value: 'on' }, { label: 'Keep going', value: null, cls: 'ghost' }] })
         .then((v) => { if (v === 'on') { S.unlimitedHints = true; save(); render(); } });
       return;
@@ -318,7 +318,7 @@ export function sudokuScreen(app, params = {}) {
     stopTimer();
     save(true);
     const v = await dialog({
-      hero: 'img/cats/cat09.png', title: 'Game over', dismissible: false,
+      hero: 'img/art/cats/cat09.svg', title: 'Game over', dismissible: false,
       text: `You made ${MAX_MISTAKES} mistakes and lost this game.`,
       buttons: [
         { label: 'Second chance', value: 'second' },
@@ -377,16 +377,16 @@ export function sudokuScreen(app, params = {}) {
     const newBest = !g.daily && (!prevBest || g.elapsed < prevBest);
     const newScore = !g.daily && g.score > prevScore;
     const node = el(`<div class="win">
-      <img class="trophy" src="img/ui/${g.daily ? 'glowing-star' : 'trophy'}.png" alt="">
+      <img class="trophy" src="img/art/ui/${g.daily ? 'glowing-star' : 'trophy'}.svg" alt="">
       <h1>${g.mistakes ? 'Well done' : 'Excellent'}</h1>
       <div class="sub">${g.daily ? 'Daily challenge complete' : `${DIFFICULTY_LABELS[g.difficulty]} puzzle solved`}</div>
       <div class="rows">
-        <div class="row"><span><img src="img/ui/bar-chart.png" alt="">Difficulty</span><b>${DIFFICULTY_LABELS[g.difficulty]}</b></div>
-        <div class="row"><span><img src="img/ui/gem-stone.png" alt="">Score</span><b>${g.score.toLocaleString('en-AU')}${newScore ? '<span class="new">BEST</span>' : ''}</b></div>
-        <div class="row"><span><img src="img/ui/calendar.png" alt="">Time</span><b>${fmtTime(g.elapsed)}${newBest ? '<span class="new">BEST</span>' : ''}</b></div>
-        ${g.daily ? '' : `<div class="row"><span><img src="img/ui/sports-medal.png" alt="">Best time</span><b>${fmtTime(st.bestTime)}</b></div>
-        <div class="row"><span><img src="img/ui/fire.png" alt="">Win streak</span><b>${st.streak}</b></div>`}
-        <div class="row"><span><img src="img/ui/thinking-face.png" alt="">Mistakes</span><b>${g.mistakes}</b></div>
+        <div class="row"><span><img src="img/art/ui/bar-chart.svg" alt="">Difficulty</span><b>${DIFFICULTY_LABELS[g.difficulty]}</b></div>
+        <div class="row"><span><img src="img/art/ui/gem-stone.svg" alt="">Score</span><b>${g.score.toLocaleString('en-AU')}${newScore ? '<span class="new">BEST</span>' : ''}</b></div>
+        <div class="row"><span><img src="img/art/ui/calendar.svg" alt="">Time</span><b>${fmtTime(g.elapsed)}${newBest ? '<span class="new">BEST</span>' : ''}</b></div>
+        ${g.daily ? '' : `<div class="row"><span><img src="img/art/ui/sports-medal.svg" alt="">Best time</span><b>${fmtTime(st.bestTime)}</b></div>
+        <div class="row"><span><img src="img/art/ui/fire.svg" alt="">Win streak</span><b>${st.streak}</b></div>`}
+        <div class="row"><span><img src="img/art/ui/thinking-face.svg" alt="">Mistakes</span><b>${g.mistakes}</b></div>
       </div>
       <div class="actions">
         ${g.daily ? '<button class="btn" data-act="daily">Back to daily challenges</button>' : '<button class="btn" data-act="new">New game</button>'}

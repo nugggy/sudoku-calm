@@ -75,7 +75,7 @@ export function treatHomeScreen(app) {
       <div class="treat-hero">${[0, 1, 2, 3, 4, 5].map((k) => `<div class="hero-candy" style="animation-delay:${k * 0.12}s">${candySvg(k)}</div>`).join('')}</div>
       <h1 class="treat-title">Treat Twist</h1>
       <button class="btn treat-btn" data-act="play">Play level ${next + 1}<small>${goalText(spec)}</small></button>
-      <div class="treat-total"><img src="img/ui/star.png" alt=""> ${total} stars collected</div>
+      <div class="treat-total"><img src="img/art/ui/star.svg" alt=""> ${total} stars collected</div>
       <div class="treat-map">${[...Array(show)].map((_, i) => {
         const s = t.stars[i] || 0;
         return `<button class="treat-node ${i < next ? 'done' : ''} ${i === next ? 'current' : ''}" data-idx="${i}" ${i > next ? 'disabled' : ''}><b>${i + 1}</b><span>${'★'.repeat(s)}${'☆'.repeat(i < next ? 3 - s : 0)}</span></button>`;

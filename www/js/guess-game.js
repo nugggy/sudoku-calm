@@ -134,7 +134,7 @@ export function guessGameScreen(app, { mode }) {
     } else sfx.error();
     await new Promise((x) => setTimeout(x, 900));
     const words = ['Genius!', 'Magnificent!', 'Impressive!', 'Splendid!', 'Great!', 'Phew!'];
-    const v = await dialog({ hero: won ? 'img/ui/trophy.png' : 'img/ui/thinking-face.png', title: won ? words[guesses.length - 1] : 'Out of guesses', dismissible: false,
+    const v = await dialog({ hero: won ? 'img/art/ui/trophy.svg' : 'img/art/ui/thinking-face.svg', title: won ? words[guesses.length - 1] : 'Out of guesses', dismissible: false,
       text: `The word was ${answer.toUpperCase()}.${won ? `\nSolved in ${guesses.length} of 6.` : ''}`,
       buttons: [...(mode === 'practice' ? [{ label: 'Next word', value: 'next' }] : []), { label: 'Back', value: 'back', cls: mode === 'practice' ? 'ghost' : '' }] });
     if (v === 'next') app.replace('guessgame', { mode: 'practice' }); else app.back();

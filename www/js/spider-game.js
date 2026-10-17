@@ -32,7 +32,7 @@ function newGame(suits) {
 
 function cardHtml(c) {
   const red = isRedSuit(c.s) ? ' red' : '';
-  const centre = FACE_ART[c.r] ? `<img class="face-art" src="img/cats/${FACE_ART[c.r]}.png" alt="">${c.r >= 12 ? '<img class="face-crown" src="img/ui/crown.png" alt="">' : ''}` : `<span class="pip">${SUITS[c.s]}</span>`;
+  const centre = FACE_ART[c.r] ? `<img class="face-art" src="img/art/cats/${FACE_ART[c.r]}.svg" alt="">${c.r >= 12 ? '<img class="face-crown" src="img/art/ui/crown.svg" alt="">' : ''}` : `<span class="pip">${SUITS[c.s]}</span>`;
   return `<div class="pcard${red}" data-id="${c.id}"><div class="front"><span class="corner">${RANKS[c.r - 1]}<i>${SUITS[c.s]}</i></span>${centre}</div><div class="back"></div></div>`;
 }
 
@@ -44,7 +44,7 @@ export function spiderHomeScreen(app) {
   const body = $('.scroll', root);
   function render() {
     const sp = SP();
-    body.innerHTML = `<div class="kit-hero"><img src="img/ui/spider.png" alt=""></div><h1 class="kit-title" style="color:#fff">Spider Solitaire</h1>
+    body.innerHTML = `<div class="kit-hero"><img src="img/art/ui/spider.svg" alt=""></div><h1 class="kit-title" style="color:#fff">Spider Solitaire</h1>
       ${sp.current ? `<button class="btn sol-btn" data-act="continue">Continue game<small>${sp.current.suits} suit${sp.current.suits > 1 ? 's' : ''} · ${sp.current.done}/8 runs</small></button>` : ''}
       ${[1, 2, 4].map((n) => `<button class="mines-level spider-level" data-s="${n}"><b>${n} suit${n > 1 ? 's' : ''}</b><span>${n === 1 ? 'Relaxing' : n === 2 ? 'A good challenge' : 'For experts'}</span><em>${sp.won[n] || 0} won</em></button>`).join('')}`;
   }
@@ -234,7 +234,7 @@ export function spiderGameScreen(app, { suits }) {
     sp.best[g.suits] = Math.max(sp.best[g.suits] || 0, g.score);
     sp.current = null; save(true);
     sfx.win(); confetti(3000);
-    const v = await dialog({ hero: 'img/ui/spider.png', title: 'You won!', dismissible: false, text: `Score ${g.score} · ${g.moves} moves · ${fmtTime(g.elapsed)}`, buttons: [{ label: 'New game', value: 'new' }, { label: 'Back', value: 'back', cls: 'ghost' }] });
+    const v = await dialog({ hero: 'img/art/ui/spider.svg', title: 'You won!', dismissible: false, text: `Score ${g.score} · ${g.moves} moves · ${fmtTime(g.elapsed)}`, buttons: [{ label: 'New game', value: 'new' }, { label: 'Back', value: 'back', cls: 'ghost' }] });
     if (v === 'new') app.replace('spidergame', { suits: g.suits }); else app.back();
   }
 

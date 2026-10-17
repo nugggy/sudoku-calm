@@ -54,7 +54,7 @@ export function cutie(k) {
     <ellipse cx="50" cy="86" rx="16" ry="12" fill="#fff" fill-opacity=".35"/>
     ${d.mid || ''}
     <circle cx="50" cy="44" r="35" fill="${c.col}" stroke="${c.dark}" stroke-width="2"/>
-    <image href="img/cats/${c.face}.png" x="19" y="15" width="62" height="62"/>
+    <image href="img/art/cats/${c.face}.svg" x="19" y="15" width="62" height="62"/>
     <ellipse cx="34" cy="97" rx="8" ry="5.5" fill="#fff4e6" stroke="${c.dark}" stroke-width="1.5"/>
     <ellipse cx="66" cy="97" rx="8" ry="5.5" fill="#fff4e6" stroke="${c.dark}" stroke-width="1.5"/>
     ${d.front}
@@ -97,7 +97,7 @@ export function sortHomeScreen(app) {
         </div>
         <p class="sort-note">You earn a free booster for every level you finish. No ads, no shop.</p>
       </div>
-      <div class="sort-card"><div class="stat-row" style="border:0"><img src="img/ui/trophy.png" alt=""><span class="k">Levels finished</span><span class="v">${s.level}</span></div></div>`;
+      <div class="sort-card"><div class="stat-row" style="border:0"><img src="img/art/ui/trophy.svg" alt=""><span class="k">Levels finished</span><span class="v">${s.level}</span></div></div>`;
   }
   root.addEventListener('click', (e) => {
     const a = e.target.closest('[data-act]')?.dataset.act;
@@ -180,7 +180,7 @@ export function sortGameScreen(app, { level }) {
       <button class="sort-boost" data-act="undo" aria-label="Undo">${icon.undo}<span class="plus" data-b="undo"></span></button>
       <button class="sort-boost" data-act="shuffle" aria-label="Shuffle">${icon.refresh}<span class="plus" data-b="shuffle"></span></button>
       <button class="sort-boost" data-act="slot" aria-label="Extra spot">${icon.plus}<span class="plus" data-b="slot"></span></button>
-      <button class="sort-boost hint-btn" data-act="hint" aria-label="Hint"><img src="img/ui/light-bulb.png" alt=""></button>
+      <button class="sort-boost hint-btn" data-act="hint" aria-label="Hint"><img src="img/art/ui/light-bulb.svg" alt=""></button>
     </div>
   </section>`);
   const q = (k) => $(`[data-el="${k}"]`, root);
@@ -301,7 +301,7 @@ export function sortGameScreen(app, { level }) {
     if (s.boosters.undo > 0 && history.length) opts.push({ label: `Undo last move (${s.boosters.undo} left)`, value: 'undo' });
     if (s.boosters.shuffle > 0) opts.push({ label: `Shuffle cats (${s.boosters.shuffle} left)`, value: 'shuffle' });
     opts.push({ label: 'Restart level', value: 'restart', cls: opts.length ? 'secondary' : '' });
-    const v = await dialog({ hero: 'img/cats/cat08.png', title: 'No moves left', text: 'Every cat is blocked. Use a booster or start the level again.', buttons: opts, dismissible: false });
+    const v = await dialog({ hero: 'img/art/cats/cat08.svg', title: 'No moves left', text: 'Every cat is blocked. Use a booster or start the level again.', buttons: opts, dismissible: false });
     if (v === 'restart') restart(); else if (v) useBooster(v); // no choice means back was pressed
   }
 

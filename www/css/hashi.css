@@ -1,0 +1,81 @@
+/* Island Hop: sea, sandy islands and rope bridges. */
+
+.g-hashi { background: linear-gradient(150deg, #4cc3e0, #1f7fb4); }
+.art-hashi { display: grid; place-items: center; padding: 4px; border-radius: 14px; background: url(../img/kenney/pirate/tile_73.png) center / 60px; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .45), 0 4px 10px rgba(0, 40, 80, .2); }
+.art-hashi-svg { width: 84px; height: 84px; display: block; overflow: visible; }
+
+.hashi-theme { background: linear-gradient(180deg, #e8f7fc 0%, #cdeef8 100%); --kit-accent: #1f8fc4; --kit-done: #d4f2dc; }
+:root[data-theme="dark"] .hashi-theme { background: linear-gradient(180deg, #0f1f29 0%, #0a161e 100%); --kit-accent: #2a9fd6; --kit-done: #1f3d2b; }
+:root[data-theme="dark"] .hashi-theme .kit-level.done { background: var(--kit-done); color: #9fe0b2; }
+:root[data-theme="dark"] .hashi-theme .kit-level.current { background: var(--kit-accent); color: #fff; }
+.hashi-btn { background: #1f8fc4; box-shadow: 0 4px 0 #156a93; }
+
+/* home hero: the little scene floating on the sea with a ship passing by */
+.hs-hero { position: relative; padding: 10px 26px; border-radius: 26px; background: url(../img/kenney/pirate/tile_73.png) center / 88px; box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .55), 0 8px 18px rgba(20, 90, 130, .22); }
+:root[data-theme="dark"] .hs-hero { background: linear-gradient(rgba(6, 22, 40, .55), rgba(6, 22, 40, .55)), url(../img/kenney/pirate/tile_73.png) center / 88px; box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .12); }
+.hs-hero-svg { display: block; width: 132px; height: 132px; overflow: visible; }
+.hs-ship { position: absolute; width: 34px; right: -40px; bottom: -6px; transform: rotate(-90deg); animation: hs-sail 5s ease-in-out infinite; filter: drop-shadow(0 3px 2px rgba(0, 40, 80, .25)); }
+@keyframes hs-sail { 50% { transform: rotate(-90deg) translateX(-6px) rotate(4deg); } }
+
+/* ---------- Game screen ---------- */
+.hs-info { display: flex; justify-content: center; align-items: center; gap: 14px; padding: 0 16px 4px; font-size: 14px; color: var(--muted); }
+.hs-info b { color: var(--text); font-variant-numeric: tabular-nums; }
+.hs-tier { padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 12.5px; color: #fff; background: #3fae6a; }
+.hs-tier.t2 { background: #e8a72e; } .hs-tier.t3 { background: #e5634d; } .hs-tier.t4 { background: #8d5bd6; }
+.hs-wrap { flex: 1; min-height: 0; display: grid; place-items: center; padding: 6px 4px; }
+.hs-board { position: relative; border-radius: 16px; touch-action: none;
+  background: url(../img/kenney/pirate/tile_73.png) 0 0 / calc(var(--hc, 40px) * 2.5);
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .6), 0 10px 26px rgba(20, 90, 130, .25); }
+:root[data-theme="dark"] .hs-board { background: linear-gradient(rgba(6, 22, 40, .58), rgba(6, 22, 40, .58)), url(../img/kenney/pirate/tile_73.png) 0 0 / calc(var(--hc, 40px) * 2.5);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .12), 0 10px 26px rgba(0, 0, 0, .4); }
+.hs-board svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.hs-grid circle { fill: rgba(255, 255, 255, .55); }
+:root[data-theme="dark"] .hs-grid circle { fill: rgba(255, 255, 255, .14); }
+.hs-ghost line { stroke: rgba(255, 255, 255, .7); stroke-linecap: round; }
+
+/* bridges: planks over a darker edge, with a rope down each side */
+.hs-bridge .pl { stroke: #d9a15e; }
+.hs-bridge .pl-dk { stroke: #8a5527; }
+.hs-bridge .rope { stroke: #6b4320; stroke-linecap: round; }
+:root[data-theme="dark"] .hs-bridge .pl { stroke: #c48b4c; }
+.hs-bridge.new { animation: hs-build .25s ease-out; }
+@keyframes hs-build { from { opacity: 0; filter: brightness(1.5); } }
+.hs-bridge.glow { animation: hs-glow 1.1s ease-in-out 2; }
+@keyframes hs-glow { 50% { filter: drop-shadow(0 0 5px #fff6b0) drop-shadow(0 0 9px #ffc93c); } }
+.hs-bridge.clash { animation: hs-clash .5s; }
+@keyframes hs-clash { 30%, 70% { filter: drop-shadow(0 0 4px #ff4d4d) brightness(1.2); } }
+
+/* islands */
+.hs-isl .body { transform-box: fill-box; transform-origin: center; transition: transform .12s; }
+.hs-isl .shoal { fill: rgba(255, 255, 255, .38); }
+.hs-isl .beach { fill: #f3d696; stroke: #c99b52; stroke-width: 1.5; }
+.hs-isl .top { fill: #fbebc4; transition: fill .2s; }
+.hs-isl .shine { fill: rgba(255, 255, 255, .5); }
+.hs-isl .num { fill: #74501f; font-weight: 800; text-anchor: middle; dominant-baseline: central; font-family: var(--font); pointer-events: none; }
+.hs-isl.done .top { fill: #5cc45f; }
+.hs-isl.done .num { fill: #fff; paint-order: stroke; stroke: #2f8a3c; stroke-width: 3px; }
+.hs-isl.over .top { fill: #ff6b6b; }
+.hs-isl.over .num { fill: #fff; paint-order: stroke; stroke: #b8323a; stroke-width: 3px; }
+.hs-isl.sel .beach { stroke: #fff; stroke-width: 3.5; }
+.hs-isl.sel .shoal { fill: rgba(255, 255, 255, .85); }
+.hs-isl.cand .shoal { fill: rgba(255, 255, 255, .65); }
+:root[data-theme="dark"] .hs-isl .shoal { fill: rgba(140, 220, 255, .16); }
+:root[data-theme="dark"] .hs-isl .beach { fill: #d9bd80; stroke: #9c7638; }
+:root[data-theme="dark"] .hs-isl .top { fill: #e9d6a8; }
+:root[data-theme="dark"] .hs-isl .shine { fill: rgba(255, 255, 255, .3); }
+:root[data-theme="dark"] .hs-isl.done .top { fill: #46a84b; }
+:root[data-theme="dark"] .hs-isl.over .top { fill: #e0505a; }
+:root[data-theme="dark"] .hs-isl.sel .shoal, :root[data-theme="dark"] .hs-isl.cand .shoal { fill: rgba(140, 220, 255, .4); }
+.hs-isl.press .body { animation: hs-press .18s ease-out; }
+.hs-isl.pop .body { animation: hs-pop .34s ease-out; }
+.hs-isl.shake .body { animation: hs-shake .3s; }
+.hs-isl.glow .body { animation: hs-glow 1.1s ease-in-out 2; }
+.hs-isl.hop .body { animation: hs-hop .5s ease-out; }
+@keyframes hs-press { 50% { transform: scale(.9); } }
+@keyframes hs-pop { 40% { transform: scale(1.22); } 70% { transform: scale(.95); } }
+@keyframes hs-shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+@keyframes hs-hop { 35% { transform: translateY(-22%) scale(1.1); } 70% { transform: translateY(0) scale(.95, 1.05); } }
+
+.hs-tools { width: 100%; max-width: 420px; padding-bottom: calc(10px + var(--safe-bottom)); }
+.hashi-game .tool .ic { background: rgba(255, 255, 255, .7); color: #1f6f99; }
+:root[data-theme="dark"] .hashi-game .tool .ic { background: rgba(255, 255, 255, .08); color: #7cc8ee; }

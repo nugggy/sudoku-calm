@@ -79,7 +79,7 @@ export function pipeGameScreen(app, { level }) {
     <div class="pipe-wrap"><div class="pipe-board" data-el="board"><svg data-el="svg"></svg></div></div>
     <div class="pipe-bar">
       <button class="sort-boost" data-act="restart" aria-label="Clear board">${icon.restart}</button>
-      <button class="sort-boost hint-btn" data-act="hint" aria-label="Hint"><img src="img/ui/light-bulb.png" alt=""></button>
+      <button class="sort-boost hint-btn" data-act="hint" aria-label="Hint"><img src="img/art/ui/light-bulb.svg" alt=""></button>
     </div>
   </section>`);
   const q = (k) => $(`[data-el="${k}"]`, root);
@@ -154,7 +154,7 @@ export function pipeGameScreen(app, { level }) {
     sfx.win(); confetti();
     $$('polyline', q('svg')).forEach((n) => n.classList.add('win'));
     await new Promise((r) => setTimeout(r, 900));
-    const v = await dialog({ hero: 'img/ui/sparkles.png', title: 'Perfect flow!', dismissible: false, text: `Level ${level + 1} complete`, buttons: [{ label: 'Next level', value: 'next' }, { label: 'Back', value: 'back', cls: 'ghost' }] });
+    const v = await dialog({ hero: 'img/art/ui/sparkles.svg', title: 'Perfect flow!', dismissible: false, text: `Level ${level + 1} complete`, buttons: [{ label: 'Next level', value: 'next' }, { label: 'Back', value: 'back', cls: 'ghost' }] });
     if (v === 'next') app.replace('pipegame', { level: level + 1 }); else app.back();
   }
 

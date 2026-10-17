@@ -26,7 +26,7 @@ export function solHelp() {
 function cardHtml(c) {
   const r = rankOf(c), s = SUITS[suitOf(c)], red = isRed(c) ? ' red' : '';
   const centre = FACE_ART[r]
-    ? `<img class="face-art" src="img/cats/${FACE_ART[r]}.png" alt="">${r === 13 || r === 12 ? '<img class="face-crown" src="img/ui/crown.png" alt="">' : ''}`
+    ? `<img class="face-art" src="img/art/cats/${FACE_ART[r]}.svg" alt="">${r === 13 || r === 12 ? '<img class="face-crown" src="img/art/ui/crown.svg" alt="">' : ''}`
     : `<span class="pip">${s}</span>`;
   return `<div class="pcard${red}" data-c="${c}"><div class="front"><span class="corner">${RANKS[r - 1]}<i>${s}</i></span>${centre}<span class="corner br">${RANKS[r - 1]}<i>${s}</i></span></div><div class="back"></div></div>`;
 }
@@ -41,7 +41,7 @@ export function solitaireScreen(app) {
     <div class="sol-bar">
       <button class="sol-tool" data-act="new">${icon.plus}<span>New</span></button>
       <button class="sol-tool" data-act="hint">${icon.bulb}<span>Hint</span></button>
-      <button class="sol-tool hidden" data-act="auto"><img src="img/ui/sparkles.png" alt=""><span>Auto finish</span></button>
+      <button class="sol-tool hidden" data-act="auto"><img src="img/art/ui/sparkles.svg" alt=""><span>Auto finish</span></button>
       <button class="sol-tool" data-act="undo">${icon.undo}<span>Undo</span></button>
     </div>
   </section>`);
@@ -243,7 +243,7 @@ export function solitaireScreen(app) {
     save(true);
     sfx.win();
     cascade().then(async () => {
-      const v = await dialog({ hero: 'img/ui/trophy.png', title: 'You won!', dismissible: false,
+      const v = await dialog({ hero: 'img/art/ui/trophy.svg', title: 'You won!', dismissible: false,
         text: `Score ${g.score} · ${g.moves} moves · ${fmtTime(g.elapsed)}${newBest ? '\nNew best time!' : ''}`,
         buttons: [{ label: 'New game', value: 'new' }, { label: 'Back', value: 'back', cls: 'ghost' }] });
       if (v === 'new') newGame(g.draw); else app.back();

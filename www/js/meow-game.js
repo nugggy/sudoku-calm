@@ -6,15 +6,15 @@ import { el, $, $$, sheet, confetti, toast } from './ui.js';
 import { sfx, buzz } from './sound.js';
 
 export const CATS = [
-  { img: 'cat01.png', name: 'Mochi' }, { img: 'cat02.png', name: 'Biscuit' }, { img: 'cat03.png', name: 'Sunny' },
-  { img: 'cat04.png', name: 'Romeo' }, { img: 'cat05.png', name: 'Smirk' }, { img: 'cat06.png', name: 'Kiki' },
-  { img: 'cat07.png', name: 'Giggles' }, { img: 'cat08.png', name: 'Gasp' }, { img: 'cat09.png', name: 'Teary' },
-  { img: 'cat10.png', name: 'Grumpy' }, { img: 'cat11.png', name: 'Shadow' }, { img: 'cat12.png', name: 'Marmalade' },
-  { img: 'cat13.png', name: 'Tiger' }, { img: 'cat14.png', name: 'Leo' },
+  { img: 'cat01.svg', name: 'Mango' }, { img: 'cat02.svg', name: 'Biscuit' }, { img: 'cat03.svg', name: 'Pepper' },
+  { img: 'cat04.svg', name: 'Rosie' }, { img: 'cat05.svg', name: 'Smudge' }, { img: 'cat06.svg', name: 'Patches' },
+  { img: 'cat07.svg', name: 'Ziggy' }, { img: 'cat08.svg', name: 'Shadow' }, { img: 'cat09.svg', name: 'Misty' },
+  { img: 'cat10.svg', name: 'Grumbles' }, { img: 'cat11.svg', name: 'Toffee' }, { img: 'cat12.svg', name: 'Cocoa' },
+  { img: 'cat13.svg', name: 'Tiger' }, { img: 'cat14.svg', name: 'Leo' },
 ];
 const UNLOCK_EVERY = 10; // a new cat every 10 levels
 export const catUnlocked = (k) => store.meow.level >= k * UNLOCK_EVERY;
-export const catSrc = (k = store.meow.cat) => `img/cats/${CATS[k].img}`;
+export const catSrc = (k = store.meow.cat) => `img/art/cats/${CATS[k].img}`;
 
 const COLOURS = ['#e3bb45', '#e8a7c0', '#9b80d6', '#c4678c', '#7cc4a4', '#7fb2e5', '#f0956a', '#b5cf6b', '#a0764e', '#a9a9d9', '#6fc3c9', '#e35d5b', '#90a4ae'];
 
@@ -76,7 +76,7 @@ export function meowHomeScreen(app) {
       <button class="meow-btn" data-act="play">${resume ? 'Continue' : 'Play'} level ${lvl + 1}<small>${resume ? fmtTime(m.current.elapsed) : 'One cat per row, column and colour'}</small></button>
       <div style="height:14px"></div>
       <div class="meow-card" style="display:flex;align-items:center;gap:14px">
-        <img src="img/ui/paw-prints.png" alt="" style="width:48px;height:48px">
+        <img src="img/art/ui/paw-prints.svg" alt="" style="width:48px;height:48px">
         <div style="flex:1"><b>${lvl} of ${TOTAL_LEVELS_LABEL()}+ levels solved</b>
           <div class="progress" style="margin:8px 0 0"><i style="width:${Math.min(100, lvl / TOTAL_LEVELS_LABEL() * 100)}%;background:#f08a4b"></i></div></div>
       </div>
@@ -86,9 +86,9 @@ export function meowHomeScreen(app) {
       </div>
       <div class="section-title">Your record</div>
       <div class="meow-card">
-        <div class="stat-row"><img src="img/ui/trophy.png" alt=""><span class="k">Levels solved</span><span class="v">${lvl}</span></div>
-        <div class="stat-row"><img src="img/ui/calendar.png" alt=""><span class="k">Total time</span><span class="v">${fmtTime(m.totalTime)}</span></div>
-        <div class="stat-row"><img src="img/ui/light-bulb.png" alt=""><span class="k">Hints used</span><span class="v">${m.hints}</span></div>
+        <div class="stat-row"><img src="img/art/ui/trophy.svg" alt=""><span class="k">Levels solved</span><span class="v">${lvl}</span></div>
+        <div class="stat-row"><img src="img/art/ui/calendar.svg" alt=""><span class="k">Total time</span><span class="v">${fmtTime(m.totalTime)}</span></div>
+        <div class="stat-row"><img src="img/art/ui/light-bulb.svg" alt=""><span class="k">Hints used</span><span class="v">${m.hints}</span></div>
       </div>`;
   }
   root.addEventListener('click', (e) => {
@@ -125,11 +125,11 @@ export function meowGameScreen(app, { idx }) {
     </header>
     <div class="rules"><div>1 cat in each colour region</div><div>1 cat in every row and column</div><div>Cats can't touch, even diagonally</div></div>
     <div class="mboard-wrap"><div class="mboard" style="grid-template-columns:repeat(${n},minmax(0,1fr));grid-template-rows:repeat(${n},minmax(0,1fr));--mgap:${n > 10 ? 2 : n > 8 ? 3 : n > 6 ? 4 : 6}px;--mrad:${n > 10 ? 4 : n > 8 ? 5 : 8}px"></div></div>
-    <div class="meow-hint" data-el="hint"><img src="img/ui/light-bulb.png" alt=""><span data-el="hint-text"></span><button class="pill-btn" data-act="apply" style="flex-shrink:0;background:#f08a4b">Do it</button></div>
+    <div class="meow-hint" data-el="hint"><img src="img/art/ui/light-bulb.svg" alt=""><span data-el="hint-text"></span><button class="pill-btn" data-act="apply" style="flex-shrink:0;background:#f08a4b">Do it</button></div>
     <div class="meow-tools">
       <button class="round-btn" data-act="undo" aria-label="Undo">${icon.undo}</button>
       <button class="round-btn" data-act="restart" aria-label="Restart">${icon.restart}</button>
-      <button class="round-btn" data-act="hint" aria-label="Hint"><img src="img/ui/light-bulb.png" alt=""></button>
+      <button class="round-btn" data-act="hint" aria-label="Hint"><img src="img/art/ui/light-bulb.svg" alt=""></button>
     </div>
     <div class="meow-timer" data-el="timer"></div>
   </section>`);
@@ -363,7 +363,7 @@ export function meowCatsScreen(app) {
   function render() {
     grid.innerHTML = CATS.map((c, k) => {
       const un = catUnlocked(k);
-      return `<button class="cat-tile ${un ? '' : 'locked'} ${store.meow.cat === k ? 'on' : ''}" data-k="${k}"><img src="img/cats/${c.img}" alt="">${un ? c.name : `Level ${k * UNLOCK_EVERY}`}</button>`;
+      return `<button class="cat-tile ${un ? '' : 'locked'} ${store.meow.cat === k ? 'on' : ''}" data-k="${k}"><img src="img/art/cats/${c.img}" alt="">${un ? c.name : `Level ${k * UNLOCK_EVERY}`}</button>`;
     }).join('');
   }
   root.addEventListener('click', (e) => {

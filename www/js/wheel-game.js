@@ -5,18 +5,42 @@ import { el, $, $$, dialog, toast, confetti } from './ui.js';
 import { sfx, buzz } from './sound.js';
 import { helpSheet, levelHome } from './kit.js';
 import { loadWords } from './words.js';
+import { paintScene } from './jigsaw-game.js';
 
 const WW = () => store.wheel;
-// A new backdrop every ten levels
+// A new backdrop every ten levels. img is the scene's picture (a path under img/) and land is drawn
+// across the whole screen behind the game with the jigsaw scene painter (positions are fractions of the
+// screen height, sizes fractions of its width).
+const fences = (y, h) => [0.07, 0.21, 0.35, 0.49, 0.63, 0.77, 0.91].map((x) => ['scenery/fence', x, y, h]);
 const SCENES = [
-  { name: 'Beach', img: 'palm-tree', sky: ['#7fd3ff', '#ffe7b3'] },
-  { name: 'Forest', img: 'evergreen-tree', sky: ['#9be7a0', '#e9f7d8'] },
-  { name: 'Snow', img: 'snowman', sky: ['#c9e4ff', '#f4f9ff'] },
-  { name: 'Garden', img: 'sunflower', sky: ['#ffd1e8', '#fff3d6'] },
-  { name: 'Space', img: 'ringed-planet', sky: ['#4b3c9e', '#c4a8ff'] },
-  { name: 'Outback', img: 'kangaroo', sky: ['#ffb36b', '#ffe9c4'] },
-  { name: 'Ocean', img: 'spouting-whale', sky: ['#5ab8ff', '#bff0ff'] },
-  { name: 'Farm', img: 'tractor', sky: ['#a7e0ff', '#f2ffd9'] },
+  { name: 'Beach', img: 'art/things/beach-umbrella.svg', sky: ['#5cc4f5', '#dff4ff'], land: [
+    ['seagull', 0.84, 0.6, 0.05], ['seagull', 0.74, 0.63, 0.04], ['band', '#46b3ec', 0.7, 0.002, 3, 0], ['sailboat', 0.8, 0.745, 0.1], ['band', '#f7e2a8', 0.79, 0.006, 1.5, 2],
+    ['scenery/treePalm', 0.07, 0.95, 0.44], ['scenery/treePalm', 0.95, 0.92, 0.32, 1], ['crab', 0.28, 0.995, 0.09], ['shell', 0.52, 0.99, 0.06], ['starfish', 0.74, 0.995, 0.08]] },
+  { name: 'Forest', img: 'kenney/animals/owl.png', sky: ['#8fd8f5', '#e8f8ff'], land: [
+    ['layer', 'backgrounds/mountains', 0.62, 0.3, '#c4e6da'], ['layer', 'backgrounds/hillsLarge', 0.68, 0.3, '#7fd6a6'], ['band', '#3fb87a', 0.78, 0.006, 1, 0],
+    ['scenery/treePine', 0.24, 0.84, 0.3], ['scenery/treeLong', 0.78, 0.84, 0.3], ['scenery/treePine', 0.07, 0.93, 0.48], ['scenery/tree', 0.93, 0.92, 0.44],
+    ['band', '#2ea566', 0.94, 0.004, 2, 1], ['fox', 0.22, 0.995, 0.18], ['mushroom', 0.8, 0.995, 0.08], ['hedgehog', 0.6, 0.995, 0.1]] },
+  { name: 'Snow', img: 'art/things/snowman.svg', sky: ['#7fbdf0', '#e6f3ff'], land: [
+    ['snowflake', 0.08, 0.22, 0.06], ['snowflake', 0.93, 0.3, 0.05], ['snowflake', 0.1, 0.5, 0.04], ['snowflake', 0.9, 0.56, 0.05],
+    ['layer', 'backgrounds/mountains', 0.6, 0.3, '#eef6fc'], ['layer', 'backgrounds/hillsLarge', 0.68, 0.3, '#d6e8f6'], ['band', '#f4f9fd', 0.78, 0.006, 1.5, 0],
+    ['scenery/treePineSnow', 0.08, 0.93, 0.44], ['scenery/treeSnow', 0.92, 0.9, 0.36], ['igloo', 0.76, 0.97, 0.16], ['snowman', 0.26, 0.98, 0.24], ['animals/penguin', 0.52, 0.995, 0.1]] },
+  { name: 'Garden', img: 'art/things/sunflower.svg', sky: ['#ffd1e8', '#fff3d6'], land: [
+    ['butterfly', 0.88, 0.56, 0.08], ['bee', 0.12, 0.6, 0.06], ['layer', 'backgrounds/hillsLarge', 0.64, 0.3, '#bde8a0'], ['layer', 'backgrounds/hills', 0.7, 0.26, '#9ad97a'],
+    ['band', '#7ccf5c', 0.78, 0.006, 1, 0], ...fences(0.86, 0.1), ['sunflower', 0.08, 0.995, 0.34], ['tulip', 0.24, 0.995, 0.16], ['daisy', 0.5, 0.995, 0.14],
+    ['daisy', 0.76, 0.995, 0.14], ['flower-pink', 0.92, 0.995, 0.22]] },
+  { name: 'Space', img: 'art/things/planet.svg', sky: ['#1c1452', '#5a40b0'], ink: '#fff', land: [
+    ['stars', 90, 5], ['scenery/moonFull', 0.1, 0.24, 0.1], ['planet', 0.88, 0.6, 0.2], ['comet', 0.86, 0.34, 0.12], ['band', '#a9b8c2', 0.84, 0.01, 1.5, 0],
+    ['crater', 0.2, 0.92, 0.04], ['crater', 0.6, 0.97, 0.05], ['crater', 0.86, 0.9, 0.03], ['rocket', 0.11, 0.66, 0.2], ['ufo', 0.9, 0.8, 0.14]] },
+  { name: 'Outback', img: 'art/things/kangaroo.svg', sky: ['#ffb36b', '#ffe9c4'], land: [
+    ['layer', 'backgrounds/mountains', 0.64, 0.2, '#f0b080'], ['uluru', 0.68, 0.79, 0.12], ['band', '#d9733f', 0.78, 0.006, 1, 0], ['scenery/bushOrange1', 0.42, 0.8, 0.05],
+    ['scenery/treeLong', 0.08, 0.88, 0.34], ['band', '#c9622f', 0.92, 0.004, 2, 1], ['kangaroo', 0.88, 0.995, 0.26, 1], ['scenery/bushOrange2', 0.22, 0.995, 0.08], ['koala', 0.58, 0.995, 0.12]] },
+  { name: 'Ocean', img: 'art/things/fish.svg', sky: ['#6fd8f7', '#2f86d4'], land: [
+    ['rays'], ['bubbles', 0.08, 0.46, 0.14], ['bubbles', 0.92, 0.36, 0.12], ['fish', 0.88, 0.66, 0.1, 1], ['fish-blue', 0.12, 0.72, 0.08], ['band', '#f3d9a4', 0.88, 0.006, 1.5, 1],
+    ['seaweed', 0.05, 0.995, 0.26], ['seaweed', 0.95, 0.995, 0.22], ['seaweed', 0.32, 0.995, 0.14], ['coral', 0.78, 0.995, 0.16], ['starfish', 0.58, 0.995, 0.07], ['shell', 0.2, 0.995, 0.06]] },
+  { name: 'Farm', img: 'art/things/tractor.svg', sky: ['#a7e0ff', '#f2ffd9'], land: [
+    ['layer', 'backgrounds/hillsLarge', 0.62, 0.3, '#b5e48f'], ['layer', 'backgrounds/hills', 0.68, 0.26, '#8fd16a'], ['band', '#79c656', 0.77, 0.006, 1, 0],
+    ['barn', 0.13, 0.8, 0.22], ['scenery/tree', 0.9, 0.79, 0.24], ['animals/pig', 0.1, 0.905, 0.1], ['animals/cow', 0.88, 0.905, 0.12], ...fences(0.92, 0.1),
+    ['band', '#68b947', 0.94, 0.004, 2, 0], ['animals/chick', 0.3, 0.995, 0.06], ['haybale', 0.66, 0.995, 0.08]] },
 ];
 let levels = null;
 async function loadLevels() { if (!levels) { try { levels = (await (await fetch('levels/wordwheel.json')).json()).levels; } catch { levels = []; } } return levels; }
@@ -44,13 +68,13 @@ export function wheelGameScreen(app, { idx }) {
   const ww = WW();
   const scene = sceneOf(idx);
   const root = el(`<section class="screen wheel-theme wheel-game" style="--sky1:${scene.sky[0]};--sky2:${scene.sky[1]}">
-    <img class="wheel-scene" src="img/scene/${scene.img}.png" alt="">
-    <header class="topbar"><button class="icon-btn" data-act="back" aria-label="Back">${icon.back}</button>
+    <canvas class="ww-land" data-el="land" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"></canvas>
+    <header class="topbar" style="position:relative;z-index:1${scene.ink ? `;color:${scene.ink};--muted:${scene.ink}` : ''}"><button class="icon-btn" data-act="back" aria-label="Back">${icon.back}</button>
       <div class="title">Level ${idx + 1}</div><button class="icon-btn" data-act="help" aria-label="How to play">${icon.help}</button></header>
     <div class="ww-grid-wrap"><div class="ww-grid" data-el="grid"></div></div>
     <div class="ww-word" data-el="word"></div>
     <div class="ww-bottom">
-      <button class="ww-side" data-act="bonus" aria-label="Bonus words"><img src="img/ui/star.png" alt=""><b data-el="bonus">0</b></button>
+      <button class="ww-side" data-act="bonus" aria-label="Bonus words"><img src="img/art/ui/star.svg" alt=""><b data-el="bonus">0</b></button>
       <div class="ww-wheel" data-el="wheel"><svg class="ww-line" data-el="line"></svg></div>
       <div class="ww-side col"><button data-act="shuffle" aria-label="Shuffle">${icon.refresh}</button><button data-act="hint" aria-label="Hint">${icon.bulb}<span data-el="hints"></span></button></div>
     </div>
@@ -170,6 +194,13 @@ export function wheelGameScreen(app, { idx }) {
     if (found.length === L.words.length) win();
   }
 
+  // the landscape behind the game, painted once at the screen's size
+  async function paintLand() {
+    const w = root.clientWidth || innerWidth, h = root.clientHeight || innerHeight, dpr = window.devicePixelRatio || 1;
+    const pic = await paintScene({ draw: scene.land }, Math.round(w * dpr), Math.round(h * dpr));
+    const cv = q('land'); cv.width = pic.width; cv.height = pic.height; cv.getContext('2d').drawImage(pic, 0, 0);
+  }
+
   function persist() { ww.current = { idx, found, bonusFound }; save(); }
 
   async function win() {
@@ -181,7 +212,7 @@ export function wheelGameScreen(app, { idx }) {
     sfx.win(); confetti();
     $$('.wwc', root).forEach((n, i) => setTimeout(() => n.classList.add('win'), i * 30));
     await new Promise((r) => setTimeout(r, 900));
-    const v = await dialog({ hero: `img/scene/${scene.img}.png`, title: 'Brilliant!', dismissible: false, text: `Level ${idx + 1} complete${bonusFound.length ? ` with ${bonusFound.length} bonus word${bonusFound.length === 1 ? '' : 's'}` : ''}.`,
+    const v = await dialog({ hero: `img/${scene.img}`, title: 'Brilliant!', dismissible: false, text: `Level ${idx + 1} complete${bonusFound.length ? ` with ${bonusFound.length} bonus word${bonusFound.length === 1 ? '' : 's'}` : ''}.`,
       buttons: [...(idx + 1 < levels.length ? [{ label: 'Next level', value: 'next' }] : []), { label: 'Back', value: 'back', cls: 'ghost' }] });
     if (v === 'next') app.replace('wheelgame', { idx: idx + 1 }); else app.back();
   }
@@ -202,7 +233,7 @@ export function wheelGameScreen(app, { idx }) {
     const cur = ww.current && ww.current.idx === idx ? ww.current : null;
     found = cur ? cur.found : [];
     bonusFound = cur ? cur.bonusFound : [];
-    buildGrid(); buildWheel(); paintGrid();
+    buildGrid(); buildWheel(); paintGrid(); paintLand();
     if (!ww.seenHelp) { ww.seenHelp = true; save(); setTimeout(wheelHelp, 300); }
   })();
   return { root };

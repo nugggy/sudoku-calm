@@ -13,6 +13,9 @@ async function loadThemes() {
   return themes;
 }
 const WS = () => store.ws;
+// Theme pictures are stored as a path under img/, e.g. kenney/animals/dog.png or art/things/apple.svg
+const themeImg = (t) => `img/${t.img}`;
+const FIT = 'style="object-fit:contain"';
 
 // Level recipe: bigger grids, more words and more directions as you go.
 export function wsSpec(level, T) {
@@ -75,12 +78,12 @@ export function wsHomeScreen(app) {
     const T = await loadThemes(), w = WS();
     const spec = wsSpec(w.level, T);
     body.innerHTML = `
-      <div class="word-hero"><img src="img/themes/magnifying-glass-tilted-left.png" alt=""><img class="tilt" src="img/themes/${spec.theme.img}.png" alt=""></div>
+      <div class="word-hero"><img src="img/art/ui/magnifier.svg" alt="" ${FIT}><img class="tilt" src="${themeImg(spec.theme)}" alt="" ${FIT}></div>
       <h1 class="word-title">Word Search</h1>
       <button class="btn ws-btn" data-act="play">${w.current && w.current.level === w.level ? 'Continue' : 'Play'} puzzle ${w.level + 1}<small>${spec.theme.name} · ${spec.size}×${spec.size} · ${spec.count} words</small></button>
       <p class="word-sub">${w.level} puzzles solved</p>
       <div class="section-title">Themes</div>
-      <div class="ws-themes">${T.map((t, i) => `<div class="ws-theme-card ${i < Math.min(w.level, T.length) || i === w.level % T.length ? 'seen' : ''}"><img src="img/themes/${t.img}.png" alt=""><span>${t.name}</span></div>`).join('')}</div>`;
+      <div class="ws-themes">${T.map((t, i) => `<div class="ws-theme-card ${i < Math.min(w.level, T.length) || i === w.level % T.length ? 'seen' : ''}"><img src="${themeImg(t)}" alt="" ${FIT} loading="lazy"><span>${t.name}</span></div>`).join('')}</div>`;
   }
   root.addEventListener('click', (e) => {
     const a = e.target.closest('[data-act]')?.dataset.act;
@@ -97,7 +100,7 @@ export function wsGameScreen(app, { level }) {
   const w = WS();
   const root = el(`<section class="screen ws-theme ws-game">
     <header class="topbar"><button class="icon-btn" data-act="back" aria-label="Back">${icon.back}</button>
-      <div class="ws-head"><img data-el="img" alt=""><span data-el="name"></span></div>
+      <div class="ws-head"><img data-el="img" alt="" ${FIT}><span data-el="name"></span></div>
       <span class="cross-time" data-el="time">00:00</span>
       <button class="icon-btn" data-act="hint" aria-label="Hint">${icon.bulb}</button></header>
     <div class="ws-board-wrap"><div class="ws-board" data-el="board"><svg class="ws-lines" data-el="lines"></svg></div></div>
@@ -116,7 +119,7 @@ export function wsGameScreen(app, { level }) {
     const svg = q('lines');
     svg.setAttribute('viewBox', `0 0 ${cell * size} ${cell * size}`);
     svg.innerHTML = '<g class="found-g"></g><line class="temp" stroke="rgba(120,140,255,.45)" stroke-linecap="round" visibility="hidden"/>';
-    q('img').src = `img/themes/${spec.theme.img}.png`;
+    q('img').src = themeImg(spec.theme);
     q('name').textContent = spec.theme.name;
   }
 
@@ -222,7 +225,7 @@ export function wsGameScreen(app, { level }) {
     $$('.wcell', root).forEach((n, i) => setTimeout(() => n.classList.add('wave'), ((i % size) + Math.floor(i / size)) * 30));
     setTimeout(async () => {
       confetti();
-      const v = await dialog({ hero: `img/themes/${spec.theme.img}.png`, title: `${spec.theme.name} complete!`, dismissible: false,
+      const v = await dialog({ hero: themeImg(spec.theme), title: `${spec.theme.name} complete!`, dismissible: false,
         text: `All ${puzzle.placed.length} words found in ${fmtTime(elapsed)}`,
         buttons: [{ label: 'Next puzzle', value: 'next' }, { label: 'Back', value: 'back', cls: 'ghost' }] });
       if (v === 'next') app.replace('wsgame', { level: level + 1 }); else app.back();

@@ -114,11 +114,11 @@ export function screen2048(app) {
     s.current = g; save();
     if (!g.won && g.cells.some((c) => c && c.v === 2048)) {
       g.won = true; save(); sfx.win(); confetti();
-      const v = await dialog({ hero: 'img/ui/trophy.png', title: 'You made 2048!', text: 'Keep going for a higher score, or start fresh.', buttons: [{ label: 'Keep going', value: 'go' }, { label: 'New game', value: 'new', cls: 'ghost' }] });
+      const v = await dialog({ hero: 'img/art/ui/trophy.svg', title: 'You made 2048!', text: 'Keep going for a higher score, or start fresh.', buttons: [{ label: 'Keep going', value: 'go' }, { label: 'New game', value: 'new', cls: 'ghost' }] });
       if (v === 'new') newGame();
     } else if (!canMove()) {
       g.over = true; s.games = (s.games || 0) + 1; s.current = null; save(true); sfx.error();
-      const v = await dialog({ hero: 'img/cats/cat08.png', title: 'No more moves', dismissible: false, text: `You scored ${g.score.toLocaleString('en-AU')}.`, buttons: [{ label: 'Play again', value: 'new' }, { label: 'Back', value: 'back', cls: 'ghost' }] });
+      const v = await dialog({ hero: 'img/art/cats/cat08.svg', title: 'No more moves', dismissible: false, text: `You scored ${g.score.toLocaleString('en-AU')}.`, buttons: [{ label: 'Play again', value: 'new' }, { label: 'Back', value: 'back', cls: 'ghost' }] });
       if (v === 'new') newGame(); else app.back();
     }
   }

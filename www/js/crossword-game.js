@@ -33,7 +33,7 @@ export function crossHomeScreen(app) {
     const next = Math.min(x.level, P.length - 1);
     const solved = Object.keys(x.done).length;
     body.innerHTML = `
-      <div class="word-hero"><img src="img/themes/newspaper.png" alt=""><img class="tilt" src="img/themes/pencil.png" alt=""></div>
+      <div class="word-hero"><img src="img/art/ui/newspaper.svg" alt=""><img class="tilt" src="img/art/ui/pencil.svg" alt=""></div>
       <h1 class="word-title">Crosswords</h1>
       <button class="btn cross-btn" data-act="play">${x.current && x.current.idx === next ? 'Continue' : 'Play'} puzzle ${next + 1}<small>${sizeLabel(P[next])} · ${P[next].entries.length} clues</small></button>
       <p class="word-sub">${solved} of ${P.length} solved</p>
@@ -192,7 +192,7 @@ export function crossGameScreen(app, { idx }) {
     $$('.ccell', root).forEach((n, i) => setTimeout(() => n.classList.add('win'), i * 18));
     setTimeout(async () => {
       confetti();
-      const v = await dialog({ hero: 'img/themes/newspaper.png', title: 'Crossword solved!', dismissible: false,
+      const v = await dialog({ hero: 'img/art/ui/newspaper.svg', title: 'Crossword solved!', dismissible: false,
         text: `Puzzle ${idx + 1} in ${fmtTime(elapsed)}`,
         buttons: [...(idx + 1 < P.length ? [{ label: 'Next crossword', value: 'next' }] : []), { label: 'Back', value: 'back', cls: 'ghost' }] });
       if (v === 'next') app.replace('crossgame', { idx: idx + 1 }); else app.back();

@@ -49,7 +49,7 @@ export function blockScreen(app) {
   const b = B();
   const root = el(`<section class="screen block-theme">
     <header class="topbar"><button class="icon-btn" data-act="back" aria-label="Back">${icon.back}</button>
-      <div class="block-scores"><div class="best"><img src="img/ui/crown.png" alt=""><span data-el="best"></span></div><div class="score" data-el="score">0</div></div>
+      <div class="block-scores"><div class="best"><img src="img/art/ui/crown.svg" alt=""><span data-el="best"></span></div><div class="score" data-el="score">0</div></div>
       <button class="icon-btn" data-act="help" aria-label="How to play">${icon.help}</button></header>
     <div class="block-board-wrap"><div class="block-board" data-el="board"></div><div class="block-pop" data-el="pop"></div></div>
     <div class="block-tray" data-el="tray"></div>
@@ -166,7 +166,7 @@ export function blockScreen(app) {
     cells.forEach((d, i) => setTimeout(() => d.classList.add('dead'), (i % N + Math.floor(i / N)) * 25));
     sfx.error();
     await new Promise((r) => setTimeout(r, 700));
-    const v = await dialog({ hero: best ? 'img/ui/crown.png' : 'img/cats/cat08.png', title: best ? 'New best score!' : 'No more room', dismissible: false,
+    const v = await dialog({ hero: best ? 'img/art/ui/crown.svg' : 'img/art/cats/cat08.svg', title: best ? 'New best score!' : 'No more room', dismissible: false,
       text: `You scored ${final.toLocaleString('en-AU')}.${best ? '' : ` Your best is ${b.best.toLocaleString('en-AU')}.`}`,
       buttons: [{ label: 'Play again', value: 'again' }, { label: 'Back', value: 'back', cls: 'ghost' }] });
     if (v === 'again') { g = { grid: new Array(N * N).fill(0), tray: null, score: 0, streak: 0 }; g.tray = newTray(g.grid); renderBoard(); renderTray(); persist(); }

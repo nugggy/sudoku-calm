@@ -489,7 +489,7 @@ h1, h2, h3, p { margin: 0; }
 .sort-boost.hint-btn { background: radial-gradient(circle at 35% 30%, #ffe08a, #f2b631); box-shadow: 0 4px 0 #b9821a, inset 0 0 0 3px rgba(255, 255, 255, .3); }
 .sort-boost.hint-btn img { width: 34px; height: 34px; }
 .shelf.hint-dst .plank, .basket.hint-dst { animation: hint-glow 1s ease-in-out infinite; }
-@keyframes hint-glow { 50% { box-shadow: 0 0 0 4px #fff, 0 0 18px 8px #ffcb47; } }
+@keyframes hint-glow { 0%, 100% { box-shadow: 0 0 0 3px #ffcb47, 0 0 10px 4px #ffcb47; } 50% { box-shadow: 0 0 0 5px #fff, 0 0 24px 12px #ffb300; } }
 .sort-boost:active, .sort-round:active { transform: translateY(2px); box-shadow: 0 2px 0 #6f4322; }
 
 .sort-hero { text-align: center; padding: 10px 0 4px; }

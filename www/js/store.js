@@ -34,7 +34,6 @@ const defaults = () => ({
   pool: {},                   // pre-generated puzzles per difficulty
   meow: { level: 0, best: {}, current: null, cat: 0, totalTime: 0, hints: 0 },
   sort: { level: 0, current: null, boosters: { undo: 5, shuffle: 3, slot: 3 } },
-  paw: { level: 0, solved: {}, current: null, perfect: 0 },
   treat: { level: 0, stars: {}, best: 0 },
   block: { best: 0, games: 0, current: null },
   sol: { draw: 1, current: null, next: {}, stats: { played: 0, won: 0, bestTime: 0, fewestMoves: 0, streak: 0, bestStreak: 0, bestScore: 0 } },

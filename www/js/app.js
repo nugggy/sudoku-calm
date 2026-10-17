@@ -7,9 +7,8 @@ import { sfx } from './sound.js';
 import { native, checkForUpdate, REPO } from './native.js';
 import { sudokuScreen, startGame, continueLabel, prefetch } from './sudoku-game.js';
 import { sortHomeScreen, sortGameScreen, sortLevelsScreen, sortHelp, cutie } from './sort-game.js';
-import { pawHomeScreen, pawGameScreen, pawGalleryScreen, pawHelp, loadPawLevels, pixelArt } from './pawgram-game.js';
 import { solitaireScreen, solHelp } from './solitaire-game.js';
-import { treatHomeScreen, treatGameScreen, treatHelp } from './treat-game.js';
+import { treatHomeScreen, treatGameScreen, treatHelp, candySvg } from './treat-game.js';
 import { blockScreen, blockHelp } from './block-game.js';
 import { meowHomeScreen, meowGameScreen, meowLevelsScreen, meowCatsScreen, loadLevels, meowHelp } from './meow-game.js';
 
@@ -42,7 +41,6 @@ const TABS = [
 const SCREENS = {
   games: landingScreen, home: homeScreen, meow: meowHomeScreen, me: statsScreen,
   sort: sortHomeScreen, sortgame: sortGameScreen, sortlevels: sortLevelsScreen,
-  paw: pawHomeScreen, pawgame: pawGameScreen, pawgallery: pawGalleryScreen,
   solitaire: solitaireScreen,
   treat: treatHomeScreen, treatgame: treatGameScreen, block: blockScreen,
   sudoku: sudokuScreen, meowgame: meowGameScreen, meowlevels: meowLevelsScreen, meowcats: meowCatsScreen,
@@ -176,18 +174,13 @@ registerGame({
   progress: () => continueLabel() ? `Game in progress · ${continueLabel()}` : `${DIFFICULTIES.reduce((a, d) => a + store.stats[d].won, 0)} solved`,
 });
 registerGame({
-  id: 'paw', screen: 'paw', name: 'Pawgram', tag: 'Crack the clues, reveal the picture', theme: 'g-paw',
-  art: () => '<div class="art-paw" data-pawart></div>',
-  progress: () => { const n = Object.keys(store.paw.solved).length; return `${n} picture${n === 1 ? '' : 's'}`; },
-});
-registerGame({
   id: 'sol', screen: 'solitaire', name: 'Solitaire', tag: 'Classic Klondike, every deal winnable', theme: 'g-sol',
   art: () => `<div class="art-sol">${[['A', '♠', ''], ['K', '♥', 'red'], ['Q', '♦', 'red']].map(([r, s, c], i) => `<div class="mini-card ${c}" style="transform:rotate(${(i - 1) * 12}deg) translateY(${Math.abs(i - 1) * 6}px)"><b>${r}</b><i>${s}</i></div>`).join('')}</div>`,
   progress: () => store.sol.current ? 'Game in progress' : `${store.sol.stats.won} won`,
 });
 registerGame({
-  id: 'treat', screen: 'treat', name: 'Treat Twist', tag: 'Swap and match the treats', theme: 'g-treat',
-  art: () => `<div class="art-treat">${[0, 4, 2, 5, 1, 3, 4, 0, 2].map((t) => `<img src="img/treats/t${t}.png" alt="">`).join('')}</div>`,
+  id: 'treat', screen: 'treat', name: 'Treat Twist', tag: 'Swap and match the candies', theme: 'g-treat',
+  art: () => `<div class="art-treat">${[0, 4, 2, 5, 1, 3, 4, 0, 2].map((t) => candySvg(t)).join('')}</div>`,
   progress: () => `Level ${store.treat.level + 1}`,
 });
 registerGame({
@@ -228,12 +221,6 @@ function landingScreen() {
           <div class="game-progress">${esc(g.progress())}</div>
         </button>`).join('')}</div>
       <p class="landing-foot">No ads. No interruptions. Just puzzles.</p>`;
-    // Pawgram's card shows a pixel picture drawn from its level file
-    loadPawLevels().then((L) => {
-      const slot = $('[data-pawart]', body);
-      const lv = L.find((x) => /cat face/i.test(x.name)) || L[0];
-      if (slot && lv) slot.appendChild(pixelArt(lv, 84));
-    });
   }
   root.addEventListener('click', (e) => {
     if (e.target.closest('[data-act="settings"]')) return app.go('settings');
@@ -328,11 +315,6 @@ function statsScreen() {
         ${row('sports-medal', 'Best time', store.sol.stats.bestTime ? fmtTime(store.sol.stats.bestTime) : '-')}
         ${row('fire', 'Best win streak', store.sol.stats.bestStreak)}
       </div>
-      <div class="section-title">Pawgram</div>
-      <div class="card stat-group">
-        ${row('star', 'Pictures solved', Object.keys(store.paw.solved).length)}
-        ${row('sports-medal', 'Solved without mistakes', store.paw.perfect || 0)}
-      </div>
       <div class="section-title">Cosy Cat Sort</div>
       <div class="card stat-group">
         ${row('party-popper', 'Levels finished', store.sort.level)}
@@ -404,7 +386,6 @@ function settingsScreen() {
         <button class="set-row" data-act="rules"><div class="txt">How to play Sudoku</div></button>
         <button class="set-row" data-act="meowrules"><div class="txt">How to play Meowdoku</div></button>
         <button class="set-row" data-act="sortrules"><div class="txt">How to play Cosy Cat Sort</div></button>
-        <button class="set-row" data-act="pawrules"><div class="txt">How to play Pawgram</div></button>
         <button class="set-row" data-act="solrules"><div class="txt">How to play Solitaire</div></button>
         <button class="set-row" data-act="treatrules"><div class="txt">How to play Treat Twist</div></button>
         <button class="set-row" data-act="blockrules"><div class="txt">How to play Block Pounce</div></button>
@@ -429,13 +410,12 @@ function settingsScreen() {
     else if (a === 'rules') sudokuRules();
     else if (a === 'meowrules') meowHelp();
     else if (a === 'sortrules') sortHelp();
-    else if (a === 'pawrules') pawHelp();
     else if (a === 'solrules') solHelp();
     else if (a === 'treatrules') treatHelp();
     else if (a === 'blockrules') blockHelp();
     else if (a === 'about') app.go('about');
     else if (a === 'reset') {
-      const ok = await dialog({ title: 'Reset all progress?', text: 'This deletes your statistics, saved games, Meowdoku, Cat Sort and Pawgram progress. Your settings stay. This cannot be undone.',
+      const ok = await dialog({ title: 'Reset all progress?', text: 'This deletes your statistics, saved games, Meowdoku, Cat Sort, Treat Twist and Block Pounce progress. Your settings stay. This cannot be undone.',
         buttons: [{ label: 'Reset everything', value: true, cls: 'danger' }, { label: 'Cancel', value: false, cls: 'ghost' }] });
       if (ok) { resetAll(); toast('Progress reset'); }
     }
@@ -453,7 +433,7 @@ function aboutScreen() {
       <div class="card credits">
         <p>An ad-free collection of logic puzzles. Every Sudoku is generated on your phone with exactly one solution, and every Meowdoku level can be solved with logic alone.</p><br>
         <p>Your progress stays on this device. The app only goes online to check GitHub for updates, which you can turn off in Settings.</p><br>
-        <p><b>Artwork.</b> Cats, icons, treats and the Pawgram pictures come from Microsoft Fluent Emoji, used under the MIT licence. Copyright (c) Microsoft Corporation.</p><br>
+        <p><b>Artwork.</b> Cats and icons come from Microsoft Fluent Emoji, used under the MIT licence. Copyright (c) Microsoft Corporation.</p><br>
         <p><b>Inspiration.</b> Mindnook is an independent app. It is not made by, endorsed by or affiliated with Easybrain, Oakever Games, Easetouch, King, Hungry Studio or any other game maker. Its games are our own takes on popular puzzle styles, with original artwork and names.</p><br>
         <p><a href="#" data-act="src">Source code and releases on GitHub</a></p>
       </div>

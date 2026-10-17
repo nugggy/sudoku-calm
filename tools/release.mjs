@@ -39,7 +39,7 @@ writeFileSync(propsPath, props);
 console.log(`Version ${version} (build ${code})`);
 
 // 2. tests, then a signed release build
-for (const t of ['test-sudoku.mjs', 'test-sort.mjs', 'test-pawgram.mjs']) run(`node tools/${t}`);
+for (const t of ['test-sudoku.mjs', 'test-sort.mjs']) run(`node tools/${t}`);
 const gradlew = join(ROOT, 'android', process.platform === 'win32' ? 'gradlew.bat' : 'gradlew');
 run(`"${gradlew}" assembleRelease --console=plain -q`, { cwd: join(ROOT, 'android') });
 mkdirSync(join(ROOT, 'dist'), { recursive: true });

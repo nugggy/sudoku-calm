@@ -1,15 +1,15 @@
-// Treat Twist: a match-3 game. Swap neighbouring treats to make lines of three or more.
+// Treat Twist: a match-3 game. Swap neighbouring candies to make lines of three or more.
 import { mulberry32 } from './sudoku-engine.js';
 import { store, save } from './store.js';
 import { icon } from './icons.js';
-import { el, $, $$, sheet, dialog, toast, confetti } from './ui.js';
+import { el, $, $$, sheet, toast, confetti } from './ui.js';
 import { sfx, buzz } from './sound.js';
+import { candySvg, CANDY_COLOURS, CANDY_NAMES } from './treat-art.js';
 
-const N = 8, TYPES = 6, BOMB = 9;
-const IMG = (t) => (t === BOMB ? 'img/cats/cat01.png' : `img/treats/t${t}.png`);
-const NAMES = ['strawberries', 'oranges', 'lemons', 'apples', 'fish', 'grapes'];
+const N = 8, BOMB = 9;
 const T = () => store.treat;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+export { candySvg };
 
 // ---------- Levels ----------
 // Every level is built from its number, so it is always the same board and goal.
@@ -20,7 +20,6 @@ export function levelSpec(L) {
   const kind = n <= 2 ? 'score' : kinds[n % 3];
   const types = n < 6 ? 5 : 6;
   const moves = Math.max(14, 26 - Math.floor(n / 6));
-  // board shape: later levels lose some corners or a centre block
   const holes = new Set();
   if (n > 4 && rng() < 0.6) {
     const k = 1 + ((rng() * 2) | 0);
@@ -28,7 +27,6 @@ export function levelSpec(L) {
   }
   if (n > 12 && rng() < 0.35) [27, 28, 35, 36].forEach((i) => holes.add(i));
   const spec = { n, kind, types, moves, holes: [...holes], seed: 1000 + L * 13 };
-  const playable = N * N - holes.size;
   if (kind === 'score') spec.target = Math.round((2500 + n * 450) / 100) * 100;
   if (kind === 'collect') {
     const a = (rng() * types) | 0, b = (a + 1 + ((rng() * (types - 1)) | 0)) % types;
@@ -41,7 +39,6 @@ export function levelSpec(L) {
     for (let i = 0; i < N * N; i++) if (!holes.has(i) && rng() < Math.min(0.75, 0.3 + n * 0.012)) jelly.push(i);
     spec.jelly = jelly.length ? jelly : [27, 28, 35, 36];
     spec.target = 1000 + n * 200;
-    void playable;
   }
   spec.stars = [spec.target, Math.round(spec.target * 1.6), Math.round(spec.target * 2.4)];
   return spec;
@@ -49,16 +46,16 @@ export function levelSpec(L) {
 
 export function treatHelp() {
   sheet(`<h2>How to play Treat Twist</h2><div class="help-body">
-    <p>Swipe a treat to swap it with its neighbour. Line up three or more of the same treat to collect them.</p>
-    <p><b>Four in a row</b> makes a striped treat that clears a whole row or column. <b>An L or T shape</b> makes a wrapped treat that bursts. <b>Five in a row</b> makes a cat that clears every treat of the kind you swap it with.</p>
-    <p>Swap two special treats together for an even bigger effect.</p>
-    <p>Reach the level goal before you run out of moves. Moves left over turn into bonus points.</p>
+    <p>Swipe a candy to swap it with its neighbour. Line up three or more of the same candy to collect them.</p>
+    <p><b>Four in a row</b> makes a striped candy that clears a whole row or column. <b>An L or T shape</b> makes a wrapped candy that bursts. <b>Five in a row</b> makes a sprinkle ball that clears every candy of the kind you swap it with.</p>
+    <p>Swap two special candies together for an even bigger effect.</p>
+    <p>Reach the level goal before you run out of moves. Moves left over turn into a treat feast of bonus points.</p>
   </div><button class="btn treat-btn" data-x>Let's twist</button>`, { onMount: (n, close) => { $('[data-x]', n).onclick = close; } });
 }
 
 function goalText(spec) {
   if (spec.kind === 'score') return `Score ${spec.target.toLocaleString('en-AU')} points`;
-  if (spec.kind === 'collect') return 'Collect ' + Object.entries(spec.collect).map(([t, n]) => `${n} ${NAMES[t]}`).join(' and ');
+  if (spec.kind === 'collect') return 'Collect ' + Object.entries(spec.collect).map(([t, n]) => `${n} ${CANDY_NAMES[t]}`).join(' and ');
   return 'Clear all the jelly';
 }
 
@@ -75,7 +72,7 @@ export function treatHomeScreen(app) {
     const total = Object.values(t.stars).reduce((a, b) => a + b, 0);
     const show = Math.max(30, Math.ceil((next + 15) / 5) * 5);
     body.innerHTML = `
-      <div class="treat-hero">${[0, 1, 2, 3, 4, 5].map((k) => `<img src="${IMG(k)}" style="animation-delay:${k * 0.12}s" alt="">`).join('')}</div>
+      <div class="treat-hero">${[0, 1, 2, 3, 4, 5].map((k) => `<div class="hero-candy" style="animation-delay:${k * 0.12}s">${candySvg(k)}</div>`).join('')}</div>
       <h1 class="treat-title">Treat Twist</h1>
       <button class="btn treat-btn" data-act="play">Play level ${next + 1}<small>${goalText(spec)}</small></button>
       <div class="treat-total"><img src="img/ui/star.png" alt=""> ${total} stars collected</div>
@@ -97,6 +94,70 @@ export function treatHomeScreen(app) {
   return { root, refresh: render };
 }
 
+// ---------- Particle effects ----------
+function makeFx(canvas) {
+  const ctx = canvas.getContext('2d');
+  const items = [];
+  let running = false, w = 0, h = 0;
+  function size(px) {
+    const dpr = window.devicePixelRatio || 1;
+    w = h = px;
+    canvas.width = canvas.height = px * dpr;
+    canvas.style.width = canvas.style.height = px + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  function loop() {
+    ctx.clearRect(0, 0, w, h);
+    for (let k = items.length - 1; k >= 0; k--) {
+      const p = items[k];
+      p.t++;
+      const life = p.t / p.life;
+      if (life >= 1) { items.splice(k, 1); continue; }
+      ctx.globalAlpha = 1 - life;
+      if (p.kind === 'spark') {
+        p.vy += 0.25; p.x += p.vx; p.y += p.vy; p.a += p.va;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a);
+        ctx.fillStyle = p.col;
+        if (p.star) { ctx.beginPath(); for (let i = 0; i < 5; i++) { const an = (i * 4 * Math.PI) / 5; ctx.lineTo(Math.cos(an) * p.r, Math.sin(an) * p.r); } ctx.fill(); }
+        else ctx.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * 0.7);
+        ctx.restore();
+      } else if (p.kind === 'ring') {
+        ctx.strokeStyle = p.col; ctx.lineWidth = 6 * (1 - life);
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r0 + (p.r1 - p.r0) * Math.sqrt(life), 0, Math.PI * 2); ctx.stroke();
+      } else if (p.kind === 'beam') {
+        const g = p.dir === 'h' ? ctx.createLinearGradient(0, p.y - p.th, 0, p.y + p.th) : ctx.createLinearGradient(p.x - p.th, 0, p.x + p.th, 0);
+        g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.5, '#fff'); g.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = g;
+        const reach = Math.min(1, life * 3);
+        if (p.dir === 'h') ctx.fillRect(p.x - w * reach, p.y - p.th, w * reach * 2, p.th * 2);
+        else ctx.fillRect(p.x - p.th, p.y - h * reach, p.th * 2, h * reach * 2);
+      } else if (p.kind === 'zap') {
+        ctx.strokeStyle = p.col; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(p.x, p.y);
+        const steps = 6;
+        for (let i = 1; i <= steps; i++) { const f = i / steps; ctx.lineTo(p.x + (p.x2 - p.x) * f + (i < steps ? (Math.random() - 0.5) * 14 : 0), p.y + (p.y2 - p.y) * f + (i < steps ? (Math.random() - 0.5) * 14 : 0)); }
+        ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = 1;
+    if (items.length) requestAnimationFrame(loop); else running = false;
+  }
+  function start() { if (!running) { running = true; requestAnimationFrame(loop); } }
+  return {
+    size,
+    burst(x, y, col, n = 10, power = 1) {
+      for (let i = 0; i < n; i++) {
+        const an = Math.random() * Math.PI * 2, sp = (2 + Math.random() * 4) * power;
+        items.push({ kind: 'spark', x, y, vx: Math.cos(an) * sp, vy: Math.sin(an) * sp - 2, r: 4 + Math.random() * 5, a: Math.random() * 6, va: (Math.random() - 0.5) * 0.4, col: Math.random() < 0.25 ? '#fff' : col, star: Math.random() < 0.35, t: 0, life: 32 + Math.random() * 18 });
+      }
+      start();
+    },
+    ring(x, y, col, r1) { items.push({ kind: 'ring', x, y, r0: 6, r1, col, t: 0, life: 30 }); start(); },
+    beam(x, y, dir, th) { items.push({ kind: 'beam', x, y, dir, th, t: 0, life: 26 }); start(); },
+    zap(x, y, x2, y2, col) { items.push({ kind: 'zap', x, y, x2, y2, col, t: 0, life: 18 }); start(); },
+  };
+}
+
 // ---------- Game ----------
 export function treatGameScreen(app, { level }) {
   const spec = levelSpec(level);
@@ -112,7 +173,6 @@ export function treatGameScreen(app, { level }) {
   const R = (i) => Math.floor(i / N), C = (i) => i % N;
   const at = (r, c) => (r < 0 || r >= N || c < 0 || c >= N || holes.has(r * N + c) ? undefined : grid[r * N + c]);
 
-  // fill without starting matches
   for (let i = 0; i < N * N; i++) {
     if (holes.has(i)) continue;
     let t;
@@ -124,28 +184,31 @@ export function treatGameScreen(app, { level }) {
     <header class="topbar"><button class="icon-btn" data-act="back" aria-label="Back">${icon.back}</button>
       <div class="title">Level ${level + 1}</div><button class="icon-btn" data-act="help" aria-label="How to play">${icon.help}</button></header>
     <div class="treat-hud">
-      <div class="hud-moves"><b data-el="moves"></b><span>moves</span></div>
+      <div class="hud-moves" data-el="moves-box"><b data-el="moves"></b><span>moves</span></div>
       <div class="hud-goal" data-el="goal"></div>
-      <div class="hud-score"><b data-el="score">0</b><div class="hud-bar"><i data-el="bar"></i></div></div>
+      <div class="hud-score"><b data-el="score">0</b><div class="hud-bar"><i data-el="bar"></i><s style="left:${(spec.stars[0] / spec.stars[2]) * 100}%"></s><s style="left:${(spec.stars[1] / spec.stars[2]) * 100}%"></s></div></div>
     </div>
-    <div class="treat-board-wrap"><div class="treat-board" data-el="board"></div><div class="block-pop treat-pop" data-el="pop"></div></div>
+    <div class="treat-board-wrap" data-el="wrap"><div class="treat-board" data-el="board"><canvas class="treat-fx" data-el="fx"></canvas></div><div class="combo-text" data-el="pop"></div></div>
   </section>`);
   const q = (k) => $(`[data-el="${k}"]`, root);
   const board = q('board');
+  const fx = makeFx(q('fx'));
   const tileEls = new Map();
   let cell = 40;
 
   function layout() {
-    const w = Math.min(innerWidth - 20, 520, innerHeight - 260);
+    const w = Math.min(innerWidth - 20, 520, innerHeight - 250);
     cell = Math.floor(w / N);
     board.style.width = board.style.height = cell * N + 'px';
     board.style.setProperty('--tc', cell + 'px');
+    fx.size(cell * N);
     $$('.tcell', board).forEach((n) => n.remove());
     for (let i = 0; i < N * N; i++) {
       if (holes.has(i)) continue;
       board.prepend(el(`<div class="tcell ${(R(i) + C(i)) % 2 ? 'alt' : ''} ${jelly.get(i) ? 'jelly' : ''}" data-cell="${i}" style="transform:translate(${C(i) * cell}px,${R(i) * cell}px)"></div>`));
     }
   }
+  const centre = (i) => [C(i) * cell + cell / 2, R(i) * cell + cell / 2];
 
   function render(spawnFrom = null) {
     const live = new Set();
@@ -154,15 +217,17 @@ export function treatGameScreen(app, { level }) {
       live.add(t.id);
       let n = tileEls.get(t.id);
       if (!n) {
-        n = el(`<div class="ttile"><img src="${IMG(t.t)}" alt=""></div>`);
+        n = el('<div class="ttile"></div>');
         board.appendChild(n); tileEls.set(t.id, n);
         const startRow = spawnFrom && spawnFrom.has(t.id) ? spawnFrom.get(t.id) : R(i);
         n.style.transition = 'none';
         n.style.transform = `translate(${C(i) * cell}px,${startRow * cell}px)`;
         void n.offsetWidth; n.style.transition = '';
+        if (spawnFrom && spawnFrom.has(t.id)) n.classList.add('land');
       }
-      n.className = 'ttile' + (t.sp ? ' sp-' + t.sp : '');
-      n.firstElementChild.src = IMG(t.t);
+      const key = t.t + ':' + t.sp;
+      if (n.dataset.k !== key) { n.innerHTML = candySvg(t.t, t.sp); n.dataset.k = key; if (t.sp || t.t === BOMB) n.classList.add('born'); }
+      n.classList.toggle('special', !!t.sp || t.t === BOMB);
       n.style.transform = `translate(${C(i) * cell}px,${R(i) * cell}px)`;
       n.dataset.i = i;
     });
@@ -173,13 +238,14 @@ export function treatGameScreen(app, { level }) {
 
   function hud() {
     q('moves').textContent = movesLeft;
+    q('moves-box').classList.toggle('low', movesLeft <= 5 && !over);
     q('score').textContent = score.toLocaleString('en-AU');
     q('bar').style.width = Math.min(100, (score / spec.stars[2]) * 100) + '%';
     let g = '';
     if (spec.kind === 'score') g = `<span>Reach</span><b>${spec.target.toLocaleString('en-AU')}</b>`;
-    else if (spec.kind === 'collect') g = Object.entries(spec.collect).map(([t, n]) => `<div class="goal-item"><img src="${IMG(+t)}" alt=""><b>${Math.max(0, n - (collected[t] || 0))}</b></div>`).join('');
-    else g = `<div class="goal-item"><span class="jelly-swatch"></span><b>${[...jelly.values()].filter(Boolean).length}</b></div>`;
-    q('goal').innerHTML = g;
+    else if (spec.kind === 'collect') g = Object.entries(spec.collect).map(([t, n]) => { const left = Math.max(0, n - (collected[t] || 0)); return `<div class="goal-item" data-goal="${t}">${candySvg(+t)}<b>${left ? left : '✓'}</b></div>`; }).join('');
+    else g = `<div class="goal-item"><span class="jelly-swatch"></span><b>${[...jelly.values()].filter(Boolean).length || '✓'}</b></div>`;
+    if (q('goal').innerHTML !== g) q('goal').innerHTML = g;
   }
 
   // ---------- Matching ----------
@@ -200,36 +266,72 @@ export function treatGameScreen(app, { level }) {
     return runs;
   }
 
-  // Works out which cells clear, including chain reactions from special treats.
+  // Cells that clear, including chain reactions from special candies (with their visual effects).
   function expand(cells) {
     const out = new Set(cells), queue = [...cells];
     while (queue.length) {
       const i = queue.pop(), t = grid[i];
       if (!t || !t.sp || t.fired) continue;
       t.fired = true;
+      const [x, y] = centre(i);
       const add = (k) => { if (k >= 0 && !holes.has(k) && grid[k] && !out.has(k)) { out.add(k); queue.push(k); } };
-      if (t.sp === 'h') for (let c = 0; c < N; c++) add(R(i) * N + c);
-      if (t.sp === 'v') for (let r = 0; r < N; r++) add(r * N + C(i));
-      if (t.sp === 'wrap') for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) { const r = R(i) + dr, c = C(i) + dc; if (r >= 0 && r < N && c >= 0 && c < N) add(r * N + c); }
+      if (t.sp === 'h') { fx.beam(x, y, 'h', cell * 0.35); for (let c = 0; c < N; c++) add(R(i) * N + c); }
+      if (t.sp === 'v') { fx.beam(x, y, 'v', cell * 0.35); for (let r = 0; r < N; r++) add(r * N + C(i)); }
+      if (t.sp === 'wrap') { fx.ring(x, y, CANDY_COLOURS[t.t], cell * 2.2); shake(1); for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) { const r = R(i) + dr, c = C(i) + dc; if (r >= 0 && r < N && c >= 0 && c < N) add(r * N + c); } }
     }
     return out;
   }
 
-  async function clearCells(set, created = new Map()) {
-    // effects and points
+  function shake(level = 1) {
+    const w = q('wrap');
+    w.classList.remove('shake1', 'shake2'); void w.offsetWidth;
+    w.classList.add(level > 1 ? 'shake2' : 'shake1');
+    buzz(level > 1 ? 45 : 20);
+  }
+
+  function floatScore(points, cells) {
+    if (!cells.length) return;
+    const xs = cells.map((i) => centre(i)[0]), ys = cells.map((i) => centre(i)[1]);
+    const n = el(`<div class="float-score">+${points}</div>`);
+    n.style.left = xs.reduce((a, b) => a + b, 0) / xs.length + 'px';
+    n.style.top = ys.reduce((a, b) => a + b, 0) / ys.length + 'px';
+    board.appendChild(n);
+    setTimeout(() => n.remove(), 900);
+  }
+
+  // Collected candies fly up to the goal box.
+  function flyToGoal(t, i) {
+    const goal = $(`[data-goal="${t}"]`, root);
+    if (!goal) return;
+    const br = board.getBoundingClientRect(), gr = goal.getBoundingClientRect();
+    const [x, y] = centre(i);
+    const n = el(`<div class="fly-candy">${candySvg(t)}</div>`);
+    Object.assign(n.style, { left: br.left + x - cell * 0.35 + 'px', top: br.top + y - cell * 0.35 + 'px', width: cell * 0.7 + 'px', height: cell * 0.7 + 'px' });
+    document.body.appendChild(n);
+    const dx = gr.left + 6 - (br.left + x - cell * 0.35), dy = gr.top + 4 - (br.top + y - cell * 0.35);
+    n.animate([{ transform: 'translate(0,0) scale(1)' }, { transform: `translate(${dx * 0.5}px,${dy * 0.5 - 40}px) scale(1.2)`, offset: 0.5 }, { transform: `translate(${dx}px,${dy}px) scale(.6)` }], { duration: 520, easing: 'ease-in' })
+      .finished.then(() => { n.remove(); goal.classList.remove('bump'); void goal.offsetWidth; goal.classList.add('bump'); hud(); }).catch(() => n.remove());
+  }
+
+  async function clearCells(set, created = new Map(), basePoints = 60) {
+    let flown = 0;
     for (const i of set) {
       const t = grid[i]; if (!t) continue;
-      if (t.t !== BOMB) collected[t.t] = (collected[t.t] || 0) + 1;
-      if (jelly.get(i)) jelly.set(i, 0);
+      const [x, y] = centre(i);
+      fx.burst(x, y, t.t === BOMB ? '#fff' : CANDY_COLOURS[t.t], t.sp ? 16 : 9, t.sp ? 1.4 : 1);
+      if (t.t !== BOMB) {
+        collected[t.t] = (collected[t.t] || 0) + 1;
+        if (spec.collect && spec.collect[t.t] && flown < 6) { flyToGoal(t.t, i); flown++; }
+      }
+      if (jelly.get(i)) { jelly.set(i, 0); fx.burst(x, y, '#ff8cc0', 6, 0.7); }
       const n = tileEls.get(t.id);
       if (n) n.classList.add('pop');
     }
-    score += set.size * 60;
-    await sleep(200);
-    for (const i of set) {
-      if (created.has(i)) { grid[i] = created.get(i); continue; }
-      grid[i] = null;
-    }
+    const points = set.size * basePoints;
+    score += points;
+    floatScore(points, [...set]);
+    await sleep(210);
+    for (const i of set) grid[i] = created.has(i) ? created.get(i) : null;
     render();
   }
 
@@ -248,17 +350,14 @@ export function treatGameScreen(app, { level }) {
     render(spawn);
   }
 
-  // Resolve all matches until the board settles. `swap` marks where specials appear.
+  const COMBO_WORDS = ['', '', 'Sweet!', 'Tasty!', 'Delicious!', 'Divine!', 'Sugar rush!'];
   async function resolve(swapCells = []) {
     let chain = 0;
     for (;;) {
       const runs = findMatches();
       if (!runs.length) break;
       chain++;
-      const created = new Map();
-      const all = new Set();
-      // specials from long runs and crossings
-      const counts = new Map();
+      const created = new Map(), all = new Set(), counts = new Map();
       runs.forEach((r) => r.cells.forEach((i) => counts.set(i, (counts.get(i) || 0) + 1)));
       const pickSpot = (cells) => cells.find((i) => swapCells.includes(i)) ?? cells[Math.floor(cells.length / 2)];
       for (const r of runs) {
@@ -271,10 +370,11 @@ export function treatGameScreen(app, { level }) {
       }
       const set = expand([...all].filter((i) => !created.has(i) || grid[i]?.sp));
       created.forEach((_, i) => set.add(i));
-      if (chain > 1) popText(['', '', 'Sweet!', 'Tasty!', 'Delicious!', 'Purrfect!'][Math.min(chain, 5)]);
+      if (chain > 1) popText(COMBO_WORDS[Math.min(chain, 6)]);
+      if (chain > 2 || set.size >= 10) shake(chain > 3 ? 2 : 1);
+      if (created.size) sfx.hint();
       sfx[chain > 1 ? 'unit' : 'place']();
-      score += (chain - 1) * 40 * set.size;
-      await clearCells(set, created);
+      await clearCells(set, created, 60 + (chain - 1) * 40);
       await sleep(60);
       gravity();
       await sleep(240);
@@ -282,7 +382,7 @@ export function treatGameScreen(app, { level }) {
     }
   }
 
-  function popText(t) { const p = q('pop'); p.innerHTML = t; p.classList.remove('show'); void p.offsetWidth; p.classList.add('show'); }
+  function popText(t) { const p = q('pop'); p.textContent = t; p.classList.remove('show'); void p.offsetWidth; p.classList.add('show'); }
 
   // ---------- Swapping ----------
   function swapGrid(a, b) { [grid[a], grid[b]] = [grid[b], grid[a]]; }
@@ -294,33 +394,39 @@ export function treatGameScreen(app, { level }) {
     const ta = grid[a], tb = grid[b];
     swapGrid(a, b); render(); sfx.tap();
     await sleep(170);
-    // special combinations
     if (ta.t === BOMB || tb.t === BOMB) {
       const other = ta.t === BOMB ? tb : ta;
+      const bombAt = ta.t === BOMB ? b : a;
       const set = new Set([a, b]);
       if (other.t === BOMB) grid.forEach((t, i) => { if (t) set.add(i); });
       else grid.forEach((t, i) => { if (t && t.t === other.t) { if (other.sp) t.sp = other.sp === 'wrap' ? 'wrap' : (Math.random() < 0.5 ? 'h' : 'v'); set.add(i); } });
-      movesLeft--; buzz(30); popText('Cat-astrophic!');
-      await clearCells(expand([...set]));
+      const [bx, by] = centre(bombAt);
+      fx.ring(bx, by, '#fff', cell * 4);
+      set.forEach((i) => { if (i !== bombAt) { const [x, y] = centre(i); fx.zap(bx, by, x, y, CANDY_COLOURS[(Math.random() * 6) | 0]); } });
+      movesLeft--; shake(2); popText('Sprinkle blast!'); sfx.unit();
+      await sleep(250);
+      await clearCells(expand([...set]), new Map(), 90);
       gravity(); await sleep(240);
       await resolve();
       return afterMove();
     }
     if (ta.sp && tb.sp) {
       const set = new Set([a, b]);
-      if (ta.sp === 'wrap' && tb.sp === 'wrap') { for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) { const r = R(b) + dr, c = C(b) + dc; if (r >= 0 && r < N && c >= 0 && c < N && grid[r * N + c]) set.add(r * N + c); } }
-      else if (ta.sp === 'wrap' || tb.sp === 'wrap') { for (let d = -1; d <= 1; d++) { for (let c = 0; c < N; c++) { const r = R(b) + d; if (r >= 0 && r < N && grid[r * N + c]) set.add(r * N + c); } for (let r = 0; r < N; r++) { const c = C(b) + d; if (c >= 0 && c < N && grid[r * N + c]) set.add(r * N + c); } } }
-      else { for (let c = 0; c < N; c++) if (grid[R(b) * N + c]) set.add(R(b) * N + c); for (let r = 0; r < N; r++) if (grid[r * N + C(b)]) set.add(r * N + C(b)); }
+      if (ta.sp === 'wrap' && tb.sp === 'wrap') { for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) { const r = R(b) + dr, c = C(b) + dc; if (r >= 0 && r < N && c >= 0 && c < N && grid[r * N + c]) set.add(r * N + c); } fx.ring(...centre(b), '#fff', cell * 3.5); }
+      else if (ta.sp === 'wrap' || tb.sp === 'wrap') { for (let d = -1; d <= 1; d++) { for (let c = 0; c < N; c++) { const r = R(b) + d; if (r >= 0 && r < N && grid[r * N + c]) set.add(r * N + c); } for (let r = 0; r < N; r++) { const c = C(b) + d; if (c >= 0 && c < N && grid[r * N + c]) set.add(r * N + c); } } fx.beam(...centre(b), 'h', cell * 1.2); fx.beam(...centre(b), 'v', cell * 1.2); }
+      else { for (let c = 0; c < N; c++) if (grid[R(b) * N + c]) set.add(R(b) * N + c); for (let r = 0; r < N; r++) if (grid[r * N + C(b)]) set.add(r * N + C(b)); fx.beam(...centre(b), 'h', cell * 0.4); fx.beam(...centre(b), 'v', cell * 0.4); }
       ta.fired = tb.fired = true;
-      movesLeft--; buzz(30);
-      await clearCells(expand([...set]));
+      movesLeft--; shake(2); popText('Mega combo!');
+      await clearCells(expand([...set]), new Map(), 90);
       gravity(); await sleep(240);
       await resolve();
       return afterMove();
     }
     if (!findMatches().length) {
       swapGrid(a, b); render(); buzz(15);
-      await sleep(170);
+      tileEls.get(ta.id)?.classList.add('nope'); tileEls.get(tb.id)?.classList.add('nope');
+      await sleep(260);
+      tileEls.get(ta.id)?.classList.remove('nope'); tileEls.get(tb.id)?.classList.remove('nope');
       busy = false;
       return;
     }
@@ -329,17 +435,12 @@ export function treatGameScreen(app, { level }) {
     afterMove();
   }
 
-  function goalMet() {
-    if (score < spec.target) return false;
+  const otherGoalsMet = () => {
     if (spec.kind === 'collect') return Object.entries(spec.collect).every(([t, n]) => (collected[t] || 0) >= n);
     if (spec.kind === 'jelly') return [...jelly.values()].every((v) => !v);
     return true;
-  }
-  function goalMetExceptScore() {
-    if (spec.kind === 'collect') return Object.entries(spec.collect).every(([t, n]) => (collected[t] || 0) >= n);
-    if (spec.kind === 'jelly') return [...jelly.values()].every((v) => !v);
-    return false;
-  }
+  };
+  const goalMet = () => score >= spec.target && otherGoalsMet();
 
   function possibleMove() {
     for (let i = 0; i < N * N; i++) for (const j of [i + 1, i + N]) {
@@ -353,11 +454,10 @@ export function treatGameScreen(app, { level }) {
 
   async function afterMove() {
     hud();
-    // collect/jelly goals also need the score target, which is usually reached along the way
-    if (goalMet() || (goalMetExceptScore() && movesLeft === 0)) return win();
+    if (goalMet() || (spec.kind !== 'score' && otherGoalsMet() && movesLeft === 0)) return win();
     if (movesLeft <= 0) return lose();
     if (!possibleMove()) {
-      popText('Shuffling'); await sleep(500);
+      popText('Shuffle!'); await sleep(500);
       for (let tries = 0; tries < 20; tries++) {
         const live = grid.map((t, i) => (t ? i : -1)).filter((i) => i >= 0);
         const ts = live.map((i) => grid[i]).sort(() => Math.random() - 0.5);
@@ -370,36 +470,87 @@ export function treatGameScreen(app, { level }) {
     armHint();
   }
 
+  // Leftover moves become striped candies that all go off together.
+  async function treatFeast() {
+    if (movesLeft <= 0) return;
+    popText('Treat feast!');
+    while (movesLeft > 0) {
+      const options = grid.map((t, i) => (t && !t.sp && t.t !== BOMB ? i : -1)).filter((i) => i >= 0);
+      if (!options.length) break;
+      const i = options[(Math.random() * options.length) | 0];
+      grid[i].sp = Math.random() < 0.5 ? 'h' : 'v';
+      movesLeft--;
+      score += 120;
+      const [x, y] = centre(i);
+      fx.burst(x, y, '#fff', 6, 0.6);
+      render(); sfx.note();
+      await sleep(110);
+    }
+    await sleep(250);
+    const specials = grid.map((t, i) => (t && t.sp ? i : -1)).filter((i) => i >= 0);
+    if (specials.length) { shake(2); await clearCells(expand(specials), new Map(), 60); gravity(); await sleep(260); await resolve(); }
+  }
+
   async function win() {
     over = true;
-    // leftover moves become bonus points
-    if (movesLeft > 0) { popText('Bonus time!'); for (; movesLeft > 0; movesLeft--) { score += 250; hud(); sfx.note(); await sleep(90); } }
+    hud();
+    await treatFeast();
     const stars = score >= spec.stars[2] ? 3 : score >= spec.stars[1] ? 2 : 1;
     const t = T();
     t.stars[level] = Math.max(t.stars[level] || 0, stars);
     if (level >= t.level) t.level = level + 1;
     t.best = Math.max(t.best || 0, score);
     save(true);
-    sfx.win(); confetti();
-    await sleep(500);
-    const v = await dialog({ hero: 'img/cats/cat04.png', title: `Level ${level + 1} complete!`, dismissible: false,
-      text: `${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}\nScore ${score.toLocaleString('en-AU')}`,
-      buttons: [{ label: 'Next level', value: 'next' }, { label: 'Back', value: 'back', cls: 'ghost' }] });
-    if (v === 'next') app.replace('treatgame', { level: level + 1 }); else app.back();
+    sfx.win(); confetti(3000);
+    showResult(stars);
   }
 
-  async function lose() {
+  // Animated result card: stars land one at a time and the score counts up.
+  function showResult(stars) {
+    const titles = ['Treat-tastic!', 'Sweet success!', 'Delicious!', 'Sugar star!'];
+    const node = el(`<div class="treat-result"><div class="tr-card">
+      <div class="tr-ribbon">${titles[(Math.random() * titles.length) | 0]}</div>
+      <div class="tr-stars">${[0, 1, 2].map((k) => `<div class="tr-star" data-k="${k}">★</div>`).join('')}</div>
+      <div class="tr-level">Level ${level + 1}</div>
+      <div class="tr-score" data-el="final">0</div>
+      <div class="tr-candies">${[0, 1, 2, 3, 4, 5].map((k) => `<div style="animation-delay:${k * 0.1}s">${candySvg(k)}</div>`).join('')}</div>
+      <div class="tr-actions">
+        <button class="btn treat-btn" data-act="next">Next level</button>
+        <button class="btn ghost" data-act="back">Back</button>
+      </div></div></div>`);
+    document.getElementById('overlay-root').appendChild(node);
+    const fin = $('[data-el="final"]', node);
+    const t0 = performance.now();
+    (function count(now) { const f = Math.min(1, (now - t0) / 900); fin.textContent = Math.round(score * (1 - Math.pow(1 - f, 3))).toLocaleString('en-AU'); if (f < 1) requestAnimationFrame(count); })(t0);
+    $$('.tr-star', node).forEach((s, k) => { if (k < stars) setTimeout(() => { s.classList.add('on'); sfx.place(); buzz(15); }, 500 + k * 380); });
+    node.addEventListener('click', (e) => {
+      const a = e.target.closest('[data-act]')?.dataset.act; if (!a) return;
+      node.remove();
+      if (a === 'next') app.replace('treatgame', { level: level + 1 }); else app.back();
+    });
+  }
+
+  function lose() {
     sfx.error();
-    const opts = [];
-    if (!extraUsed) opts.push({ label: 'Take 5 more moves', value: 'more' });
-    opts.push({ label: 'Try again', value: 'retry', cls: opts.length ? 'secondary' : '' }, { label: 'Back', value: 'back', cls: 'ghost' });
-    const v = await dialog({ hero: 'img/cats/cat09.png', title: 'Out of moves', dismissible: false, text: `${goalText(spec)}. So close!`, buttons: opts });
-    if (v === 'more') { extraUsed = true; movesLeft = 5; busy = false; hud(); armHint(); }
-    else if (v === 'retry') app.replace('treatgame', { level });
-    else { over = true; app.back(); }
+    const node = el(`<div class="treat-result"><div class="tr-card">
+      <div class="tr-ribbon sad">Out of moves</div>
+      <div class="tr-sad">${candySvg(0)}</div>
+      <p class="tr-msg">${goalText(spec)}. So close!</p>
+      <div class="tr-actions">
+        ${extraUsed ? '' : '<button class="btn treat-btn" data-act="more">Take 5 more moves</button>'}
+        <button class="btn ${extraUsed ? 'treat-btn' : 'secondary'}" data-act="retry">Try again</button>
+        <button class="btn ghost" data-act="back">Back</button>
+      </div></div></div>`);
+    document.getElementById('overlay-root').appendChild(node);
+    node.addEventListener('click', (e) => {
+      const a = e.target.closest('[data-act]')?.dataset.act; if (!a) return;
+      node.remove();
+      if (a === 'more') { extraUsed = true; movesLeft = 5; busy = false; hud(); armHint(); popText('+5 moves'); }
+      else if (a === 'retry') app.replace('treatgame', { level });
+      else { over = true; app.back(); }
+    });
   }
 
-  // Idle hint: after a few seconds, wiggle a possible move.
   let hintTimer = null;
   function armHint() { clearTimeout(hintTimer); hintTimer = setTimeout(() => { if (busy || over) return; const m = possibleMove(); if (m) m.forEach((i) => tileEls.get(grid[i].id)?.classList.add('hint')); }, 5000); }
   function hideHint() { clearTimeout(hintTimer); $$('.ttile.hint', board).forEach((n) => n.classList.remove('hint')); }
@@ -426,7 +577,6 @@ export function treatGameScreen(app, { level }) {
     if (!start) return;
     const s = start; start = null;
     if (s.done) return;
-    // tap-tap: select, then tap a neighbour
     if (selected >= 0 && selected !== s.i && (Math.abs(selected - s.i) === N || (Math.abs(selected - s.i) === 1 && R(selected) === R(s.i)))) { const a = selected; clearSel(); trySwap(a, s.i); return; }
     clearSel();
     if (grid[s.i]) { selected = s.i; tileEls.get(grid[s.i].id)?.classList.add('sel'); sfx.tap(); }
@@ -444,5 +594,5 @@ export function treatGameScreen(app, { level }) {
     if (level === 0 && !T().seenHelp) { T().seenHelp = true; save(); setTimeout(treatHelp, 300); }
     toast(goalText(spec), 2600);
   });
-  return { root, destroy() { clearTimeout(hintTimer); over = true; } };
+  return { root, destroy() { clearTimeout(hintTimer); over = true; $$('.fly-candy').forEach((n) => n.remove()); $$('.treat-result').forEach((n) => n.remove()); } };
 }

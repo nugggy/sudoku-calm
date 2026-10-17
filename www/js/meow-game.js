@@ -57,8 +57,9 @@ export function meowHelp() {
 
 // ---------- Home tab ----------
 export function meowHomeScreen(app) {
-  const root = el(`<section class="screen meow-theme with-tabbar">
-    <header class="topbar"><button class="icon-btn" data-act="help" aria-label="How to play">${icon.help}</button><div class="title"></div>
+  const root = el(`<section class="screen meow-theme">
+    <header class="topbar"><button class="icon-btn" data-act="back" aria-label="Back">${icon.back}</button><div class="title"></div>
+      <button class="icon-btn" data-act="help" aria-label="How to play">${icon.help}</button>
       <button class="icon-btn" data-act="settings" aria-label="Settings">${icon.gear}</button></header>
     <div class="scroll"></div></section>`);
   const body = $('.scroll', root);
@@ -92,7 +93,8 @@ export function meowHomeScreen(app) {
   }
   root.addEventListener('click', (e) => {
     const a = e.target.closest('[data-act]')?.dataset.act;
-    if (a === 'play') app.go('meowgame', { idx: store.meow.level });
+    if (a === 'back') app.back();
+    else if (a === 'play') app.go('meowgame', { idx: store.meow.level });
     else if (a === 'levels') app.go('meowlevels');
     else if (a === 'cats') app.go('meowcats');
     else if (a === 'help') meowHelp();

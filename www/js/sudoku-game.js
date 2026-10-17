@@ -398,9 +398,8 @@ export function sudokuScreen(app, params = {}) {
       const a = e.target.closest('[data-act]')?.dataset.act;
       if (!a) return;
       node.remove();
-      if (a === 'new') { app.reset('home'); app.newGameSheet(); }
-      else if (a === 'daily') app.reset('daily');
-      else app.reset('home');
+      if (a === 'new') { app.backTo('home'); app.newGameSheet(); }
+      else app.backTo('home');
     });
   }
 

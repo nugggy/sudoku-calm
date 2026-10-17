@@ -72,8 +72,9 @@ function resumable(level) {
 
 // ---------- Home tab ----------
 export function sortHomeScreen(app) {
-  const root = el(`<section class="screen sort-theme with-tabbar">
-    <header class="topbar"><button class="icon-btn" data-act="help" aria-label="How to play">${icon.help}</button><div class="title"></div>
+  const root = el(`<section class="screen sort-theme">
+    <header class="topbar"><button class="icon-btn" data-act="back" aria-label="Back">${icon.back}</button><div class="title"></div>
+      <button class="icon-btn" data-act="help" aria-label="How to play">${icon.help}</button>
       <button class="icon-btn" data-act="settings" aria-label="Settings">${icon.gear}</button></header>
     <div class="scroll"></div></section>`);
   const body = $('.scroll', root);
@@ -100,7 +101,8 @@ export function sortHomeScreen(app) {
   }
   root.addEventListener('click', (e) => {
     const a = e.target.closest('[data-act]')?.dataset.act;
-    if (a === 'play') app.go('sortgame', { level: store.sort.level });
+    if (a === 'back') app.back();
+    else if (a === 'play') app.go('sortgame', { level: store.sort.level });
     else if (a === 'levels') app.go('sortlevels');
     else if (a === 'help') sortHelp();
     else if (a === 'settings') app.go('settings');

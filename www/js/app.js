@@ -1,4 +1,4 @@
-// App shell: navigation, home, statistics, settings and updates.
+// App shell: game picker, navigation, statistics, settings and updates.
 import { DIFFICULTIES, DIFFICULTY_LABELS } from './sudoku-engine.js';
 import { store, save, resetAll, fmtTime } from './store.js';
 import { icon, logoSvg } from './icons.js';
@@ -6,7 +6,11 @@ import { el, $, $$, sheet, dialog, toast, closeTopOverlay, esc } from './ui.js';
 import { sfx } from './sound.js';
 import { native, checkForUpdate, REPO } from './native.js';
 import { sudokuScreen, startGame, continueLabel, prefetch } from './sudoku-game.js';
-import { sortHomeScreen, sortGameScreen, sortLevelsScreen, sortHelp } from './sort-game.js';
+import { sortHomeScreen, sortGameScreen, sortLevelsScreen, sortHelp, cutie } from './sort-game.js';
+import { pawHomeScreen, pawGameScreen, pawGalleryScreen, pawHelp, loadPawLevels, pixelArt } from './pawgram-game.js';
+import { solitaireScreen, solHelp } from './solitaire-game.js';
+import { treatHomeScreen, treatGameScreen, treatHelp } from './treat-game.js';
+import { blockScreen, blockHelp } from './block-game.js';
 import { meowHomeScreen, meowGameScreen, meowLevelsScreen, meowCatsScreen, loadLevels, meowHelp } from './meow-game.js';
 
 // ---------- Theme ----------
@@ -32,14 +36,15 @@ mq.addEventListener?.('change', applyTheme);
 
 // ---------- Navigation ----------
 const TABS = [
-  { id: 'home', label: 'Main', icon: icon.home },
-  { id: 'meow', label: 'Meowdoku', img: 'img/cats/cat01.png' },
-  { id: 'sort', label: 'Cat Sort', img: 'img/cats/cat12.png' },
+  { id: 'games', label: 'Games', icon: icon.grid },
   { id: 'me', label: 'Me', icon: icon.chart },
 ];
 const SCREENS = {
-  home: homeScreen, meow: meowHomeScreen, me: statsScreen,
+  games: landingScreen, home: homeScreen, meow: meowHomeScreen, me: statsScreen,
   sort: sortHomeScreen, sortgame: sortGameScreen, sortlevels: sortLevelsScreen,
+  paw: pawHomeScreen, pawgame: pawGameScreen, pawgallery: pawGalleryScreen,
+  solitaire: solitaireScreen,
+  treat: treatHomeScreen, treatgame: treatGameScreen, block: blockScreen,
   sudoku: sudokuScreen, meowgame: meowGameScreen, meowlevels: meowLevelsScreen, meowcats: meowCatsScreen,
   settings: settingsScreen, about: aboutScreen,
 };
@@ -84,9 +89,10 @@ const app = {
   },
   // Returns false when there is nowhere left to go (Android then closes the app).
   back() {
+    // a win screen is showing: close it and leave the finished game
     const win = document.querySelector('.win, .meow-win');
-    if (win) { win.remove(); const n = stack[stack.length - 1]?.name || ''; app.reset(n.startsWith('meow') ? 'meow' : n.startsWith('sort') ? 'sort' : 'home'); return true; }
-    if (closeTopOverlay()) return true;
+    if (win) win.remove();
+    else if (closeTopOverlay()) return true;
     if (stack.length > 1) {
       unmount(stack.pop());
       const top = stack[stack.length - 1];
@@ -95,8 +101,19 @@ const app = {
       afterChange();
       return true;
     }
-    if (stack[0].name !== 'home') { app.reset('home'); return true; }
+    if (stack[0].name !== 'games') { app.reset('games'); return true; }
     return false;
+  },
+  // Go back to a screen further down the stack (for example a game's home after a win).
+  backTo(name, params) {
+    document.querySelectorAll('.win, .meow-win').forEach((w) => w.remove());
+    const i = stack.map((e) => e.name).lastIndexOf(name);
+    if (i < 0) { app.reset('games'); app.go(name, params); return; }
+    while (stack.length > i + 1) unmount(stack.pop());
+    const top = stack[stack.length - 1];
+    top.inst.root.style.display = '';
+    top.inst.onShow ? top.inst.onShow() : top.inst.refresh && top.inst.refresh();
+    afterChange();
   },
   applyTheme,
   newGameSheet,
@@ -147,10 +164,93 @@ function sudokuRules() {
   </div><button class="btn" data-x>Got it</button>`, { onMount: (n, close) => { $('[data-x]', n).onclick = close; } });
 }
 
-// ---------- Home ----------
+
+// ---------- Game picker (landing page) ----------
+// Each game: where it opens, its artwork, and a short progress line.
+export const GAMES = [];
+export function registerGame(g) { GAMES.push(g); }
+
+registerGame({
+  id: 'sudoku', screen: 'home', name: 'Sudoku', tag: 'The classic numbers puzzle', theme: 'g-sudoku',
+  art: () => `<div class="art-sudoku">${logoSvg}</div>`,
+  progress: () => continueLabel() ? `Game in progress · ${continueLabel()}` : `${DIFFICULTIES.reduce((a, d) => a + store.stats[d].won, 0)} solved`,
+});
+registerGame({
+  id: 'paw', screen: 'paw', name: 'Pawgram', tag: 'Crack the clues, reveal the picture', theme: 'g-paw',
+  art: () => '<div class="art-paw" data-pawart></div>',
+  progress: () => { const n = Object.keys(store.paw.solved).length; return `${n} picture${n === 1 ? '' : 's'}`; },
+});
+registerGame({
+  id: 'sol', screen: 'solitaire', name: 'Solitaire', tag: 'Classic Klondike, every deal winnable', theme: 'g-sol',
+  art: () => `<div class="art-sol">${[['A', '♠', ''], ['K', '♥', 'red'], ['Q', '♦', 'red']].map(([r, s, c], i) => `<div class="mini-card ${c}" style="transform:rotate(${(i - 1) * 12}deg) translateY(${Math.abs(i - 1) * 6}px)"><b>${r}</b><i>${s}</i></div>`).join('')}</div>`,
+  progress: () => store.sol.current ? 'Game in progress' : `${store.sol.stats.won} won`,
+});
+registerGame({
+  id: 'treat', screen: 'treat', name: 'Treat Twist', tag: 'Swap and match the treats', theme: 'g-treat',
+  art: () => `<div class="art-treat">${[0, 4, 2, 5, 1, 3, 4, 0, 2].map((t) => `<img src="img/treats/t${t}.png" alt="">`).join('')}</div>`,
+  progress: () => `Level ${store.treat.level + 1}`,
+});
+registerGame({
+  id: 'block', screen: 'block', name: 'Block Pounce', tag: 'Fit the blocks, clear the lines', theme: 'g-block',
+  art: () => `<div class="art-block">${'1100011101111011001110011'.split('').map((v, i) => `<i style="${v === '1' ? `background:${['#ff5d73', '#38b6ff', '#ffd23f', '#3ddc84', '#8f6bff'][i % 5]}` : ''}"></i>`).join('')}</div>`,
+  progress: () => (store.block.best ? `Best ${store.block.best.toLocaleString('en-AU')}` : 'New game'),
+});
+registerGame({
+  id: 'meow', screen: 'meow', name: 'Meowdoku', tag: 'One cat per row, column and colour', theme: 'g-meow',
+  art: () => `<div class="art-meow">${['#e3bb45', '#e8a7c0', '#9b80d6', '#7cc4a4', '#e3bb45', '#7fb2e5', '#e8a7c0', '#f0956a', '#9b80d6'].map((c, i) => `<i style="background:${c}">${i === 4 ? '<img src="img/cats/cat01.png" alt="">' : ''}</i>`).join('')}</div>`,
+  progress: () => `Level ${store.meow.level + 1}`,
+});
+registerGame({
+  id: 'sort', screen: 'sort', name: 'Cosy Cat Sort', tag: 'Send matching cats home', theme: 'g-sort',
+  art: () => `<div class="art-sort">${[1, 0, 4].map((k) => `<div class="cutie">${cutie(k)}</div>`).join('')}<div class="sort-plank"></div></div>`,
+  progress: () => `Level ${store.sort.level + 1}`,
+});
+
+function landingScreen() {
+  const root = el(`<section class="screen landing with-tabbar">
+    <header class="topbar"><div class="spacer"></div><div class="title"></div>
+      <button class="icon-btn" data-act="settings" aria-label="Settings">${icon.gear}</button></header>
+    <div class="scroll"></div></section>`);
+  const body = $('.scroll', root);
+  function greeting() {
+    const h = Number(new Date().toLocaleString('en-AU', { hour: 'numeric', hour12: false, timeZone: 'Australia/Sydney' }));
+    return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  }
+  function render() {
+    body.innerHTML = `
+      <div class="landing-head"><h1>${greeting()}</h1><p>What would you like to play?</p></div>
+      <div class="game-grid">${GAMES.map((g) => `
+        <button class="game-card ${g.theme}" data-game="${g.id}">
+          <div class="game-art">${g.art()}</div>
+          <div class="game-name">${esc(g.name)}</div>
+          <div class="game-tag">${esc(g.tag)}</div>
+          <div class="game-progress">${esc(g.progress())}</div>
+        </button>`).join('')}</div>
+      <p class="landing-foot">No ads. No interruptions. Just puzzles.</p>`;
+    // Pawgram's card shows a pixel picture drawn from its level file
+    loadPawLevels().then((L) => {
+      const slot = $('[data-pawart]', body);
+      const lv = L.find((x) => /cat face/i.test(x.name)) || L[0];
+      if (slot && lv) slot.appendChild(pixelArt(lv, 84));
+    });
+  }
+  root.addEventListener('click', (e) => {
+    if (e.target.closest('[data-act="settings"]')) return app.go('settings');
+    const c = e.target.closest('[data-game]');
+    if (!c) return;
+    sfx.tap();
+    const g = GAMES.find((x) => x.id === c.dataset.game);
+    app.go(g.screen, g.params);
+  });
+  render();
+  return { root, refresh: render };
+}
+
+// ---------- Sudoku home ----------
 function homeScreen() {
-  const root = el(`<section class="screen with-tabbar">
-    <header class="topbar"><button class="icon-btn" data-act="rules" aria-label="How to play">${icon.help}</button><div class="title"></div>
+  const root = el(`<section class="screen">
+    <header class="topbar"><button class="icon-btn" data-act="back" aria-label="Back">${icon.back}</button><div class="title"></div>
+      <button class="icon-btn" data-act="rules" aria-label="How to play">${icon.help}</button>
       <button class="icon-btn" data-act="settings" aria-label="Settings">${icon.gear}</button></header>
     <div class="scroll"></div></section>`);
   const body = $('.scroll', root);
@@ -159,7 +259,7 @@ function homeScreen() {
     const wins = DIFFICULTIES.reduce((a, d) => a + store.stats[d].won, 0);
     const best = Math.max(...DIFFICULTIES.map((d) => store.stats[d].bestStreak));
     body.innerHTML = `
-      <div class="home-hero">${logoSvg}<div class="app-name">Sudoku <span>Calm</span></div><div class="tagline">No ads. No interruptions. Just puzzles.</div></div>
+      <div class="home-hero">${logoSvg}<div class="app-name">Sudoku</div><div class="tagline">Six levels, from Easy to Extreme</div></div>
       <div class="home-actions" style="margin-top:28px">
         ${cont ? `<button class="btn" data-act="continue">Continue game<small>${esc(cont)}</small></button>` : ''}
         <button class="btn ${cont ? 'secondary' : ''}" data-act="new">New game</button>
@@ -168,7 +268,8 @@ function homeScreen() {
   }
   root.addEventListener('click', (e) => {
     const a = e.target.closest('[data-act]')?.dataset.act;
-    if (a === 'continue') app.go('sudoku');
+    if (a === 'back') app.back();
+    else if (a === 'continue') app.go('sudoku');
     else if (a === 'new') newGameSheet();
     else if (a === 'settings') app.go('settings');
     else if (a === 'rules') sudokuRules();
@@ -189,6 +290,7 @@ function statsScreen() {
     const rate = s.started ? Math.round((s.won / s.started) * 100) : 0;
     const row = (img, k, v) => `<div class="stat-row"><img src="img/ui/${img}.png" alt=""><span class="k">${k}</span><span class="v">${v}</span></div>`;
     body.innerHTML = `
+      <div class="section-title" style="margin-top:4px">Sudoku</div>
       <div class="chips">${DIFFICULTIES.map((d) => `<button class="chip ${d === diff ? 'active' : ''}" data-d="${d}">${DIFFICULTY_LABELS[d]}</button>`).join('')}</div>
       <div class="section-title">Games</div>
       <div class="card stat-group">
@@ -207,6 +309,28 @@ function statsScreen() {
         ${row('fire', 'Current win streak', s.streak)}
         ${row('crown', 'Best win streak', s.bestStreak)}
         ${row('gem-stone', 'Best score', s.bestScore.toLocaleString('en-AU'))}
+      </div>
+      <div class="section-title">Treat Twist</div>
+      <div class="card stat-group">
+        ${row('trophy', 'Levels finished', store.treat.level)}
+        ${row('star', 'Stars collected', Object.values(store.treat.stars).reduce((a, b) => a + b, 0))}
+      </div>
+      <div class="section-title">Block Pounce</div>
+      <div class="card stat-group">
+        ${row('crown', 'Best score', (store.block.best || 0).toLocaleString('en-AU'))}
+        ${row('puzzle-piece', 'Games played', store.block.games || 0)}
+      </div>
+      <div class="section-title">Solitaire</div>
+      <div class="card stat-group">
+        ${row('puzzle-piece', 'Games played', store.sol.stats.played)}
+        ${row('trophy', 'Games won', store.sol.stats.won)}
+        ${row('sports-medal', 'Best time', store.sol.stats.bestTime ? fmtTime(store.sol.stats.bestTime) : '-')}
+        ${row('fire', 'Best win streak', store.sol.stats.bestStreak)}
+      </div>
+      <div class="section-title">Pawgram</div>
+      <div class="card stat-group">
+        ${row('star', 'Pictures solved', Object.keys(store.paw.solved).length)}
+        ${row('sports-medal', 'Solved without mistakes', store.paw.perfect || 0)}
       </div>
       <div class="section-title">Cosy Cat Sort</div>
       <div class="card stat-group">
@@ -279,6 +403,10 @@ function settingsScreen() {
         <button class="set-row" data-act="rules"><div class="txt">How to play Sudoku</div></button>
         <button class="set-row" data-act="meowrules"><div class="txt">How to play Meowdoku</div></button>
         <button class="set-row" data-act="sortrules"><div class="txt">How to play Cosy Cat Sort</div></button>
+        <button class="set-row" data-act="pawrules"><div class="txt">How to play Pawgram</div></button>
+        <button class="set-row" data-act="solrules"><div class="txt">How to play Solitaire</div></button>
+        <button class="set-row" data-act="treatrules"><div class="txt">How to play Treat Twist</div></button>
+        <button class="set-row" data-act="blockrules"><div class="txt">How to play Block Pounce</div></button>
         <button class="set-row" data-act="about"><div class="txt">About and credits</div></button>
         <button class="set-row" data-act="reset"><div class="txt" style="color:var(--err)">Reset all progress</div></button>
       </div>`;
@@ -300,9 +428,13 @@ function settingsScreen() {
     else if (a === 'rules') sudokuRules();
     else if (a === 'meowrules') meowHelp();
     else if (a === 'sortrules') sortHelp();
+    else if (a === 'pawrules') pawHelp();
+    else if (a === 'solrules') solHelp();
+    else if (a === 'treatrules') treatHelp();
+    else if (a === 'blockrules') blockHelp();
     else if (a === 'about') app.go('about');
     else if (a === 'reset') {
-      const ok = await dialog({ title: 'Reset all progress?', text: 'This deletes your statistics, saved games, Meowdoku levels and Cat Sort levels. Your settings stay. This cannot be undone.',
+      const ok = await dialog({ title: 'Reset all progress?', text: 'This deletes your statistics, saved games, Meowdoku, Cat Sort and Pawgram progress. Your settings stay. This cannot be undone.',
         buttons: [{ label: 'Reset everything', value: true, cls: 'danger' }, { label: 'Cancel', value: false, cls: 'ghost' }] });
       if (ok) { resetAll(); toast('Progress reset'); }
     }
@@ -320,8 +452,8 @@ function aboutScreen() {
       <div class="card credits">
         <p>An ad-free collection of logic puzzles. Every Sudoku is generated on your phone with exactly one solution, and every Meowdoku level can be solved with logic alone.</p><br>
         <p>Your progress stays on this device. The app only goes online to check GitHub for updates, which you can turn off in Settings.</p><br>
-        <p><b>Artwork.</b> Cat and icon images are from Microsoft Fluent Emoji, used under the MIT licence. Copyright (c) Microsoft Corporation.</p><br>
-        <p><b>Inspiration.</b> Sudoku Calm is an independent app. It is not made by, endorsed by or affiliated with Easybrain or Oakever Games. Meowdoku and Cosy Cat Sort are our own takes on those game styles, with original artwork.</p><br>
+        <p><b>Artwork.</b> Cats, icons, treats and the Pawgram pictures come from Microsoft Fluent Emoji, used under the MIT licence. Copyright (c) Microsoft Corporation.</p><br>
+        <p><b>Inspiration.</b> Sudoku Calm is an independent app. It is not made by, endorsed by or affiliated with Easybrain, Oakever Games, Easetouch, King, Hungry Studio or any other game maker. Its games are our own takes on popular puzzle styles, with original artwork and names.</p><br>
         <p><a href="#" data-act="src">Source code and releases on GitHub</a></p>
       </div>
     </div></section>`);
@@ -364,7 +496,7 @@ async function runUpdateCheck(manual = false) {
 
 // ---------- Boot ----------
 applyTheme();
-app.reset('home');
+app.reset('games');
 loadLevels();
 prefetch('easy');
 setTimeout(() => {

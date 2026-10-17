@@ -1,10 +1,7 @@
 package au.nugggy.sudokucalm;
 
-import android.app.DownloadManager;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
 import android.graphics.Color;
 import android.net.Uri;
@@ -16,18 +13,20 @@ import android.provider.Settings;
 import android.webkit.JavascriptInterface;
 import android.widget.Toast;
 
-import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.core.view.WindowInsetsControllerCompat;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 /** Methods the web app can call as window.SCNative. */
 public class NativeBridge {
     private final MainActivity activity;
-    private long downloadId = -1;
+    private volatile boolean downloading = false;
     private File pendingApk = null;
-    private BroadcastReceiver receiver = null;
 
     NativeBridge(MainActivity activity) { this.activity = activity; }
 
@@ -75,38 +74,67 @@ public class NativeBridge {
     @JavascriptInterface
     public void exitApp() { activity.runOnUiThread(activity::finish); }
 
-    /** Downloads a release APK from GitHub and hands it to the Android installer. */
+    /** Downloads a release APK from GitHub (with retries) and hands it to the Android installer. */
     @JavascriptInterface
     public void downloadAndInstall(String url, String version) {
-        activity.runOnUiThread(() -> {
-            if (!url.startsWith("https://github.com/") && !url.startsWith("https://objects.githubusercontent.com/")) return;
+        if (!url.startsWith("https://github.com/")) return;
+        if (downloading) return;
+        downloading = true;
+        new Thread(() -> {
             File dir = activity.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
-            if (dir == null) return;
+            if (dir == null) dir = activity.getFilesDir();
             File[] old = dir.listFiles();
             if (old != null) for (File f : old) if (f.getName().endsWith(".apk")) f.delete();
             File apk = new File(dir, "sudoku-calm-" + version.replaceAll("[^0-9A-Za-z.-]", "") + ".apk");
-
-            DownloadManager dm = (DownloadManager) activity.getSystemService(Context.DOWNLOAD_SERVICE);
-            DownloadManager.Request req = new DownloadManager.Request(Uri.parse(url))
-                    .setTitle("Sudoku Calm " + version)
-                    .setDescription("Downloading update")
-                    .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
-                    .setDestinationUri(Uri.fromFile(apk));
-            downloadId = dm.enqueue(req);
-
-            if (receiver == null) {
-                receiver = new BroadcastReceiver() {
-                    @Override
-                    public void onReceive(Context context, Intent intent) {
-                        long id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
-                        if (id != downloadId) return;
-                        if (apk.exists() && apk.length() > 0) install(apk);
-                        else Toast.makeText(activity, "The update did not download. Please try again.", Toast.LENGTH_LONG).show();
-                    }
-                };
-                ContextCompat.registerReceiver(activity, receiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), ContextCompat.RECEIVER_EXPORTED);
+            boolean ok = false;
+            for (int attempt = 1; attempt <= 4 && !ok; attempt++) {
+                try {
+                    ok = fetch(url, apk);
+                } catch (Exception e) {
+                    try { Thread.sleep(1500L * attempt); } catch (InterruptedException ignored) { }
+                }
             }
-        });
+            downloading = false;
+            final boolean done = ok;
+            activity.runOnUiThread(() -> {
+                if (done) { js("window.__scUpdateProgress && window.__scUpdateProgress(100)"); install(apk); }
+                else js("window.__scUpdateFailed && window.__scUpdateFailed()");
+            });
+        }).start();
+    }
+
+    private boolean fetch(String url, File out) throws Exception {
+        HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
+        c.setInstanceFollowRedirects(true);
+        c.setConnectTimeout(15000);
+        c.setReadTimeout(30000);
+        c.setRequestProperty("User-Agent", "SudokuCalm-Updater");
+        try {
+            if (c.getResponseCode() != 200) return false;
+            long total = c.getContentLengthLong(), got = 0;
+            int lastPct = -1;
+            try (InputStream in = c.getInputStream(); FileOutputStream fo = new FileOutputStream(out)) {
+                byte[] buf = new byte[32768];
+                int n;
+                while ((n = in.read(buf)) > 0) {
+                    fo.write(buf, 0, n);
+                    got += n;
+                    int pct = total > 0 ? (int) (got * 100 / total) : -1;
+                    if (pct >= 0 && pct != lastPct && pct % 5 == 0) {
+                        lastPct = pct;
+                        final int p = pct;
+                        activity.runOnUiThread(() -> js("window.__scUpdateProgress && window.__scUpdateProgress(" + p + ")"));
+                    }
+                }
+            }
+            return total <= 0 || got == total;
+        } finally {
+            c.disconnect();
+        }
+    }
+
+    private void js(String code) {
+        try { activity.web.evaluateJavascript(code, null); } catch (Exception ignored) { }
     }
 
     private void install(File apk) {
@@ -133,10 +161,5 @@ public class NativeBridge {
         }
     }
 
-    void release() {
-        if (receiver != null) {
-            try { activity.unregisterReceiver(receiver); } catch (Exception ignored) { }
-            receiver = null;
-        }
-    }
+    void release() { }
 }

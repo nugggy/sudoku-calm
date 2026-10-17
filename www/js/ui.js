@@ -52,7 +52,7 @@ export function dialog({ hero = '', title = '', text = '', notes = '', buttons =
       ${hero ? `<img class="hero" src="${hero}" alt="">` : ''}
       ${title ? `<h2>${esc(title)}</h2>` : ''}
       ${text ? `<p>${esc(text)}</p>` : ''}
-      ${notes ? `<div class="notes">${esc(notes)}</div>` : ''}
+      ${notes ? `<div class="dlg-notes">${esc(notes)}</div>` : ''}
       <div class="stack">${buttons.map((b, i) => `<button class="btn ${b.cls || ''}" data-i="${i}">${esc(b.label)}</button>`).join('')}</div>
     </div></div>`);
     const o = mountOverlay(node, { dismissible, onClose: () => resolve(chosen) });

@@ -433,7 +433,12 @@ async function runUpdateCheck(manual = false) {
       notes: u.notes,
       buttons: [{ label: 'Update now', value: 'go' }, { label: 'Later', value: 'later', cls: 'secondary' }, { label: 'Skip this version', value: 'skip', cls: 'ghost' }],
     });
-    if (v === 'go') { native.downloadAndInstall(u.url, u.version); toast('Downloading update. Android will ask you to install it.', 4000); }
+    if (v === 'go') {
+      window.__scUpdateProgress = (p) => toast(p >= 100 ? 'Download complete. Opening the installer' : `Downloading update ${p}%`, p >= 100 ? 3000 : 6000);
+      window.__scUpdateFailed = () => toast('The update could not be downloaded. Check your connection and try again from Settings.', 5000);
+      native.downloadAndInstall(u.url, u.version);
+      toast('Downloading update', 4000);
+    }
     else if (v === 'skip') { meta.skipVersion = u.version; save(); }
   } catch (err) {
     if (manual) toast('Could not reach GitHub. Check your connection.');

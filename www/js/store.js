@@ -44,6 +44,7 @@ const defaults = () => ({
   gridlock: { level: 0, best: {}, current: null },
   crate: { level: 0, best: {}, current: null },
   potion: { level: 0, current: null },
+  press: { reached: 0, seenHelp: false },
   mahjong: { level: 0, best: {} },
   wheel: { level: 0, bonus: 0, hints: 5, current: null, revealed: {} },
   pipe: { level: 0 },

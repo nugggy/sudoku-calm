@@ -17,6 +17,7 @@ import { hashiHomeScreen, hashiGameScreen, hashiHelp, hashiCardArt } from './has
 import { gridlockHomeScreen, gridlockGameScreen, gridlockHelp, gridlockCardArt } from './gridlock-game.js';
 import { crateHomeScreen, crateGameScreen, crateHelp, crateCardArt } from './crate-game.js';
 import { potionHomeScreen, potionGameScreen, potionHelp, potionCardArt } from './potion-game.js';
+import { pressHomeScreen, pressGameScreen, pressHelp, pressCardArt } from './press-game.js';
 import { mahjongHomeScreen, mahjongGameScreen, mahjongHelp } from './mahjong-game.js';
 import { wheelHomeScreen, wheelGameScreen, wheelHelp } from './wheel-game.js';
 import { pipeHomeScreen, pipeGameScreen, pipeHelp } from './pipe-game.js';
@@ -60,7 +61,7 @@ const SCREENS = {
   treat: treatHomeScreen, treatgame: treatGameScreen, block: blockScreen,
   cross: crossHomeScreen, crossgame: crossGameScreen, ws: wsHomeScreen, wsgame: wsGameScreen,
   g2048: screen2048, mines: minesHomeScreen, minesgame: minesGameScreen, guess: guessHomeScreen, guessgame: guessGameScreen,
-  hashi: hashiHomeScreen, hashigame: hashiGameScreen, gridlock: gridlockHomeScreen, gridlockgame: gridlockGameScreen, crate: crateHomeScreen, crategame: crateGameScreen, potion: potionHomeScreen, potiongame: potionGameScreen,
+  hashi: hashiHomeScreen, hashigame: hashiGameScreen, gridlock: gridlockHomeScreen, gridlockgame: gridlockGameScreen, crate: crateHomeScreen, crategame: crateGameScreen, potion: potionHomeScreen, potiongame: potionGameScreen, press: pressHomeScreen, pressgame: pressGameScreen,
   mahjong: mahjongHomeScreen, mjgame: mahjongGameScreen,
   wheel: wheelHomeScreen, wheelgame: wheelGameScreen, pipe: pipeHomeScreen, pipegame: pipeGameScreen,
   spider: spiderHomeScreen, spidergame: spiderGameScreen,
@@ -297,6 +298,11 @@ registerGame({
   art: () => potionCardArt(),
   progress: () => `Level ${store.potion.level + 1}`,
 });
+registerGame({
+  id: 'press', cat: 'Casual', screen: 'press', name: 'Pressure Point', tag: 'One button, one tricky rule', theme: 'g-press',
+  art: () => pressCardArt(),
+  progress: () => (store.press.reached ? `Best: level ${store.press.reached}` : 'New game'),
+});
 
 function landingScreen() {
   const root = el(`<section class="screen landing with-tabbar">
@@ -409,6 +415,7 @@ function statsScreen() {
         ${row('trophy', 'Spider Solitaire games won', Object.values(store.spider.won).reduce((a, b) => a + b, 0))}
         ${row('star', 'Jigsaws completed', store.jigsaw.level)}
         ${row('sparkles', 'Sticker scenes finished', Object.keys(store.sticker.done).length)}
+        ${row('fire', 'Pressure Point best level', store.press.reached)}
       </div>
       <div class="section-title">Crosswords</div>
       <div class="card stat-group">
@@ -537,8 +544,8 @@ function settingsScreen() {
     else if (a === 'solrules') solHelp();
     else if (a === 'treatrules') treatHelp();
     else if (a === 'crossrules') crossHelp();
-    else if (a === 'rules-more') sheet(`<h2>How to play</h2>${[['2048', '2048'], ['mines', 'Minesweeper'], ['guess', 'Guesswork'], ['wheel', 'Word Wheel'], ['pipe', 'Pipeline'], ['mahjong', 'Mahjong Garden'], ['spider', 'Spider Solitaire'], ['jigsaw', 'Jigsaw'], ['sticker', 'Sticker Studio'], ['hashi', 'Island Hop'], ['gridlock', 'Gridlock'], ['crate', 'Crate Mate'], ['potion', 'Potion Pour']].map(([k, n]) => `<button class="sheet-item" data-h="${k}">${n}</button>`).join('')}`, {
-      onMount(node, close) { node.addEventListener('click', (ev) => { const b = ev.target.closest('[data-h]'); if (!b) return; close(); ({ 2048: help2048, mines: minesHelp, guess: guessHelp, wheel: wheelHelp, pipe: pipeHelp, mahjong: mahjongHelp, spider: spiderHelp, jigsaw: jigsawHelp, sticker: stickerHelp, hashi: hashiHelp, gridlock: gridlockHelp, crate: crateHelp, potion: potionHelp })[b.dataset.h](); }); },
+    else if (a === 'rules-more') sheet(`<h2>How to play</h2>${[['2048', '2048'], ['mines', 'Minesweeper'], ['guess', 'Guesswork'], ['wheel', 'Word Wheel'], ['pipe', 'Pipeline'], ['mahjong', 'Mahjong Garden'], ['spider', 'Spider Solitaire'], ['jigsaw', 'Jigsaw'], ['sticker', 'Sticker Studio'], ['hashi', 'Island Hop'], ['gridlock', 'Gridlock'], ['crate', 'Crate Mate'], ['potion', 'Potion Pour'], ['press', 'Pressure Point']].map(([k, n]) => `<button class="sheet-item" data-h="${k}">${n}</button>`).join('')}`, {
+      onMount(node, close) { node.addEventListener('click', (ev) => { const b = ev.target.closest('[data-h]'); if (!b) return; close(); ({ 2048: help2048, mines: minesHelp, guess: guessHelp, wheel: wheelHelp, pipe: pipeHelp, mahjong: mahjongHelp, spider: spiderHelp, jigsaw: jigsawHelp, sticker: stickerHelp, hashi: hashiHelp, gridlock: gridlockHelp, crate: crateHelp, potion: potionHelp, press: () => pressHelp() })[b.dataset.h](); }); },
     });
     else if (a === 'wsrules') wsHelp();
     else if (a === 'blockrules') blockHelp();

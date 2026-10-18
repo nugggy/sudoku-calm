@@ -2,9 +2,9 @@
 import { el, $, sheet } from './ui.js';
 import { icon } from './icons.js';
 
-export function helpSheet(title, paras, btnCls = '') {
+export function helpSheet(title, paras, btnCls = '', onClose) {
   sheet(`<h2>${title}</h2><div class="help-body">${paras.map((p) => `<p>${p}</p>`).join('')}</div><button class="btn ${btnCls}" data-x>Got it</button>`,
-    { onMount: (n, close) => { $('[data-x]', n).onclick = close; } });
+    { onMount: (n, close) => { $('[data-x]', n).onclick = close; }, onClose });
 }
 
 // opts: {app, cls, title, hero (html), play: () => ({label, sub}), onPlay, levels?: () => ({count, current, done(i), label(i)}), onLevel, help, extra?: () => html}

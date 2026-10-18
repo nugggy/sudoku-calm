@@ -1,0 +1,6 @@
+# key|file id on static.poly.pizza|licence (0 = CC0, B = CC-BY 3.0)|author|title|poly.pizza model id
+bike_a|f7635710-7cfa-4768-ad70-8366ab485358|B|Poly by Google|Motorcycle|dse64pqMKAR
+bike_b|4fa4f21a-c3b8-425f-8e57-9c202b1d6ba6|B|Poly by Google|Motorcycle|5_MTCnqfUTr
+bike_c|5f33b17d-c39b-4b5c-97ef-286d34990b09|B|Poly by Google|Motorcycle|cFvmALDjMKw
+scooter|0d01cacb-225d-49ab-b20a-2b37fada21d5|B|Poly by Google|Scooter|eHdEFPwUfCt
+dirtbike|191eebc7-b1f8-4ec7-8652-9c6c49521b99|B|Corentin Fatus|Motorcycle|bBbozwADWnS

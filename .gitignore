@@ -29,3 +29,5 @@ tools/sticker/kenney/
 tools/sticker/last-stickers.json
 tools/sticker/catalog.json
 tools/yeti/models/
+tools/moto/models/
+tools/moto/kenney/

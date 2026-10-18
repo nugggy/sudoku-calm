@@ -7,17 +7,18 @@ import { native } from '../native.js';
 // ---------- Sprites ----------
 // Rendered from 3D models by tools/yeti (see tools/yeti/models.txt for credits). Strips of frames share one crop.
 export const SPR = {};
-const IMG = {};
-let loading = null;
-export function loadSprites() {
-  if (!loading) loading = (async () => {
-    const meta = await (await fetch('img/yeti/sprites.json')).json();
+export const IMG = {};
+const loading = {};
+// Loads a sprite set (img/yeti for the Yeti Games, img/moto for the motorbike games). Names are unique across sets.
+export function loadSprites(dir = 'img/yeti') {
+  if (!loading[dir]) loading[dir] = (async () => {
+    const meta = await (await fetch(`${dir}/sprites.json`)).json();
     await Promise.all(Object.entries(meta).map(([k, m]) => new Promise((ok) => {
-      const im = new Image(); im.onload = ok; im.onerror = ok; im.src = `img/yeti/${k}.webp`;
+      const im = new Image(); im.onload = ok; im.onerror = ok; im.src = `${dir}/${k}.webp`;
       IMG[k] = im; SPR[k] = m;
     })));
   })();
-  return loading;
+  return loading[dir];
 }
 
 // Draws frame `f` of sprite `name` so its ground point (or centre) sits at screen point (x, y).

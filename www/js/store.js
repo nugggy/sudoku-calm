@@ -46,6 +46,7 @@ const defaults = () => ({
   potion: { level: 0, current: null },
   press: { reached: 0, seenHelp: false },
   yeti: { best: {}, played: {}, seen: {}, tourBest: 0 },
+  moto: { coins: 0, owned: ['scooter'], bike: 'scooter', paint: {}, paints: ['factory'], rider: 'r1', best: {}, played: {}, seen: {}, level: {}, stars: {} },
   mahjong: { level: 0, best: {} },
   wheel: { level: 0, bonus: 0, hints: 5, current: null, revealed: {} },
   pipe: { level: 0 },

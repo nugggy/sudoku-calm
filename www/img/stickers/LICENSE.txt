@@ -1,0 +1,11 @@
+Sticker Studio pictures
+
+Every image in this folder was rendered by tools/sticker from 3D models made by Kenney (www.kenney.nl):
+Furniture Kit, Food Kit, Nature Kit, Holiday Kit, Cube Pets, Fantasy Town Kit, Pirate Kit, Space Kit,
+Car Kit, Graveyard Kit, Castle Kit, Train Kit, Survival Kit, Mini Market, Coaster Kit, Minigolf Kit,
+Toy Car Kit, Mini Arcade, Mini Characters, Mini Dungeon, Platformer Kit, City Kit (Suburban) and Mini Skate.
+
+The models are licensed Creative Commons Zero (CC0 1.0 Universal), public domain:
+http://creativecommons.org/publicdomain/zero/1.0/
+
+The floors, walls, windows and wall decorations are drawn by the renderer for this app.

@@ -4,7 +4,7 @@
 
 A calm corner for your mind.
 
-An ad-free Android puzzle app with 20 games, grouped on one landing page:
+An ad-free Android puzzle app with 21 games, grouped on one landing page:
 
 - **Sudoku.** Six difficulty levels from Easy to Extreme, notes, smart hints that explain the next move, mistake checking, scoring with row, column and box bonuses, statistics, and light and dark themes with five accent colours.
 - **Meowdoku.** Place one cat in every row, column and colour region, with no two cats touching. 1,000 hand-checked levels from 4×4 to 12×12 that get harder as you go, then endless generated levels.
@@ -19,6 +19,7 @@ An ad-free Android puzzle app with 20 games, grouped on one landing page:
 - **Spider Solitaire.** One, two or four suits, with undo and hints.
 - **Mahjong Garden.** Mahjong solitaire on six layouts with cartoon tiles; every deal can be cleared.
 - **Jigsaw.** Interlocking pieces of 12 cartoon scenes, from 9 to 49 pieces.
+- **Sticker Studio.** Peel stickers off the sheet and press them onto numbered outlines to fill 50 cosy isometric scenes, from a living room and a bakery to a moon base and a zoo. Stickers snap onto their outline or stay wherever you drop them, and you can move them later. Tap a placed sticker to swap its style (about 300 stickers have alternatives, such as three kinds of couch) or recolour it. Hints, zoom and an option to hide the numbers.
 - **Island Hop.** Join numbered islands with bridges. 320 puzzles from 7×7 to 12×12, each with exactly one solution.
 - **Gridlock.** Slide cars and trucks to free the red car. 320 car parks from 3 to 51 moves, with a target, stars and hints.
 - **Crate Mate.** Push every crate onto its spot. 218 original warehouses from one crate to six, each checked by a solver.
@@ -78,6 +79,7 @@ node tools/gen-gridlock.mjs             # Gridlock car parks
 node tools/gen-crate.mjs                # Crate Mate warehouses
 node tools/gen-potion.mjs               # Potion Pour levels
 node tools/gen-art.mjs && node tools/gen-scene-art.mjs # redraw the SVG artwork
+node tools/sticker/server.mjs <kenney-kits> # render Sticker Studio scenes (open the printed address in Chrome)
 cd android && ./gradlew assembleRelease # build the APK
 ```
 
@@ -100,6 +102,7 @@ tools/               tests, level generator and release script
 - Word lists: based on SCOWL, copyright Kevin Atkinson and contributors, used under its permissive licence. See `www/levels/WORDLIST-LICENSE.txt`.
 
 - Animal, scenery, vehicle, warehouse and island pictures: [Kenney](https://kenney.nl), CC0 (public domain). See `www/img/kenney/LICENSE-CC0.txt`.
+- Sticker Studio scenes are rendered from Kenney's CC0 3D kits (furniture, food, nature, holiday, cube pets, fantasy town, pirate, space, cars, graveyard, castle, trains, survival, mini market, coaster, minigolf, toy cars, mini arcade, mini characters, mini dungeon, platformer, suburban city and mini skate). See `www/img/stickers/LICENSE.txt`.
 - All other illustrations (cats, Mahjong tiles, icons, candies and scene objects) are original SVG drawings made for this app.
 
 Mindnook is an independent project. It is not made by, endorsed by or affiliated with Easybrain, Oakever Games, Easetouch, King, Hungry Studio or any other game maker. Its games are original takes on popular puzzle styles.

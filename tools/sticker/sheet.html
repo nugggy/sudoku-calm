@@ -1,0 +1,10 @@
+<!doctype html><meta charset="utf-8"><title>Sticker scenes</title>
+<style>body{margin:0;font:12px system-ui;background:#f4efe6;display:grid;grid-template-columns:repeat(var(--cols,5),1fr);gap:6px;padding:6px}figure{margin:0;background:#fff;border-radius:6px;padding:4px;text-align:center}img{width:100%;display:block}</style>
+<script type="module">
+const P = new URLSearchParams(location.search);
+document.body.style.setProperty('--cols', P.get('cols') || 5);
+const kind = P.get('kind') || 'thumb', from = +(P.get('from') || 1), to = +(P.get('to') || 50);
+const data = await (await fetch('/www/levels/stickers.json?' + Date.now())).json();
+for (let i = from; i <= to; i++) { const s = data.scenes[i - 1]; if (!s) continue; const id = String(i).padStart(2, '0');
+  document.body.insertAdjacentHTML('beforeend', `<figure><img src="/www/img/stickers/s${id}/${kind}.webp?${Date.now()}"><figcaption>${i}. ${s.name} (${s.s.length})</figcaption></figure>`); }
+</script>

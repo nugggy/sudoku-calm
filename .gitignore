@@ -23,3 +23,8 @@ Thumbs.db
 desktop.ini
 tools/.pawgram-cache/
 tools/pawgram-candidates.json
+
+# Sticker Studio renderer: downloaded Kenney kits and working files
+tools/sticker/kenney/
+tools/sticker/last-stickers.json
+tools/sticker/catalog.json

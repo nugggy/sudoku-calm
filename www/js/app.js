@@ -22,6 +22,7 @@ import { wheelHomeScreen, wheelGameScreen, wheelHelp } from './wheel-game.js';
 import { pipeHomeScreen, pipeGameScreen, pipeHelp } from './pipe-game.js';
 import { spiderHomeScreen, spiderGameScreen, spiderHelp } from './spider-game.js';
 import { jigsawHomeScreen, jigsawGameScreen, jigsawHelp } from './jigsaw-game.js';
+import { stickerHomeScreen, stickerGameScreen, stickerHelp, stickerCardArt } from './sticker-game.js';
 import { crossHomeScreen, crossGameScreen, crossHelp } from './crossword-game.js';
 import { wsHomeScreen, wsGameScreen, wsHelp } from './wordsearch-game.js';
 import { meowHomeScreen, meowGameScreen, meowLevelsScreen, meowCatsScreen, loadLevels, meowHelp } from './meow-game.js';
@@ -63,7 +64,7 @@ const SCREENS = {
   mahjong: mahjongHomeScreen, mjgame: mahjongGameScreen,
   wheel: wheelHomeScreen, wheelgame: wheelGameScreen, pipe: pipeHomeScreen, pipegame: pipeGameScreen,
   spider: spiderHomeScreen, spidergame: spiderGameScreen,
-  jigsaw: jigsawHomeScreen, jiggame: jigsawGameScreen,
+  jigsaw: jigsawHomeScreen, jiggame: jigsawGameScreen, sticker: stickerHomeScreen, stickergame: stickerGameScreen,
   sudoku: sudokuScreen, meowgame: meowGameScreen, meowlevels: meowLevelsScreen, meowcats: meowCatsScreen,
   settings: settingsScreen, about: aboutScreen,
 };
@@ -272,6 +273,11 @@ registerGame({
   progress: () => `Puzzle ${store.jigsaw.level + 1}`,
 });
 registerGame({
+  id: 'sticker', cat: 'Casual', screen: 'sticker', name: 'Sticker Studio', tag: 'Fill cosy scenes with stickers', theme: 'g-sticker',
+  art: () => stickerCardArt(),
+  progress: () => `${Object.keys(store.sticker.done).length} of 50 scenes`,
+});
+registerGame({
   id: 'hashi', cat: 'Logic', screen: 'hashi', name: 'Island Hop', tag: 'Join the islands with bridges', theme: 'g-hashi',
   art: () => hashiCardArt(),
   progress: () => `Level ${store.hashi.level + 1}`,
@@ -402,6 +408,7 @@ function statsScreen() {
         ${row('sports-medal', 'Mahjong boards cleared', store.mahjong.level)}
         ${row('trophy', 'Spider Solitaire games won', Object.values(store.spider.won).reduce((a, b) => a + b, 0))}
         ${row('star', 'Jigsaws completed', store.jigsaw.level)}
+        ${row('sparkles', 'Sticker scenes finished', Object.keys(store.sticker.done).length)}
       </div>
       <div class="section-title">Crosswords</div>
       <div class="card stat-group">
@@ -530,8 +537,8 @@ function settingsScreen() {
     else if (a === 'solrules') solHelp();
     else if (a === 'treatrules') treatHelp();
     else if (a === 'crossrules') crossHelp();
-    else if (a === 'rules-more') sheet(`<h2>How to play</h2>${[['2048', '2048'], ['mines', 'Minesweeper'], ['guess', 'Guesswork'], ['wheel', 'Word Wheel'], ['pipe', 'Pipeline'], ['mahjong', 'Mahjong Garden'], ['spider', 'Spider Solitaire'], ['jigsaw', 'Jigsaw'], ['hashi', 'Island Hop'], ['gridlock', 'Gridlock'], ['crate', 'Crate Mate'], ['potion', 'Potion Pour']].map(([k, n]) => `<button class="sheet-item" data-h="${k}">${n}</button>`).join('')}`, {
-      onMount(node, close) { node.addEventListener('click', (ev) => { const b = ev.target.closest('[data-h]'); if (!b) return; close(); ({ 2048: help2048, mines: minesHelp, guess: guessHelp, wheel: wheelHelp, pipe: pipeHelp, mahjong: mahjongHelp, spider: spiderHelp, jigsaw: jigsawHelp, hashi: hashiHelp, gridlock: gridlockHelp, crate: crateHelp, potion: potionHelp })[b.dataset.h](); }); },
+    else if (a === 'rules-more') sheet(`<h2>How to play</h2>${[['2048', '2048'], ['mines', 'Minesweeper'], ['guess', 'Guesswork'], ['wheel', 'Word Wheel'], ['pipe', 'Pipeline'], ['mahjong', 'Mahjong Garden'], ['spider', 'Spider Solitaire'], ['jigsaw', 'Jigsaw'], ['sticker', 'Sticker Studio'], ['hashi', 'Island Hop'], ['gridlock', 'Gridlock'], ['crate', 'Crate Mate'], ['potion', 'Potion Pour']].map(([k, n]) => `<button class="sheet-item" data-h="${k}">${n}</button>`).join('')}`, {
+      onMount(node, close) { node.addEventListener('click', (ev) => { const b = ev.target.closest('[data-h]'); if (!b) return; close(); ({ 2048: help2048, mines: minesHelp, guess: guessHelp, wheel: wheelHelp, pipe: pipeHelp, mahjong: mahjongHelp, spider: spiderHelp, jigsaw: jigsawHelp, sticker: stickerHelp, hashi: hashiHelp, gridlock: gridlockHelp, crate: crateHelp, potion: potionHelp })[b.dataset.h](); }); },
     });
     else if (a === 'wsrules') wsHelp();
     else if (a === 'blockrules') blockHelp();

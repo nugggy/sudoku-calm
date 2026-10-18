@@ -49,6 +49,7 @@ const defaults = () => ({
   pipe: { level: 0 },
   spider: { current: null, played: {}, won: {}, best: {} },
   jigsaw: { level: 0, current: null, ghost: false },
+  sticker: { placed: {}, done: {}, numbers: true, last: 0 },
   block: { best: 0, games: 0, current: null },
   sol: { draw: 1, current: null, next: {}, stats: { played: 0, won: 0, bestTime: 0, fewestMoves: 0, streak: 0, bestStreak: 0, bestScore: 0 } },
   meta: { installed: Date.now(), lastUpdateCheck: 0, skipVersion: '' },

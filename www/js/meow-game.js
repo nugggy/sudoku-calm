@@ -14,7 +14,7 @@ export const CATS = [
 ];
 const UNLOCK_EVERY = 10; // a new cat every 10 levels
 const LIVES = 3;         // wrong cats allowed per level
-const HOLD_MS = 450;     // press and hold this long to place a cat, so a stray tap never does
+const DOUBLE_MS = 400;   // two taps on one cell within this time place a cat; a later second tap only clears the cross
 const heartSvg = '<svg viewBox="0 0 24 24"><path d="M12 21C5 16.3 2 12.6 2 8.6 2 5.5 4.4 3.2 7.3 3.2c1.9 0 3.6 1 4.7 2.6 1.1-1.6 2.8-2.6 4.7-2.6 2.9 0 5.3 2.3 5.3 5.4 0 4-3 7.7-10 12.4z"/></svg>';
 export const catUnlocked = (k) => store.meow.level >= k * UNLOCK_EVERY;
 export const catSrc = (k = store.meow.cat) => `img/art/cats/${CATS[k].img}`;
@@ -51,10 +51,10 @@ export function meowHelp() {
     <div class="demo">
       <div><span></span>Empty</div>
       <div><span style="color:#5a4a42">${icon.x.replace('<svg', '<svg width="20" height="20" style="opacity:.6"')}</span>Tap</div>
-      <div><span><img src="${cat}" alt=""></span>Press and hold</div>
+      <div><span><img src="${cat}" alt=""></span>Double-tap</div>
     </div>
-    <p>Tap a cell to cross it out, and tap again to clear it. Drag across cells to cross out lots at once.</p>
-    <p>To place a cat, <b>press and hold</b> a cell until the circle fills. A quick tap never places a cat.</p>
+    <p>Tap a cell to cross it out, and tap it again later to clear it. Drag across cells to cross out lots at once.</p>
+    <p>To place a cat, <b>double-tap</b> a cell quickly. Tapping a crossed-out cell again later never turns it into a cat.</p>
     <p>You have <b>3 lives</b> on each level. A cat in the wrong cell costs a life and that cell gets crossed out.</p>
     <p>Stuck? The hint button finds mistakes first, then shows you the next logical move and why it works. You never need to guess.</p>
   </div><button class="meow-btn" data-x>Let's play</button>`, { onMount: (n, close) => $('[data-x]', n).onclick = close });
@@ -244,8 +244,8 @@ export function meowGameScreen(app, { idx }) {
     }, 900);
   }
 
-  // ---------- Input: tap crosses out, press and hold places a cat, drag paints crosses ----------
-  let gesture = null;
+  // ---------- Input: tap crosses out, a quick double-tap places a cat, drag paints crosses ----------
+  let gesture = null, lastTap = null;
   function tryCat(i) {
     clearHint();
     const s = state[i];
@@ -281,23 +281,15 @@ export function meowGameScreen(app, { idx }) {
       });
     }, 700);
   }
-  const stopHold = (gs) => { if (!gs) return; clearTimeout(gs.timer); cells[gs.start].classList.remove('holding'); };
   const cellAt = (x, y) => { const t = document.elementFromPoint(x, y); const c = t && t.closest('.mcell'); return c && boardEl.contains(c) ? +c.dataset.i : -1; };
   boardEl.addEventListener('pointerdown', (e) => {
     if (done) return;
     const i = cellAt(e.clientX, e.clientY); if (i < 0) return;
     boardEl.setPointerCapture(e.pointerId);
-    const gs = gesture = { start: i, moved: false, mode: state[i] === CROSS ? 'clear' : 'cross', changes: [], seen: new Set() };
-    if (state[i] !== CAT) {
-      cells[i].classList.add('holding');
-      gs.timer = setTimeout(() => {
-        if (gesture !== gs || gs.moved || done) return;
-        gs.held = true; stopHold(gs);
-        tryCat(i);
-      }, HOLD_MS);
-    }
+    gesture = { start: i, moved: false, mode: state[i] === CROSS ? 'clear' : 'cross', changes: [], seen: new Set() };
   });
   boardEl.addEventListener('contextmenu', (e) => e.preventDefault());
+  boardEl.addEventListener('dblclick', (e) => e.preventDefault());
   function paint(i) {
     if (gesture.seen.has(i)) return;
     gesture.seen.add(i);
@@ -309,23 +301,36 @@ export function meowGameScreen(app, { idx }) {
     if (!gesture) return;
     const i = cellAt(e.clientX, e.clientY);
     if (i < 0) return;
-    if (i !== gesture.start && !gesture.moved && !gesture.held) { gesture.moved = true; stopHold(gesture); clearHint(); paint(gesture.start); }
+    if (i !== gesture.start && !gesture.moved) { gesture.moved = true; lastTap = null; clearHint(); paint(gesture.start); }
     if (gesture.moved) { paint(i); render(); }
   });
   const end = () => {
     if (!gesture) return;
     const gs = gesture; gesture = null;
-    stopHold(gs);
-    if (gs.held || done) return;
+    if (done) return;
     if (gs.moved) { commit(gs.changes); return; }
-    const i = gs.start, s = state[i];
-    if (s === CAT) { toast('That cat is in the right place'); return; }
+    const i = gs.start, s = state[i], now = performance.now();
+    if (s === CAT) { lastTap = null; toast('That cat is in the right place'); return; }
+    // second tap in quick succession: take back the first tap's change, then try a cat
+    if (lastTap && lastTap.i === i && now - lastTap.at < DOUBLE_MS) {
+      const first = lastTap; lastTap = null;
+      const h = history[history.length - 1];
+      if (h && h.length === 1 && h[0][0] === i) history.pop();
+      state[i] = first.was;
+      tryCat(i);
+      return;
+    }
     clearHint();
     state[i] = s === UNKNOWN ? CROSS : UNKNOWN;
     if (s === UNKNOWN) sfx.cross(); else sfx.tap();
+    lastTap = { i, at: now, was: s };
     commit([[i, s]]);
-    // people used to tap twice for a cat, so remind them a few times how it works now
-    if (s === CROSS && (m.holdTips || 0) < 3) { m.holdTips = (m.holdTips || 0) + 1; save(); toast('To place a cat, press and hold a cell', 2600); }
+    // a slow second tap only clears the cross, so remind them a few times how cats go in
+    // (waits a moment, so the tip doesn't show when this tap turns out to be the start of a double-tap)
+    if (s === CROSS && (m.dblTips || 0) < 3) {
+      const t = lastTap;
+      setTimeout(() => { if (lastTap === t && !done) { m.dblTips = (m.dblTips || 0) + 1; save(); toast('To place a cat, double-tap a cell quickly', 2600); } }, DOUBLE_MS);
+    }
   };
   boardEl.addEventListener('pointerup', end);
   boardEl.addEventListener('pointercancel', end);

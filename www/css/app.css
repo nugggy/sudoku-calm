@@ -364,8 +364,6 @@ h1, h2, h3, p { margin: 0; }
 .mcell.focus { filter: brightness(1.12) saturate(.8); }
 .mcell.win img { animation: dance .6s ease-in-out infinite alternate; }
 .mboard { -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
-.mcell.holding::after { content: ""; position: absolute; inset: 10%; border-radius: 50%; border: 3px solid #fff; background: rgba(255, 255, 255, .45); box-shadow: 0 0 6px rgba(0, 0, 0, .15); animation: hold-fill .45s linear forwards; pointer-events: none; }
-@keyframes hold-fill { from { transform: scale(0); opacity: .4; } to { transform: scale(1); opacity: 1; } }
 .mcell.wrong { animation: wrong-cell .5s; }
 .mcell.wrong::before { content: ""; position: absolute; inset: 0; background: #ff3b5c; animation: wrong-flash .7s ease-out forwards; pointer-events: none; }
 @keyframes wrong-cell { 20% { transform: translateX(-4px); } 40% { transform: translateX(4px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(2px); } }

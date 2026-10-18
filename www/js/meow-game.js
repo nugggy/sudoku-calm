@@ -13,6 +13,9 @@ export const CATS = [
   { img: 'cat13.svg', name: 'Tiger' }, { img: 'cat14.svg', name: 'Leo' },
 ];
 const UNLOCK_EVERY = 10; // a new cat every 10 levels
+const LIVES = 3;         // wrong cats allowed per level
+const HOLD_MS = 450;     // press and hold this long to place a cat, so a stray tap never does
+const heartSvg = '<svg viewBox="0 0 24 24"><path d="M12 21C5 16.3 2 12.6 2 8.6 2 5.5 4.4 3.2 7.3 3.2c1.9 0 3.6 1 4.7 2.6 1.1-1.6 2.8-2.6 4.7-2.6 2.9 0 5.3 2.3 5.3 5.4 0 4-3 7.7-10 12.4z"/></svg>';
 export const catUnlocked = (k) => store.meow.level >= k * UNLOCK_EVERY;
 export const catSrc = (k = store.meow.cat) => `img/art/cats/${CATS[k].img}`;
 
@@ -47,10 +50,12 @@ export function meowHelp() {
     <p>Cats need personal space. Two cats can never touch, not even corner to corner.</p>
     <div class="demo">
       <div><span></span>Empty</div>
-      <div><span style="color:#5a4a42">${icon.x.replace('<svg', '<svg width="20" height="20" style="opacity:.6"')}</span>Tap once</div>
-      <div><span><img src="${cat}" alt=""></span>Tap twice</div>
+      <div><span style="color:#5a4a42">${icon.x.replace('<svg', '<svg width="20" height="20" style="opacity:.6"')}</span>Tap</div>
+      <div><span><img src="${cat}" alt=""></span>Press and hold</div>
     </div>
-    <p>Tap a cell once to cross it out, twice to place a cat, and a third time to clear it. Drag across cells to cross out lots at once.</p>
+    <p>Tap a cell to cross it out, and tap again to clear it. Drag across cells to cross out lots at once.</p>
+    <p>To place a cat, <b>press and hold</b> a cell until the circle fills. A quick tap never places a cat.</p>
+    <p>You have <b>3 lives</b> on each level. A cat in the wrong cell costs a life and that cell gets crossed out.</p>
     <p>Stuck? The hint button finds mistakes first, then shows you the next logical move and why it works. You never need to guess.</p>
   </div><button class="meow-btn" data-x>Let's play</button>`, { onMount: (n, close) => $('[data-x]', n).onclick = close });
 }
@@ -109,16 +114,20 @@ export function meowGameScreen(app, { idx }) {
   const S = store.settings, m = store.meow;
   const level = getLevel(idx);
   const { n, regions } = level;
-  let state, history, elapsed;
-  if (m.current && m.current.idx === idx && m.current.state.length === n * n) ({ state, history, elapsed } = m.current);
-  else { state = new Array(n * n).fill(UNKNOWN); history = []; elapsed = 0; }
-  const cur = () => (m.current = { idx, state, history, elapsed });
+  const isSol = (i) => level.solution[(i / n) | 0] === i % n;
+  let state, history, elapsed, lives;
+  if (m.current && m.current.idx === idx && m.current.state.length === n * n) ({ state, history, elapsed, lives = LIVES } = m.current);
+  else { state = new Array(n * n).fill(UNKNOWN); history = []; elapsed = 0; lives = LIVES; }
+  // cats only ever go where they belong; games saved before lives existed may still hold wrong ones
+  state.forEach((s, i) => { if (s === CAT && !isSol(i)) state[i] = UNKNOWN; });
+  const cur = () => (m.current = { idx, state, history, elapsed, lives });
   let done = false, tick = null, hint = null;
 
   const root = el(`<section class="screen meow-theme meow-game">
     <header class="meow-header">
       <button class="icon-btn" data-act="back" aria-label="Back">${icon.back}</button>
       <div class="cat-count"><img src="${catSrc()}" alt=""><span><span class="got" data-el="got">0</span>/${n}</span></div>
+      <div class="meow-lives" data-el="lives" aria-label="Lives"></div>
       <div class="title">Level ${idx + 1}</div>
       <button class="round-btn" data-act="help" aria-label="How to play">${icon.help}</button>
       <button class="round-btn" data-act="settings" aria-label="Settings">${icon.gear}</button>
@@ -169,7 +178,13 @@ export function meowGameScreen(app, { idx }) {
       c.classList.toggle('focus', !!hint && !!hint.focus && hint.focus.includes(i) && !hint.cells.includes(i));
     });
     q('got').textContent = state.filter((s) => s === CAT).length;
+    renderLives();
     q('timer').textContent = S.meowTimer ? fmtTime(elapsed) : '';
+  }
+
+  function renderLives(lost = false) {
+    q('lives').innerHTML = [...Array(LIVES)].map((_, k) => `<i class="${k < lives ? '' : 'lost'} ${lost && k === lives ? 'pop' : ''}">${heartSvg}</i>`).join('');
+    q('lives').setAttribute('aria-label', `${lives} ${lives === 1 ? 'life' : 'lives'} left`);
   }
 
   function startTimer() {
@@ -229,15 +244,60 @@ export function meowGameScreen(app, { idx }) {
     }, 900);
   }
 
-  // ---------- Input: tap cycles, drag paints crosses ----------
+  // ---------- Input: tap crosses out, press and hold places a cat, drag paints crosses ----------
   let gesture = null;
+  function tryCat(i) {
+    clearHint();
+    const s = state[i];
+    if (isSol(i)) { state[i] = CAT; sfx.cat(); buzz(12); commit([[i, s]]); return; }
+    // wrong cell: the cat won't stay, the cell is crossed out, and a life is gone
+    lives = Math.max(0, lives - 1);
+    state[i] = CROSS;
+    sfx.error(); buzz([60, 40, 60]);
+    cur(); save(true);
+    render(); renderLives(true);
+    cells[i].classList.remove('wrong'); void cells[i].offsetWidth; cells[i].classList.add('wrong');
+    if (lives <= 0) outOfLives();
+    else toast(`Not there. ${lives} ${lives === 1 ? 'life' : 'lives'} left`);
+  }
+  function outOfLives() {
+    done = true; stopTimer();
+    m.current = null; save(true);
+    document.getElementById('toast').classList.remove('show'); // the "lives left" note no longer applies
+    setTimeout(() => {
+      const node = el(`<div class="meow-win"><div class="box">
+        <img src="${catSrc()}" alt="" style="animation:none">
+        <h2>Out of lives</h2>
+        <p>Three cats went in the wrong place. Have another go at level ${idx + 1}.</p>
+        <div class="stack" style="display:flex;flex-direction:column;gap:10px">
+          <button class="meow-btn" data-act="again">Try again</button>
+          <button class="meow-btn alt" data-act="home">Back</button>
+        </div></div></div>`);
+      document.getElementById('overlay-root').appendChild(node);
+      node.addEventListener('click', (e) => {
+        const a = e.target.closest('[data-act]')?.dataset.act; if (!a) return;
+        node.remove();
+        if (a === 'again') app.replace('meowgame', { idx }); else app.back();
+      });
+    }, 700);
+  }
+  const stopHold = (gs) => { if (!gs) return; clearTimeout(gs.timer); cells[gs.start].classList.remove('holding'); };
   const cellAt = (x, y) => { const t = document.elementFromPoint(x, y); const c = t && t.closest('.mcell'); return c && boardEl.contains(c) ? +c.dataset.i : -1; };
   boardEl.addEventListener('pointerdown', (e) => {
     if (done) return;
     const i = cellAt(e.clientX, e.clientY); if (i < 0) return;
     boardEl.setPointerCapture(e.pointerId);
-    gesture = { start: i, moved: false, mode: state[i] === CROSS ? 'clear' : 'cross', changes: [], seen: new Set() };
+    const gs = gesture = { start: i, moved: false, mode: state[i] === CROSS ? 'clear' : 'cross', changes: [], seen: new Set() };
+    if (state[i] !== CAT) {
+      cells[i].classList.add('holding');
+      gs.timer = setTimeout(() => {
+        if (gesture !== gs || gs.moved || done) return;
+        gs.held = true; stopHold(gs);
+        tryCat(i);
+      }, HOLD_MS);
+    }
   });
+  boardEl.addEventListener('contextmenu', (e) => e.preventDefault());
   function paint(i) {
     if (gesture.seen.has(i)) return;
     gesture.seen.add(i);
@@ -249,20 +309,23 @@ export function meowGameScreen(app, { idx }) {
     if (!gesture) return;
     const i = cellAt(e.clientX, e.clientY);
     if (i < 0) return;
-    if (i !== gesture.start && !gesture.moved) { gesture.moved = true; clearHint(); paint(gesture.start); }
+    if (i !== gesture.start && !gesture.moved && !gesture.held) { gesture.moved = true; stopHold(gesture); clearHint(); paint(gesture.start); }
     if (gesture.moved) { paint(i); render(); }
   });
   const end = () => {
     if (!gesture) return;
     const gs = gesture; gesture = null;
+    stopHold(gs);
+    if (gs.held || done) return;
     if (gs.moved) { commit(gs.changes); return; }
     const i = gs.start, s = state[i];
-    const next = s === UNKNOWN ? CROSS : s === CROSS ? CAT : UNKNOWN;
+    if (s === CAT) { toast('That cat is in the right place'); return; }
     clearHint();
-    state[i] = next;
-    if (next === CAT) { sfx.cat(); buzz(12); if (conflicts(n, regions, state).has(i)) setTimeout(() => sfx.error(), 120); }
-    else if (next === CROSS) sfx.cross(); else sfx.tap();
+    state[i] = s === UNKNOWN ? CROSS : UNKNOWN;
+    if (s === UNKNOWN) sfx.cross(); else sfx.tap();
     commit([[i, s]]);
+    // people used to tap twice for a cat, so remind them a few times how it works now
+    if (s === CROSS && (m.holdTips || 0) < 3) { m.holdTips = (m.holdTips || 0) + 1; save(); toast('To place a cat, press and hold a cell', 2600); }
   };
   boardEl.addEventListener('pointerup', end);
   boardEl.addEventListener('pointercancel', end);
@@ -302,7 +365,7 @@ export function meowGameScreen(app, { idx }) {
         if (done || !history.length) break;
         clearHint();
         const ch = history.pop();
-        for (let k = ch.length - 1; k >= 0; k--) state[ch[k][0]] = ch[k][1];
+        for (let k = ch.length - 1; k >= 0; k--) state[ch[k][0]] = ch[k][1] === CAT && !isSol(ch[k][0]) ? UNKNOWN : ch[k][1];
         sfx.tap(); cur(); save(); render();
         break;
       }

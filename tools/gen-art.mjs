@@ -1,4 +1,4 @@
-// Draws Mindnook's original cartoon art as SVG files: dialog pictures, cat faces and Mahjong tile faces.
+// Draws GameHub's original cartoon art as SVG files: dialog pictures, cat faces and Mahjong tile faces.
 // Run with: node tools/gen-art.mjs   (writes www/img/art/{ui,cats,mahjong}/*.svg)
 // One house style: flat colours, a soft shadow crescent on the lower right, a small shine on the upper left
 // and a warm dark outline. Every file has a viewBox plus explicit width and height so it also draws on a canvas.

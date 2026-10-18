@@ -29,7 +29,7 @@ export const icon = {
   info: s('<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>'),
 };
 
-// Mindnook brand mark: four tiles hinting at the games (numbers, cards, blocks, pictures).
+// GameHub brand mark: four tiles hinting at the games (numbers, cards, blocks, pictures).
 export const brandSvg = `<svg class="brand" viewBox="0 0 120 120" aria-hidden="true">
   <defs><linearGradient id="bg-brand" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b6cf0"/><stop offset="1" stop-color="#9b5de5"/></linearGradient></defs>
   <rect x="4" y="4" width="112" height="112" rx="28" fill="url(#bg-brand)"/>

@@ -1,8 +1,8 @@
-<p align="center"><img src="docs/icon.png" width="120" alt="Mindnook icon"></p>
+<p align="center"><img src="docs/icon.png" width="120" alt="GameHub icon"></p>
 
-# Mindnook
+# GameHub
 
-A calm corner for your mind.
+All your games in one place, with no ads.
 
 An ad-free Android puzzle app with 22 games, grouped on one landing page:
 
@@ -106,4 +106,4 @@ tools/               tests, level generator and release script
 - Sticker Studio scenes are rendered from Kenney's CC0 3D kits (furniture, food, nature, holiday, cube pets, fantasy town, pirate, space, cars, graveyard, castle, trains, survival, mini market, coaster, minigolf, toy cars, mini arcade, mini characters, mini dungeon, platformer, suburban city and mini skate). See `www/img/stickers/LICENSE.txt`.
 - All other illustrations (cats, Mahjong tiles, icons, candies and scene objects) are original SVG drawings made for this app.
 
-Mindnook is an independent project. It is not made by, endorsed by or affiliated with Easybrain, Oakever Games, Easetouch, King, Hungry Studio or any other game maker. Its games are original takes on popular puzzle styles.
+GameHub is an independent project. It is not made by, endorsed by or affiliated with Easybrain, Oakever Games, Easetouch, King, Hungry Studio or any other game maker. Its games are original takes on popular puzzle styles.

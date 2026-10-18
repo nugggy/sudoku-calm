@@ -316,7 +316,7 @@ function landingScreen() {
   }
   function render() {
     body.innerHTML = `
-      <div class="brand-row">${brandSvg}<span>Mindnook</span></div>
+      <div class="brand-row">${brandSvg}<span>GameHub</span></div>
       <div class="landing-head"><h1>${greeting()}</h1><p>What would you like to play?</p></div>
       ${CATEGORIES.map((cat) => `<div class="cat-title">${cat}</div><div class="game-grid">${GAMES.filter((g) => g.cat === cat).map((g) => `
         <button class="game-card ${g.theme}" data-game="${g.id}">
@@ -565,13 +565,13 @@ function aboutScreen() {
   const root = el(`<section class="screen">
     <header class="topbar"><button class="icon-btn" data-act="back" aria-label="Back">${icon.back}</button><div class="title">About</div><div class="spacer"></div></header>
     <div class="scroll">
-      <div class="home-hero">${brandSvg}<div class="app-name">Mindnook</div><div class="tagline">Version ${esc(native.versionName())}</div></div>
+      <div class="home-hero">${brandSvg}<div class="app-name">GameHub</div><div class="tagline">Version ${esc(native.versionName())}</div></div>
       <div class="card credits">
         <p>An ad-free collection of logic puzzles. Every Sudoku is generated on your phone with exactly one solution, and every Meowdoku level can be solved with logic alone.</p><br>
         <p>Your progress stays on this device. The app only goes online to check GitHub for updates, which you can turn off in Settings.</p><br>
         <p><b>Words.</b> Word lists are based on SCOWL, copyright Kevin Atkinson and contributors, used under its permissive licence (see levels/WORDLIST-LICENSE.txt).</p><br>
-        <p><b>Artwork.</b> Animal, scenery and vehicle pictures are by Kenney (kenney.nl), released into the public domain under CC0. All other illustrations, including the cats, icons and Mahjong tiles, are original to Mindnook.</p><br>
-        <p><b>Inspiration.</b> Mindnook is an independent app. It is not made by, endorsed by or affiliated with Easybrain, Oakever Games, Easetouch, King, Hungry Studio or any other game maker. Its games are our own takes on popular puzzle styles, with original artwork and names.</p><br>
+        <p><b>Artwork.</b> Animal, scenery and vehicle pictures are by Kenney (kenney.nl), released into the public domain under CC0. All other illustrations, including the cats, icons and Mahjong tiles, are original to GameHub.</p><br>
+        <p><b>Inspiration.</b> GameHub is an independent app. It is not made by, endorsed by or affiliated with Easybrain, Oakever Games, Easetouch, King, Hungry Studio or any other game maker. Its games are our own takes on popular puzzle styles, with original artwork and names.</p><br>
         <p><a href="#" data-act="src">Source code and releases on GitHub</a></p>
       </div>
     </div></section>`);

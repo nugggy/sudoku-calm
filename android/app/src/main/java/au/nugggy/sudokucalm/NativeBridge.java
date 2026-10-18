@@ -108,7 +108,7 @@ public class NativeBridge {
         c.setInstanceFollowRedirects(true);
         c.setConnectTimeout(15000);
         c.setReadTimeout(30000);
-        c.setRequestProperty("User-Agent", "Mindnook-Updater");
+        c.setRequestProperty("User-Agent", "GameHub-Updater");
         try {
             if (c.getResponseCode() != 200) return false;
             long total = c.getContentLengthLong(), got = 0;
@@ -141,7 +141,7 @@ public class NativeBridge {
         if (!activity.getPackageManager().canRequestPackageInstalls()) {
             // Android needs a one-off permission to install updates from this app.
             pendingApk = apk;
-            Toast.makeText(activity, "Allow Mindnook to install updates, then come back.", Toast.LENGTH_LONG).show();
+            Toast.makeText(activity, "Allow GameHub to install updates, then come back.", Toast.LENGTH_LONG).show();
             activity.startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + activity.getPackageName())));
             return;
         }

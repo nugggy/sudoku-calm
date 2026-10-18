@@ -55,6 +55,6 @@ run(`git tag v${version}`);
 run('git push');
 run(`git push origin v${version}`);
 const notesFile = join(ROOT, 'dist', 'notes.txt');
-writeFileSync(notesFile, notes || `Mindnook ${version}`);
-run(`gh release create v${version} "${apk}" --title "Mindnook ${version}" --notes-file "${notesFile}"${beta ? ' --prerelease' : ' --latest'}`);
+writeFileSync(notesFile, notes || `GameHub ${version}`);
+run(`gh release create v${version} "${apk}" --title "GameHub ${version}" --notes-file "${notesFile}"${beta ? ' --prerelease' : ' --latest'}`);
 console.log(`\nPublished v${version}${beta ? ' (beta)' : ''}. Phones will offer the update next time the app checks.`);

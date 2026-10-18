@@ -1,0 +1,49 @@
+/* ---------- Yeti Games ---------- */
+.yeti-theme { --kit-accent: #2f8fd8; color: #23405f; background: linear-gradient(180deg, #cfeaff 0%, #eef8ff 55%, #ffffff 100%); }
+:root[data-theme="dark"] .yeti-theme { color: #dcecff; background: linear-gradient(180deg, #13263d 0%, #182c44 60%, #1b2f47 100%); }
+.yeti-theme .icon-btn { color: inherit; }
+.yeti-theme .topbar .title small { display: block; font-size: 11px; font-weight: 800; letter-spacing: .4px; opacity: .65; text-transform: uppercase; }
+.yeti-btn { background: #2f8fd8; box-shadow: 0 4px 0 #1d649e; }
+.g-yeti { background: linear-gradient(150deg, #7cc6f5, #2f6fb8); }
+
+/* picker card and hub hero: the yeti and the penguin side by side */
+.art-yeti, .yeti-hero { position: relative; display: flex; align-items: flex-end; justify-content: center; }
+.art-yeti img { height: 84px; filter: drop-shadow(0 5px 6px rgba(10, 30, 60, .3)); }
+.art-yeti img.pg { height: 46px; margin-left: -8px; }
+.yeti-hero { padding: 8px 0 12px; }
+.yeti-hero img { height: 128px; filter: drop-shadow(0 8px 10px rgba(10, 30, 60, .25)); animation: float 3s ease-in-out infinite; }
+.yeti-hero img.pg { height: 70px; margin-left: -10px; animation-delay: -1.2s; }
+
+.yeti-tour { display: flex; flex-direction: column; align-items: center; width: 100%; }
+.yeti-list { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+.yeti-card { display: flex; align-items: stretch; gap: 12px; padding: 8px; border-radius: 18px; background: rgba(255, 255, 255, .8); box-shadow: 0 3px 12px rgba(30, 70, 120, .12); text-align: left; color: inherit; transition: transform .1s; }
+:root[data-theme="dark"] .yeti-card { background: rgba(255, 255, 255, .07); }
+.yeti-card:active { transform: scale(.98); }
+.yeti-thumb { width: 112px; height: 76px; border-radius: 12px; flex-shrink: 0; display: block; }
+.yeti-info { display: flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; }
+.yeti-info b { font-size: 16px; font-weight: 800; }
+.yeti-info span { font-size: 13px; opacity: .75; line-height: 1.3; }
+.yeti-info em { font-style: normal; font-size: 12px; font-weight: 800; color: #2f8fd8; margin-top: 3px; }
+.yeti-credit { font-size: 12px; opacity: .6; text-align: center; margin: 18px 8px 6px; line-height: 1.4; }
+
+/* playing */
+.yeti-play { background: #9fd3f5; }
+.yeti-stage { position: relative; flex: 1; min-height: 0; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
+.yeti-stage canvas { position: absolute; inset: 0; display: block; touch-action: none; }
+.yeti-hud { position: absolute; left: 10px; right: 10px; top: 8px; display: flex; justify-content: space-between; gap: 8px; pointer-events: none; }
+.yeti-hud span { background: rgba(15, 30, 55, .55); color: #fff; font-weight: 800; font-size: 14px; padding: 5px 12px; border-radius: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.yeti-hud span[hidden] { display: block; visibility: hidden; }
+.yeti-prompt { position: absolute; left: 50%; bottom: calc(18% + var(--safe-bottom)); transform: translate(-50%, 10px); max-width: 86%; text-align: center; color: #fff; font-weight: 900; font-size: 20px; line-height: 1.25; text-shadow: 0 2px 0 rgba(10, 25, 50, .6), 0 0 12px rgba(10, 25, 50, .5); opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; }
+.yeti-prompt.show { opacity: 1; transform: translate(-50%, 0); animation: yeti-pulse 1.6s ease-in-out infinite; }
+@keyframes yeti-pulse { 50% { transform: translate(-50%, -4px); } }
+.yeti-loading { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 800; color: #fff; text-shadow: 0 2px 4px rgba(0, 0, 0, .3); }
+
+.yeti-result { position: absolute; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(10, 25, 45, .45); animation: fade .25s; }
+.yeti-result .box { position: relative; width: 100%; max-width: 360px; background: var(--card); color: var(--text); border-radius: 26px; padding: 22px 20px 18px; text-align: center; animation: pop .35s cubic-bezier(.2, 1.4, .4, 1); }
+.yeti-result img { height: 96px; }
+.yeti-result .big { font-size: 40px; font-weight: 900; letter-spacing: -1px; color: #2f8fd8; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.yeti-result p { margin-top: 4px; }
+.yeti-result .sub { opacity: .65; font-size: 14px; }
+.yeti-result .badge { position: absolute; top: -14px; left: 50%; transform: translateX(-50%) rotate(-3deg); background: #ffcf3f; color: #5a3a00; font-weight: 900; padding: 6px 16px; border-radius: 14px; box-shadow: 0 3px 0 #d69c10; }
+.yeti-result .tour { margin-top: 12px; background: var(--surface); border-radius: 12px; padding: 8px; font-size: 14px; }
+.yeti-result .stack { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }

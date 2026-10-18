@@ -1,0 +1,31 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Yeti models</title>
+<script type="importmap">{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }</script>
+<style>body{margin:0;background:#cfe6f5;font:13px system-ui}#g{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;padding:6px}figure{margin:0;background:#fff;border-radius:8px;padding:4px}img{width:100%;display:block}figcaption{font-size:11px;word-break:break-word}</style>
+</head><body><div id="g"></div>
+<script type="module">
+// Shows every model from a side view, with its size and animation names, to plan the sprites.
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+const keys = (await (await fetch('/tool/models.txt')).text()).split('\n').filter((l) => l.trim() && !l.startsWith('#')).map((l) => l.split('|')[0]);
+const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: true }); r.setSize(300, 300);
+const loader = new GLTFLoader();
+const g = document.getElementById('g');
+window.info = {};
+for (const k of keys) {
+  const gl = await loader.loadAsync(`/models/${k}.glb`);
+  const scene = new THREE.Scene(); scene.add(new THREE.HemisphereLight(0xffffff, 0x8899aa, 2.2)); const d = new THREE.DirectionalLight(0xffffff, 1.6); d.position.set(3, 5, 4); scene.add(d);
+  scene.add(gl.scene);
+  const box = new THREE.Box3().setFromObject(gl.scene), size = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3());
+  const m = Math.max(size.x, size.y, size.z) * 0.62;
+  const cam = new THREE.OrthographicCamera(-m, m, m, -m, -100, 100); cam.position.set(c.x + 1, c.y + 0.25, c.z + 0.6); cam.lookAt(c);
+  r.render(scene, cam);
+  const anims = gl.animations.map((a) => a.name);
+  window.info[k] = { size: size.toArray().map((v) => +v.toFixed(2)), anims };
+  g.insertAdjacentHTML('beforeend', `<figure><img src="${r.domElement.toDataURL()}"><figcaption><b>${k}</b> ${size.toArray().map((v) => v.toFixed(1)).join('×')}<br>${anims.join(', ')}</figcaption></figure>`);
+}
+window.done = true;
+</script></body></html>

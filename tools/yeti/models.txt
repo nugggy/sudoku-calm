@@ -1,0 +1,24 @@
+# key|file id on static.poly.pizza|licence (0 = CC0, B = CC-BY 3.0)|author|title|poly.pizza model id
+yeti|40a831b3-686a-4af8-b189-a13b38a3c26a|0|Quaternius|Yeti|ceRHrn8HHE
+penguin|f242d6d3-67cd-41b4-ae93-4cfd0acf8b5e|B|Poly by Google|Penguin|fBXvsC6pe_V
+penguinChar|150bb3ca-ccfe-4804-9a17-31cc2357e906|0|Polygonal Mind|Penguin Character|2GSHsxaDIo
+orca|a7baa268-485e-4bc8-a936-64087228e963|B|Poly by Google|Killer Whale|7pqZEQ9b_E-
+orca2|f6214f69-34e2-4a28-8986-1e7d6ca9b964|B|Poly by Google|Orca|5p9B6IebY-A
+seal|52abfcb3-f9b2-47bd-b524-7bdf4811e01b|B|Poly by Google|Seal|fudlK4rnsI-
+gull|882c4ff3-c97b-4ae2-aedf-953c8d692898|B|Poly by Google|Flying gull|eMNhHDZakYp
+flamingo|210f907e-74ef-469a-9c24-afbd0ecdbeb7|B|Хмара Сергей|Flamingo|5hUIvLVFqet
+flamingo2|60e6c14b-aabe-4957-b8cf-b76faa8b9b82|B|Risa Pizza|flamingo|etPoDta6HCd
+giraffe|679f9200-64f2-4a1c-aa4b-f38afdfdd8ae|B|Poly by Google|Giraffe|80w8kwQU0QH
+elephant|b8ca84f2-02b2-4c84-92c0-b5f8b0eee90e|B|Poly by Google|Elephant|a27MA0rXyyj
+vulture|731a1ee8-ef73-43fd-b4cd-aee5005a17c0|B|Poly by Google|Turkey vulture|fvAgunyr1kd
+snake|0f3a551e-743e-48f5-936f-804c6c3b88bd|0|Quaternius|Snake|x9x0viZs8V
+acacia|28d1b007-927a-4fbc-a3bf-1a38278dc73c|B|Poly by Google|Acacia|0j86RMO4kQC
+goat|3c39d371-5547-42aa-99cd-db34f52bb317|B|Poly by Google|Goat|bSetPnvQB5G
+bighorn|9bd96002-34d8-49e7-b045-c1708afc861e|B|Poly by Google|Bighorn sheep|4kUChlMv8Vp
+llama|73641d10-547f-47d8-9c86-ad92158fd78b|0|Quaternius|Llama|JxVJ9rfWGy
+bull|5704ef69-2c27-4de8-a942-70a29458af21|0|Quaternius|Bull|a8PIIYwF7r
+surfboard|15eb2c4f-a5c2-49ba-9845-01817b2bf997|B|Poly by Google|Surfboard|dkwqsVsI2R0
+snowboard|b3f02a40-6db3-46dc-91fd-01d4c3e66598|0|Geldvillager|Snowboard|sMbO7OqgNX
+bat|66659244-e1d4-4a55-8135-e570818e8190|0|CreativeTrio|Baseball Bat|i2JCd3w8gh
+icicle|848175fa-fc5d-47fd-9535-7b3eb27fbb79|B|Poly by Google|Icicle|dEz_atLOlje
+iceberg|ab6f30ba-ff00-4c27-8c67-b26699473902|B|Poly by Google|Iceberg|8sqTOfIjWml

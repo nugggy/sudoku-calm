@@ -45,6 +45,7 @@ const defaults = () => ({
   crate: { level: 0, best: {}, current: null },
   potion: { level: 0, current: null },
   press: { reached: 0, seenHelp: false },
+  yeti: { best: {}, played: {}, seen: {}, tourBest: 0 },
   mahjong: { level: 0, best: {} },
   wheel: { level: 0, bonus: 0, hints: 5, current: null, revealed: {} },
   pipe: { level: 0 },

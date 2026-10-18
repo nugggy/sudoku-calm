@@ -584,8 +584,11 @@ function aboutScreen() {
 }
 
 // ---------- Updates ----------
+let updateBusy = false; // one check (and one update dialog) at a time
 async function runUpdateCheck(manual = false) {
   const meta = store.meta;
+  if (updateBusy) return;
+  updateBusy = true;
   if (manual) toast('Checking for updates');
   try {
     const u = await checkForUpdate(store.settings.updateChannel);
@@ -609,7 +612,7 @@ async function runUpdateCheck(manual = false) {
     else if (v === 'skip') { meta.skipVersion = u.version; save(); }
   } catch (err) {
     if (manual) toast('Could not reach GitHub. Check your connection.');
-  }
+  } finally { updateBusy = false; }
 }
 
 // ---------- Boot ----------
@@ -617,9 +620,12 @@ applyTheme();
 app.reset('games');
 loadLevels();
 prefetch('easy');
-setTimeout(() => {
-  const S = store.settings;
-  if (native.isApp && S.autoUpdate && Date.now() - store.meta.lastUpdateCheck > 3600 * 1000) runUpdateCheck(false);
-}, 2500);
+// Check for a new version every time the app opens, and again when it comes back after a while
+// (Android often resumes the app rather than starting it fresh).
+const autoCheck = () => { if (native.isApp && store.settings.autoUpdate) runUpdateCheck(false); };
+setTimeout(autoCheck, 1500);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && Date.now() - store.meta.lastUpdateCheck > 10 * 60 * 1000) autoCheck();
+});
 // Resume audio context on first touch (browsers require a gesture).
 document.addEventListener('pointerdown', () => sfx.tap && null, { once: true });

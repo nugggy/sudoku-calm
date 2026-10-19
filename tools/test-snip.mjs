@@ -2,7 +2,7 @@
 // that every level can be solved in principle, and scripted solves for one level of each kind.
 // Run with: node tools/test-snip.mjs
 import * as E from '../www/js/snip-engine.js';
-import { uShape, LEG_N } from '../www/js/snip-body.js';
+import { uShape, LEG_N, LEG_C, LEG_T } from '../www/js/snip-body.js';
 
 const { K, LEVELS, BW, BH } = E;
 let fail = 0;
@@ -65,11 +65,11 @@ for (let i = 0; i < LEVELS.length; i++) {
       check(fitsInBuddy(p), `${name}: a part does not fit inside one buddy`);
       check(Math.abs(E.area(p)) >= E.MIN_AREA, `${name}: a part is smaller than the smallest allowed buddy`);
     }
-    // the lowest piece rests on a surface: on the ground (a buddy lying on its side) or at standing height
+    // the lowest piece rests on a surface: on the ground (a buddy lying on its side) or at standing, stand-tall or crouching height
     const all = w.target.rings.flat(), bottom = Math.max(...all.map((q) => q[1]));
     const low = all.filter((q) => q[1] > bottom - 0.05), cx = low.reduce((t, q) => t + q[0], 0) / low.length;
     const s = surfaceBelow(w, cx, bottom);
-    check(s && (Math.abs(s.y - bottom) < 0.05 || Math.abs(s.y - LEG_N - bottom) < 0.05), `${name}: the outline does not rest on a surface`);
+    check(s && [0, LEG_N, LEG_T, LEG_C].some((h) => Math.abs(s.y - h - bottom) < 0.05), `${name}: the outline does not rest on a surface`);
   }
   if (lv.type === 'pop') for (const [x, y, r] of lv.balloons) { const s = surfaceBelow(w, x, y); check(s && s.y - (y + r) <= REACH, `${name}: a balloon is out of reach`); }
   if (lv.type === 'goal') {
@@ -114,6 +114,34 @@ check(w.won, 'scripted solve of level 5 (press) failed');
 // goal: push the ball up the ramp and into the gap
 w = solve(6, (w) => { const [a] = w.buddies, ball = w.props[0]; return [steer(a, Math.min(7.4, ball.x), 0.02), 0]; }, 1500);
 check(w.won, `scripted solve of level 7 (goal) failed (ball at ${w.props[0].x.toFixed(2)}, ${w.props[0].y.toFixed(2)})`);
+// ---------- 5b. scripted solves of the leg levels, and proof that they need the legs ----------
+const lvl = (name) => { const i = LEVELS.findIndex((l) => l.name === name); check(i >= 0, `no level called ${name}`); return i; };
+// Tall order: one stands tall in the higher outline
+w = solve(lvl('Tall order'), (w) => [steer(w.buddies[0], 4.25) | K.T, steer(w.buddies[1], 5.65)]);
+check(w.won, `scripted solve of Tall order failed (score ${w.score.toFixed(2)})`);
+w = solve(lvl('Tall order'), (w) => [steer(w.buddies[0], 4.25), steer(w.buddies[1], 5.65)], 600);
+check(!w.won, 'Tall order should not be won without standing tall');
+// Big and small: one tall, one crouching
+w = solve(lvl('Big and small'), (w) => [steer(w.buddies[0], 4.35) | K.T, steer(w.buddies[1], 5.65) | K.C]);
+check(w.won, `scripted solve of Big and small failed (score ${w.score.toFixed(2)})`);
+w = solve(lvl('Big and small'), (w) => [steer(w.buddies[0], 4.35), steer(w.buddies[1], 5.65)], 600);
+check(!w.won, 'Big and small should not be won standing normally');
+// Duck down: crouch to get under the roof to the far button
+w = solve(lvl('Duck down'), (w) => [steer(w.buddies[0], 1.2), steer(w.buddies[1], 7.2) | K.C]);
+check(w.won, 'scripted solve of Duck down failed');
+w = solve(lvl('Duck down'), (w) => [steer(w.buddies[0], 1.2), steer(w.buddies[1], 7.2)], 600);
+check(!w.won && w.buddies[1].x < 5.2, `standing upright should not fit under the roof in Duck down (x ${w.buddies[1].x.toFixed(2)})`);
+// Stilts: stand tall against the wall for the high button
+w = solve(lvl('Stilts'), (w) => [steer(w.buddies[0], 0.4) | K.T, steer(w.buddies[1], 8.4)]);
+check(w.won, 'scripted solve of Stilts failed');
+w = solve(lvl('Stilts'), (w) => [steer(w.buddies[0], 0.4), steer(w.buddies[1], 8.4)], 600);
+check(!w.won, 'Stilts should not be won without standing tall');
+// Reach and duck: tall on the left, crouched under the shelf on the right
+w = solve(lvl('Reach and duck'), (w) => [steer(w.buddies[0], 0.4) | K.T, steer(w.buddies[1], 9.6) | K.C]);
+check(w.won, 'scripted solve of Reach and duck failed');
+w = solve(lvl('Reach and duck'), (w) => [steer(w.buddies[0], 0.4) | K.T, steer(w.buddies[1], 9.6)], 600);
+check(!w.won, 'Reach and duck should not be won without crouching under the shelf');
+
 // a snip that would leave too little paper is refused, and reset gives back a full sheet
 w = E.createWorld(0);
 w.buddies[0].x = w.buddies[1].x; w.buddies[0].y = w.buddies[1].y;
@@ -139,5 +167,5 @@ check(Math.abs(w.buddies[1].area - E.BODY_AREA) < 1e-6, 'reset should give a ful
   check(b.leg < 0.03 && b.grounded, 'a buddy on its side should tuck its legs away and rest on the ground');
 }
 
-console.log(fail ? `\n${fail} check(s) failed` : `Snip Buddies: ${LEVELS.length} levels load, settle, are deterministic and solvable in principle; snipping maths and 5 scripted solves pass.`);
+console.log(fail ? `\n${fail} check(s) failed` : `Snip Buddies: ${LEVELS.length} levels load, settle, are deterministic and solvable in principle; snipping maths, 10 scripted solves (5 of them leg puzzles) and the legs-needed checks pass.`);
 process.exit(fail ? 1 : 0);

@@ -15,6 +15,7 @@ const COLOURS = ['#ff7a6b', '#4fa8ff'];
 const DARKER = ['#d4523f', '#2a7fd6'];
 const FACES = ['face_a', 'face_f'];
 
+export const SNIP_LEVEL_COUNT = LEVELS.length;
 export const snipHelp = () => helpSheet('How to play Snip Buddies', [
   'You and a friend each control a paper buddy. Work together to solve each little puzzle: fill an outline, pop balloons, roll a ball into place or hold down buttons.',
   'Move, jump and turn with your buttons. Your legs bend to <b>crouch</b> and stretch to <b>stand tall</b>, so you can go lower or reach higher. Turn right over and your legs tuck away.',

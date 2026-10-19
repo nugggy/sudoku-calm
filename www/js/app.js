@@ -19,7 +19,7 @@ import { crateHomeScreen, crateGameScreen, crateHelp, crateCardArt } from './cra
 import { arrowHomeScreen, arrowGameScreen, arrowHelp, arrowCardArt } from './arrow-game.js';
 import { chessHomeScreen, chessGameScreen, chessHelp, chessCardArt } from './chess-game.js';
 import { ropeHomeScreen, ropeGameScreen, ropeHelp, ropeCardArt } from './rope-game.js';
-import { snipHomeScreen, snipLobbyScreen, snipGameScreen, snipHelp, snipCardArt } from './snip-game.js';
+import { snipHomeScreen, snipLobbyScreen, snipGameScreen, snipHelp, snipCardArt, SNIP_LEVEL_COUNT } from './snip-game.js';
 import { turtleHubScreen, turtleGameScreen, turtleHelp, turtleCardArt, TURTLE_GAMES } from './turtle/hub.js';
 import { heroHubScreen, heroBuilderScreen, heroGameScreen, heroHelp, heroCardArt } from './hero/hub.js';
 import { duoHubScreen, duoLobbyScreen, duoGameScreen, duoHelp, duoCardArt } from './duo/hub.js';
@@ -330,7 +330,7 @@ registerGame({
 registerGame({
   id: 'snip', cat: 'Casual', screen: 'snip', name: 'Snip Buddies', tag: 'Team up, snip each other into shape', theme: 'g-snip',
   art: () => snipCardArt(),
-  progress: () => { const n = Object.keys(store.snip.done).length; return n ? `${n} of 22 solved` : 'Play with a friend'; },
+  progress: () => { const n = Object.keys(store.snip.done).length; return n ? `${n} of ${SNIP_LEVEL_COUNT} solved` : 'Play with a friend'; },
 });
 registerGame({
   id: 'moto', cat: 'Casual', screen: 'moto', name: 'Moto Mania', tag: 'Six motorbike games and a garage', theme: 'g-moto',

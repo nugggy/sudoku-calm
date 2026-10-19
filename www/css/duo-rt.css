@@ -1,0 +1,56 @@
+/* ---------- Play Together: real-time games (Air Hockey, Tank Duel, Paddle Ball) ---------- */
+.rt-game { position: relative; flex: 1; height: 100%; width: 100%; display: flex; flex-direction: column; min-height: 0; color: var(--text); }
+.rt-stage { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+.rt-canvas { position: absolute; inset: 0; display: block; touch-action: none; -webkit-user-select: none; user-select: none; }
+
+/* score header: the other player on the left, you on the right */
+.rt-score { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 14px; flex-shrink: 0; }
+.rt-side { display: flex; align-items: center; gap: 8px; min-width: 0; font-weight: 800; font-size: 14px; }
+.rt-side span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 34vw; opacity: .8; }
+.rt-side b { min-width: 40px; height: 40px; padding: 0 8px; border-radius: 12px; display: grid; place-items: center; font-size: 22px; font-weight: 900; color: #fff; font-variant-numeric: tabular-nums; }
+.rt-side.me span { opacity: 1; text-decoration: underline; text-underline-offset: 3px; }
+.rt-side b.pop { animation: rt-pop .4s cubic-bezier(.3, 1.8, .5, 1); }
+@keyframes rt-pop { from { transform: scale(1.6); } to { transform: none; } }
+/* each phone shows its own player on the right */
+.rt-score.swap .p1 { order: 3; flex-direction: row-reverse; } .rt-score.swap .rt-mid { order: 2; } .rt-score.swap .p0 { order: 1; flex-direction: row-reverse; }
+.rt-mid { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; }
+.rt-hockey .p0 b { background: #ff4d5e; } .rt-hockey .p1 b { background: #2f8cff; }
+.rt-paddle .p0 b { background: #ff7a1a; } .rt-paddle .p1 b { background: #18b5a4; }
+/* one phone shared by two: the top player reads their score upside down */
+.rt-game.local .rt-side.p1 { transform: rotate(180deg); }
+.rt-game.local .rt-score { padding-bottom: 2px; }
+
+/* card art */
+.rt-art { display: block; width: 120px; max-width: 100%; height: auto; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .25)); }
+.tanks-art { position: relative; width: 120px; height: 80px; }
+.tanks-art svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.tanks-art img { position: absolute; z-index: 1; width: 30px; height: auto; }
+.tanks-art .t0 { left: 14px; top: 32px; }
+.tanks-art .t1 { right: 14px; top: 26px; transform: scaleX(-1); }
+
+/* ----- Tank Duel ----- */
+.rt-tanks .tk-hud { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 14px; flex-shrink: 0; }
+.tk-turn { font-weight: 900; font-size: 16px; padding-left: 12px; position: relative; }
+.tk-turn::before { content: ""; position: absolute; left: 0; top: 50%; width: 7px; height: 7px; margin-top: -3.5px; border-radius: 50%; background: var(--c, #888); }
+.tk-wind { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--muted); }
+.tk-wind i { position: relative; width: 56px; height: 8px; border-radius: 4px; background: var(--faint, rgba(127, 127, 127, .2)); overflow: hidden; }
+.tk-wind i::after { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: calc(var(--w) * 50%); background: #4aa3ff; border-radius: 4px; }
+.tk-wind i.left::after { left: auto; right: 50%; }
+.tk-wind i:not(.left):not(.right)::after { display: none; }
+.tk-wind b { color: var(--text); font-size: 14px; min-width: 14px; }
+.tk-panel { flex-shrink: 0; padding: 8px 12px calc(12px + var(--safe-bottom)); display: flex; flex-direction: column; gap: 8px; }
+.tk-weapons { display: flex; gap: 6px; }
+.tk-w { flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 7px 4px 6px; border-radius: 12px; border: 2px solid transparent; background: var(--card); color: var(--text); font-size: 12px; font-weight: 800; box-shadow: var(--shadow); }
+.tk-w.on { border-color: #4f9d2d; }
+.tk-w:disabled { opacity: .45; }
+.tk-w small { position: absolute; top: -6px; right: -4px; min-width: 20px; height: 20px; border-radius: 10px; background: #4f9d2d; color: #fff; display: grid; place-items: center; font-size: 11px; border: 2px solid var(--card); }
+.tk-ic { width: 22px; height: 12px; border-radius: 6px 10px 10px 6px; background: #3a3f47; }
+.tk-ic-big { width: 26px; height: 16px; background: #6b2f1a; }
+.tk-ic-bounce { width: 14px; height: 14px; border-radius: 50%; background: #2f6fd1; box-shadow: 9px 3px 0 -3px #2f6fd1; }
+.tk-row { display: flex; gap: 10px; align-items: center; }
+.tk-read { flex: 1; display: flex; gap: 14px; font-size: 13px; color: var(--muted); font-weight: 700; }
+.tk-read b { color: var(--text); font-size: 17px; font-variant-numeric: tabular-nums; }
+.tk-fire { min-width: 120px; height: 50px; border: 0; border-radius: 25px; background: linear-gradient(#ff6b3d, #d9431d); color: #fff; font-size: 18px; font-weight: 900; letter-spacing: .5px; box-shadow: 0 4px 0 #9c2e12; }
+.tk-fire:active { transform: translateY(2px); box-shadow: 0 2px 0 #9c2e12; }
+.tk-fire:disabled { background: #9aa0a6; box-shadow: 0 4px 0 #6b7075; }
+.rt-tanks.waiting .tk-panel { opacity: .75; }

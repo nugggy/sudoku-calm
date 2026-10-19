@@ -29,20 +29,31 @@ public class NativeBridge {
     private File pendingApk = null;
 
     private LanLink lan;
+    private BtLink bt;
 
     NativeBridge(MainActivity activity) { this.activity = activity; }
 
     private synchronized LanLink lan() { if (lan == null) lan = new LanLink(activity); return lan; }
+    private synchronized BtLink bt() { if (bt == null) bt = new BtLink(activity); return bt; }
 
     // ---------- Local two-phone games (see LanLink) ----------
-    @JavascriptInterface public void lanHost(String name) { lan().host(name); }
+    @JavascriptInterface public void lanHost(String name) { if (bt != null) bt.close(); lan().host(name); }
     @JavascriptInterface public void lanDiscover() { lan().discover(); }
     @JavascriptInterface public void lanStopDiscover() { lan().stopDiscover(); }
-    @JavascriptInterface public void lanJoin(String id) { lan().join(id); }
-    @JavascriptInterface public void lanJoinIp(String ip, int port) { lan().joinIp(ip, port); }
+    @JavascriptInterface public void lanJoin(String id) { if (bt != null) bt.close(); lan().join(id); }
+    @JavascriptInterface public void lanJoinIp(String ip, int port) { if (bt != null) bt.close(); lan().joinIp(ip, port); }
     @JavascriptInterface public void lanSend(String json) { lan().send(json); }
     @JavascriptInterface public void lanClose() { lan().close(); }
     @JavascriptInterface public String lanIp() { return LanLink.localIp(); }
+
+    // ---------- The same over Bluetooth (see BtLink). Events also arrive through window.__lan, tagged via: "bt". ----------
+    @JavascriptInterface public boolean btAvailable() { return activity.getPackageManager().hasSystemFeature(android.content.pm.PackageManager.FEATURE_BLUETOOTH); }
+    @JavascriptInterface public void btHost(String name) { lan().close(); bt().host(name); }
+    @JavascriptInterface public void btDiscover() { bt().discover(); }
+    @JavascriptInterface public void btStopDiscover() { bt().stopDiscover(); }
+    @JavascriptInterface public void btJoin(String address) { lan().close(); bt().join(address); }
+    @JavascriptInterface public void btSend(String json) { bt().send(json); }
+    @JavascriptInterface public void btClose() { bt().close(); }
 
     @JavascriptInterface
     public String getVersionName() {
@@ -175,5 +186,5 @@ public class NativeBridge {
         }
     }
 
-    void release() { if (lan != null) lan.close(); }
+    void release() { if (lan != null) lan.close(); if (bt != null) bt.close(); }
 }

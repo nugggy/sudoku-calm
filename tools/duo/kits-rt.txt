@@ -1,0 +1,15 @@
+# Kenney kits (CC0) for the real-time Play Together games, unzipped into tools/duo/kenney-rt/<name>
+# Chrome was not connected while these were fetched, so the zip link was read from the asset page with curl.
+tanks|https://kenney.nl/media/pages/assets/tanks/d0bbede612-1677579063/kenney_tanks.zip
+# Files copied into www/img/duo (from PNG/Default size):
+#   tanks_body_green.png  <- tanks_tankGreen_body1.png
+#   tanks_body_grey.png   <- tanks_tankGrey_body1.png
+#   tanks_tracks.png      <- tanks_tankTracks1.png
+#   tanks_turret.png      <- tanks_turret1.png
+#   tanks_shell.png       <- tank_bullet1.png
+#   tanks_bigshell.png    <- tank_bullet3.png
+#   tanks_boom1..4.png    <- tank_explosion3, 4, 8, 9
+#   tanks_cloud.png       <- tank_explosion9.png
+#   tanks_card_green.png  <- tanks_tankGreen1.png
+#   tanks_card_grey.png   <- tanks_tankGrey1.png
+# Air Hockey and Paddle Ball are drawn in code (no image files).

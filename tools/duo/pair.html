@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en-AU" data-theme="light">
+<head>
+<base href="../../www/">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Play Together pair test</title>
+<link rel="stylesheet" href="../../www/css/app.css">
+<link rel="stylesheet" href="../../www/css/chess.css">
+<link rel="stylesheet" href="../../www/css/duo.css">
+<style>
+  body { overflow: auto; }
+  .pair { display: flex; gap: 8px; padding: 8px; }
+  .side { width: 380px; height: 640px; display: flex; flex-direction: column; border: 2px solid #999; border-radius: 12px; overflow: hidden; position: relative; }
+</style>
+</head>
+<body>
+<pre id="log"></pre>
+<div id="overlay-root"></div><div id="toast" class="toast"></div>
+<script type="module">
+// Plays full random games of each turn-based game between two in-page "phones" (makePair) and checks both agree.
+// ?games=connect4,ttt  ?show=1 keeps the last pair on screen.
+import { makePair } from '../../www/js/duo/core.js';
+const q = new URLSearchParams(location.search);
+const ids = (q.get('games') || 'connect4,ttt,dots,reversi,draughts,chess,ships').split(',');
+const log = (s) => { document.getElementById('log').textContent += s + '\n'; };
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+let fails = 0;
+for (const id of ids) {
+  const game = (await import(`../../www/js/duo/g-${id}.js`)).default;
+  for (const first of [0, 1]) {
+    const wrap = document.createElement('div'); wrap.className = 'pair duo-theme';
+    const roots = [0, 1].map(() => { const d = document.createElement('div'); d.className = 'side duo-stage'; wrap.appendChild(d); return d; });
+    document.body.appendChild(wrap);
+    const pair = makePair(game, { roots, first, names: ['Ann', 'Ben'], seed: 99 + first });
+    let steps = 0, stuck = 0;
+    while (!(pair.results[0] && pair.results[1]) && steps < 4000) {
+      let moved = false;
+      for (const g of pair.game) { if (g.bot()) { moved = true; await sleep(0); } }
+      await sleep(moved ? 0 : 60);
+      stuck = moved ? 0 : stuck + 1;
+      if (stuck > 80) break;
+      steps++;
+    }
+    await sleep(50);
+    const [a, b] = pair.results, sa = JSON.stringify(pair.game[0].state()), sb = JSON.stringify(pair.game[1].state());
+    const ok = a && b && a.winner === b.winner && sa === sb;
+    if (!ok) fails++;
+    log(`${ok ? 'ok  ' : 'FAIL'} ${id} first=${first}: ${a ? `winner ${a.winner} (${a.text})` : 'no result A'} / ${b ? `winner ${b.winner}` : 'no result B'}${sa === sb ? '' : `\n   A ${sa.slice(0, 200)}\n   B ${sb.slice(0, 200)}`}`);
+    if (!(q.get('show') && id === ids[ids.length - 1] && first === 1)) { pair.destroy(); wrap.remove(); }
+  }
+}
+log(fails ? `${fails} FAILED` : 'ALL PAIRS AGREE');
+document.title = fails ? 'FAIL' : 'DONE';
+</script>
+</body>
+</html>

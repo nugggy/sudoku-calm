@@ -1,0 +1,148 @@
+/* ---------- Play Together: Mancala, Nine Men's Morris, Five in a Row, Word Duel, Memory Duel ---------- */
+.tbc { --tbc-ink: #3a2b22; --tbc-card: rgba(255, 255, 255, .7); --tbc-wood: #e9c58f; --tbc-wood-d: #b98447; --tbc-line: #6b4424; --tbc-muted: #7b6a5d;
+  position: relative; flex: 1; height: 100%; min-height: 0; display: flex; flex-direction: column; color: var(--tbc-ink); }
+:root[data-theme="dark"] .tbc { --tbc-ink: #f2e6d8; --tbc-card: rgba(255, 255, 255, .08); --tbc-wood: #6d4a2a; --tbc-wood-d: #3d2714; --tbc-line: #e8c9a0; --tbc-muted: #b9a796; }
+
+.tbc-bar { display: flex; gap: 8px; padding: 6px 12px 0; flex-shrink: 0; }
+.tbc-pl { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 14px; background: var(--tbc-card); border: 2px solid transparent; transition: border-color .2s, box-shadow .2s, transform .2s; }
+.tbc-pl i { width: 14px; height: 14px; border-radius: 50%; background: var(--pc); flex: none; box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .2); }
+.tbc-nm { flex: 1; min-width: 0; font-size: 14px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tbc-sc { font-size: 18px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.tbc-pl.on { border-color: var(--pc); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pc) 25%, transparent); transform: translateY(-1px); }
+.tbc-status { min-height: 22px; padding: 6px 14px 2px; text-align: center; font-size: 14px; font-weight: 700; color: var(--tbc-muted); flex-shrink: 0; }
+.tbc-body { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 6px 12px calc(12px + var(--safe-bottom, 0px)); }
+.tbc-cover { position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; padding: 24px; background: color-mix(in srgb, var(--bg, #f5efe6) 96%, transparent); backdrop-filter: blur(10px); }
+.tbc-cover-in { max-width: 320px; text-align: center; display: flex; flex-direction: column; gap: 12px; }
+.tbc-cover-in h2 { margin: 0; font-size: 22px; }
+.tbc-cover-in p { margin: 0; color: var(--tbc-muted); }
+
+/* ---------- Mancala ---------- */
+.mc-board { width: min(100%, 330px); max-height: 100%; display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 28px; background: linear-gradient(160deg, var(--tbc-wood), var(--tbc-wood-d)); box-shadow: 0 6px 0 rgba(60, 30, 10, .3), inset 0 2px 0 rgba(255, 255, 255, .25); }
+.mc-cols { display: flex; gap: 10px; }
+.mc-col { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+.mc-pit, .mc-store { position: relative; border: 0; padding: 0; border-radius: 50%; background: radial-gradient(circle at 50% 40%, rgba(0, 0, 0, .28), rgba(0, 0, 0, .12) 70%); box-shadow: inset 0 3px 6px rgba(0, 0, 0, .35); color: #fff; }
+.mc-pit { aspect-ratio: 1.45; max-height: 9.5vh; border-radius: 45%; }
+.mc-store { height: clamp(52px, 10vh, 76px); border-radius: 30px; }
+.mc-store span { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 12px; font-weight: 800; color: rgba(255, 255, 255, .9); text-shadow: 0 1px 2px rgba(0, 0, 0, .5); max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-store.mine { box-shadow: inset 0 3px 6px rgba(0, 0, 0, .35), 0 0 0 3px var(--pc); }
+.mc-store.theirs { box-shadow: inset 0 3px 6px rgba(0, 0, 0, .35), 0 0 0 3px color-mix(in srgb, var(--pc) 60%, transparent); }
+.mc-pit b, .mc-store b { position: absolute; right: 9px; bottom: 4px; font-size: 13px; font-weight: 900; text-shadow: 0 1px 2px rgba(0, 0, 0, .6); }
+.mc-store b { right: 16px; top: 50%; bottom: auto; transform: translateY(-50%); font-size: 20px; }
+.mc-seeds { position: absolute; inset: 8% 10%; pointer-events: none; }
+.mc-seeds i { position: absolute; width: 11px; height: 11px; margin: -5.5px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff 0 12%, var(--sc) 35%, color-mix(in srgb, var(--sc) 70%, #000) 100%); box-shadow: 0 1px 1px rgba(0, 0, 0, .35); }
+.mc-pit.can { box-shadow: inset 0 3px 6px rgba(0, 0, 0, .35), 0 0 0 3px #ffd34d; cursor: pointer; }
+.mc-pit.can:active { transform: scale(.96); }
+.mc-pit.last { outline: 2px dashed rgba(255, 255, 255, .7); outline-offset: -4px; }
+.mc-pit.hot, .mc-store.hot { background: radial-gradient(circle at 50% 40%, rgba(255, 230, 150, .55), rgba(0, 0, 0, .1) 75%); }
+.mc-pit.cap { animation: tbc-cap .6s ease-in-out; }
+@keyframes tbc-cap { 50% { background: rgba(255, 90, 90, .7); transform: scale(1.06); } }
+.tbc-art-mancala { display: grid; grid-template-columns: repeat(2, 40px); gap: 5px; padding: 6px; border-radius: 16px; background: linear-gradient(160deg, #e9c58f, #b98447); box-shadow: 0 4px 0 rgba(60, 30, 10, .3); }
+.tbc-art-mancala .mc-pit { position: relative; width: 40px; height: 24px; max-height: none; }
+.tbc-art-mancala .mc-seeds i { width: 7px; height: 7px; margin: -3.5px; }
+
+/* ---------- Nine Men's Morris ---------- */
+.tbc-morris .tbc-body { gap: 6px; }
+.mr-board { width: min(100%, 52vh, 420px); height: auto; display: block; touch-action: manipulation; }
+.mr-wood { fill: var(--tbc-wood); stroke: var(--tbc-wood-d); stroke-width: 3; }
+.mr-line { stroke: var(--tbc-line); stroke-width: 2.2; stroke-linecap: round; }
+.mr-pt { fill: var(--tbc-line); }
+.mr-pt.tgt { fill: #ffd34d; stroke: var(--tbc-line); stroke-width: 1.5; }
+.mr-pt.from { fill: none; stroke: var(--tbc-line); stroke-width: 1.5; stroke-dasharray: 2 2; }
+.mr-hit { fill: transparent; cursor: pointer; }
+.mr-stone .mr-shine { fill: none; stroke: rgba(0, 0, 0, .35); stroke-width: 1.4; }
+.mr-stone .mr-ring { fill: none; stroke: rgba(255, 255, 255, .45); stroke-width: 1.6; }
+.mr-stone.last circle:first-child { stroke: #ffd34d; stroke-width: 2.5; }
+.mr-stone.can circle:first-child { stroke: rgba(255, 255, 255, .9); stroke-width: 2; }
+.mr-stone.sel { transform-box: fill-box; }
+.mr-stone.sel circle:first-child { stroke: #ffd34d; stroke-width: 3.5; }
+.mr-stone.take circle:first-child { stroke: #ff3b3b; stroke-width: 3; stroke-dasharray: 4 3; animation: tbc-spin 1.2s linear infinite; }
+@keyframes tbc-spin { to { stroke-dashoffset: -14; } }
+.mr-mill { fill: rgba(255, 211, 77, .35); animation: tbc-glow 1s ease-in-out 2; }
+@keyframes tbc-glow { 50% { fill: rgba(255, 211, 77, .7); } }
+.mr-hand { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px; min-height: 22px; font-size: 12px; font-weight: 700; color: var(--tbc-muted); }
+.mr-hand i { width: 14px; height: 14px; border-radius: 50%; background: var(--pc); box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .25); }
+.mr-hand span { margin-left: 6px; }
+.tbc-art-morris { width: 68px; height: 68px; filter: drop-shadow(0 4px 4px rgba(60, 30, 10, .3)); }
+.tbc-art-morris .mr-wood { fill: #e9c58f; stroke: #b98447; }
+.tbc-art-morris .mr-line { stroke: #6b4424; }
+
+/* ---------- Five in a Row ---------- */
+.tbc-gomoku .tbc-body { padding-left: 6px; padding-right: 6px; }
+.gm-wrap { position: relative; width: 100%; flex: 1; min-height: 0; display: flex; }
+.gm-scroll { flex: 1; overflow: auto; display: grid; place-items: center; touch-action: pan-x pan-y; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.gm-board { display: block; margin: auto; }
+.gm-wood { fill: var(--tbc-wood); stroke: var(--tbc-wood-d); stroke-width: .08; }
+.gm-line { stroke: var(--tbc-line); stroke-width: .045; }
+.gm-dot { fill: var(--tbc-line); }
+.gm-stone .gm-shine { fill: none; stroke: rgba(0, 0, 0, .3); stroke-width: .05; }
+.gm-stone circle:first-child { filter: drop-shadow(0 .05px .05px rgba(0, 0, 0, .3)); }
+.gm-stone.ghost { opacity: .45; }
+.gm-stone.last circle:first-child { stroke: #ffd34d; stroke-width: .1; }
+.gm-stone.won circle:first-child { stroke: #fff; stroke-width: .12; animation: tbc-pulse .9s ease-in-out infinite; }
+@keyframes tbc-pulse { 50% { stroke-width: .02; } }
+.gm-zoom { position: absolute; right: 6px; bottom: 6px; display: flex; flex-direction: column; gap: 6px; }
+.gm-zoom button { width: 40px; height: 40px; border-radius: 50%; border: 0; font-size: 22px; font-weight: 900; background: var(--tbc-card); color: var(--tbc-ink); box-shadow: 0 2px 6px rgba(0, 0, 0, .25); backdrop-filter: blur(6px); }
+.tbc-art-gomoku { width: 68px; height: 68px; filter: drop-shadow(0 4px 4px rgba(60, 30, 10, .3)); }
+.tbc-art-gomoku .gm-wood { fill: #e9c58f; stroke: #b98447; }
+.tbc-art-gomoku .gm-line { stroke: #6b4424; }
+
+/* ---------- Word Duel ---------- */
+.tbc-wordduel .tbc-body { justify-content: flex-start; gap: 8px; }
+.wd-balloons { width: auto; height: clamp(110px, 22vh, 190px); flex-shrink: 0; }
+.wd-str { fill: none; stroke: var(--tbc-muted); stroke-width: .8; }
+.wd-str.gone { opacity: 0; }
+.wd-box { fill: #c98f55; stroke: var(--tbc-line); stroke-width: 1.2; }
+.wd-ribbon { stroke: #e8604c; stroke-width: 2.4; fill: none; }
+.wd-pop { animation: tbc-pop .45s ease-out forwards; transform-box: fill-box; }
+@keyframes tbc-pop { from { opacity: 1; transform: scale(.4); } to { opacity: 0; transform: scale(1.6); } }
+.wd-word { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.wd-word i { width: 36px; height: 44px; display: grid; place-items: center; border-radius: 9px; font-style: normal; font-size: 24px; font-weight: 900; text-transform: uppercase; background: var(--tbc-card); border-bottom: 3px solid var(--tbc-muted); }
+.wd-word i.got { border-bottom-color: #3fae6a; }
+.wd-word i.shown { color: #e8604c; }
+.wd-word.setter i { color: var(--tbc-muted); }
+.wd-word.setter i.got { color: inherit; }
+.wd-misses { min-height: 26px; display: flex; gap: 6px; justify-content: center; }
+.wd-misses i { font-style: normal; font-weight: 900; text-transform: uppercase; color: #e8604c; text-decoration: line-through; }
+.wd-keys { width: 100%; max-width: 440px; margin-top: auto; display: flex; flex-direction: column; gap: 6px; }
+.wd-keys > div { display: flex; justify-content: center; gap: 5px; }
+.wd-key { flex: 1; max-width: 40px; height: 46px; border: 0; border-radius: 8px; font-size: 17px; font-weight: 800; text-transform: uppercase; background: var(--tbc-card); color: var(--tbc-ink); box-shadow: 0 2px 0 rgba(0, 0, 0, .18); }
+.wd-key:active { transform: translateY(1px); }
+.wd-key.wide { max-width: 130px; text-transform: none; font-size: 15px; }
+.wd-key.go { background: #3fae6a; color: #fff; }
+.wd-key.hit { background: #3fae6a; color: #fff; }
+.wd-key.miss { background: transparent; color: var(--tbc-muted); box-shadow: none; opacity: .5; }
+.wd-set { text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.wd-set p { margin: 0; color: var(--tbc-muted); font-weight: 700; }
+.wd-typed { display: flex; gap: 6px; min-height: 44px; }
+.wd-typed i { width: 34px; height: 44px; display: grid; place-items: center; border-radius: 9px; font-style: normal; font-size: 22px; font-weight: 900; text-transform: uppercase; background: var(--tbc-card); border: 2px dashed var(--tbc-muted); }
+.wd-note { min-height: 18px; font-size: 13px; font-weight: 700; color: #3fae6a; }
+.wd-note.bad { color: #e8604c; }
+.wd-last { padding: 8px 14px; border-radius: 12px; font-size: 14px; font-weight: 700; text-align: center; background: var(--tbc-card); }
+.wd-last.ok b { color: #3fae6a; }
+.wd-last.no b { color: #e8604c; }
+.wd-wait { margin: auto 0; display: flex; flex-direction: column; align-items: center; gap: 12px; font-weight: 700; color: var(--tbc-muted); text-align: center; }
+.wd-final { margin: auto 0; font-size: 24px; font-weight: 900; text-align: center; }
+.tbc-art-word { display: flex; align-items: center; gap: 6px; }
+.tbc-art-word .wd-balloons { height: 66px; }
+.tbc-art-word .wd-str { stroke: rgba(255, 255, 255, .8); }
+.wd-art-word { display: flex; gap: 3px; }
+.wd-art-word i { width: 18px; height: 24px; display: grid; place-items: center; font-style: normal; font-weight: 900; font-size: 14px; color: #3a2b22; background: rgba(255, 255, 255, .9); border-radius: 4px; }
+
+/* ---------- Memory Duel ---------- */
+.mm-sizes { display: flex; flex-direction: column; gap: 10px; width: min(100%, 300px); }
+.mm-grid { --cols: 4; width: min(100%, calc((100vh - 230px) * var(--cols) / (var(--cols) + 2)), 480px); display: grid; grid-template-columns: repeat(var(--cols), 1fr); gap: 7px; }
+.mm-card { position: relative; aspect-ratio: .8; border: 0; padding: 0; background: none; perspective: 600px; }
+.mm-card .mm-back, .mm-card .mm-face { position: absolute; inset: 0; border-radius: 10px; backface-visibility: hidden; transition: transform .35s ease; }
+.mm-back { background: repeating-linear-gradient(45deg, #3b7ddd 0 8px, #4a8ae6 8px 16px); box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .6), 0 3px 0 rgba(0, 0, 0, .2); }
+.mm-face { display: grid; place-items: center; background: #fffaf2; box-shadow: inset 0 0 0 3px #f2b631, 0 3px 0 rgba(0, 0, 0, .2); transform: rotateY(180deg); }
+.mm-face img { width: 78%; height: auto; }
+.mm-card.up .mm-back { transform: rotateY(180deg); }
+.mm-card.up .mm-face { transform: rotateY(0); }
+.mm-card.miss .mm-face { box-shadow: inset 0 0 0 3px #e8604c, 0 3px 0 rgba(0, 0, 0, .2); }
+.mm-card.gone { opacity: .28; pointer-events: none; }
+.mm-card.gone .mm-face { box-shadow: inset 0 0 0 3px #3fae6a; }
+:root[data-theme="dark"] .mm-face { background: #2b2620; }
+.tbc-art-memory { display: grid; grid-template-columns: repeat(4, 36px); gap: 5px; }
+.tbc-art-memory .mm-card { width: 36px; height: 46px; border-radius: 8px; display: grid; place-items: center; background: #fffaf2; box-shadow: inset 0 0 0 2px #f2b631, 0 3px 0 rgba(0, 0, 0, .25); }
+.tbc-art-memory .mm-card.back { background: repeating-linear-gradient(45deg, #3b7ddd 0 6px, #4a8ae6 6px 12px); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .6), 0 3px 0 rgba(0, 0, 0, .25); }
+.tbc-art-memory img { width: 80%; }

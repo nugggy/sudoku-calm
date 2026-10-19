@@ -22,6 +22,7 @@ import { ropeHomeScreen, ropeGameScreen, ropeHelp, ropeCardArt } from './rope-ga
 import { snipHomeScreen, snipLobbyScreen, snipGameScreen, snipHelp, snipCardArt } from './snip-game.js';
 import { turtleHubScreen, turtleGameScreen, turtleHelp, turtleCardArt, TURTLE_GAMES } from './turtle/hub.js';
 import { heroHubScreen, heroBuilderScreen, heroGameScreen, heroHelp, heroCardArt } from './hero/hub.js';
+import { duoHubScreen, duoLobbyScreen, duoGameScreen, duoHelp, duoCardArt } from './duo/hub.js';
 import { potionHomeScreen, potionGameScreen, potionHelp, potionCardArt } from './potion-game.js';
 import { motoHubScreen, motoGarageScreen, motoGameScreen, motoHelp, motoCardArt } from './moto/hub.js';
 import { yetiHubScreen, yetiGameScreen, yetiHelp, yetiCardArt, YETI_GAMES } from './yeti/hub.js';
@@ -69,7 +70,7 @@ const SCREENS = {
   treat: treatHomeScreen, treatgame: treatGameScreen, block: blockScreen,
   cross: crossHomeScreen, crossgame: crossGameScreen, ws: wsHomeScreen, wsgame: wsGameScreen,
   g2048: screen2048, mines: minesHomeScreen, minesgame: minesGameScreen, guess: guessHomeScreen, guessgame: guessGameScreen,
-  hashi: hashiHomeScreen, hashigame: hashiGameScreen, gridlock: gridlockHomeScreen, gridlockgame: gridlockGameScreen, crate: crateHomeScreen, crategame: crateGameScreen, potion: potionHomeScreen, potiongame: potionGameScreen, arrow: arrowHomeScreen, arrowgame: arrowGameScreen, chess: chessHomeScreen, chessgame: chessGameScreen, rope: ropeHomeScreen, ropegame: ropeGameScreen, snip: snipHomeScreen, sniplobby: snipLobbyScreen, snipgame: snipGameScreen, turtle: turtleHubScreen, turtlegame: turtleGameScreen, hero: heroHubScreen, herobuilder: heroBuilderScreen, herogame: heroGameScreen, press: pressHomeScreen, pressgame: pressGameScreen, yeti: yetiHubScreen, yetigame: yetiGameScreen, moto: motoHubScreen, motogarage: motoGarageScreen, motogame: motoGameScreen,
+  hashi: hashiHomeScreen, hashigame: hashiGameScreen, gridlock: gridlockHomeScreen, gridlockgame: gridlockGameScreen, crate: crateHomeScreen, crategame: crateGameScreen, potion: potionHomeScreen, potiongame: potionGameScreen, arrow: arrowHomeScreen, arrowgame: arrowGameScreen, chess: chessHomeScreen, chessgame: chessGameScreen, rope: ropeHomeScreen, ropegame: ropeGameScreen, snip: snipHomeScreen, sniplobby: snipLobbyScreen, snipgame: snipGameScreen, turtle: turtleHubScreen, turtlegame: turtleGameScreen, hero: heroHubScreen, herobuilder: heroBuilderScreen, herogame: heroGameScreen, duo: duoHubScreen, duolobby: duoLobbyScreen, duogame: duoGameScreen, press: pressHomeScreen, pressgame: pressGameScreen, yeti: yetiHubScreen, yetigame: yetiGameScreen, moto: motoHubScreen, motogarage: motoGarageScreen, motogame: motoGameScreen,
   mahjong: mahjongHomeScreen, mjgame: mahjongGameScreen,
   wheel: wheelHomeScreen, wheelgame: wheelGameScreen, pipe: pipeHomeScreen, pipegame: pipeGameScreen,
   spider: spiderHomeScreen, spidergame: spiderGameScreen,
@@ -320,6 +321,11 @@ registerGame({
   id: 'rope', cat: 'Casual', screen: 'rope', name: 'Sweet Drop', tag: 'Cut the ropes, feed the frog', theme: 'g-rope',
   art: () => ropeCardArt(),
   progress: () => `Level ${Math.min(store.rope.level + 1, 44)}`,
+});
+registerGame({
+  id: 'duo', cat: 'Casual', screen: 'duo', name: 'Play Together', tag: 'Two-player games over wifi or Bluetooth', theme: 'g-duo',
+  art: () => duoCardArt(),
+  progress: () => { const n = Object.values(store.duo.played).reduce((a, b) => a + b, 0); return n ? `${n} games played` : '20 games for two'; },
 });
 registerGame({
   id: 'snip', cat: 'Casual', screen: 'snip', name: 'Snip Buddies', tag: 'Team up, snip each other into shape', theme: 'g-snip',
@@ -597,8 +603,8 @@ function settingsScreen() {
     else if (a === 'solrules') solHelp();
     else if (a === 'treatrules') treatHelp();
     else if (a === 'crossrules') crossHelp();
-    else if (a === 'rules-more') sheet(`<h2>How to play</h2>${[['2048', '2048'], ['mines', 'Minesweeper'], ['guess', 'Guesswork'], ['wheel', 'Word Wheel'], ['pipe', 'Pipeline'], ['mahjong', 'Mahjong Garden'], ['spider', 'Spider Solitaire'], ['jigsaw', 'Jigsaw'], ['sticker', 'Sticker Studio'], ['hashi', 'Island Hop'], ['gridlock', 'Gridlock'], ['crate', 'Crate Mate'], ['potion', 'Potion Pour'], ['arrow', 'Arrow Away'], ['chess', 'Chess'], ['rope', 'Sweet Drop'], ['snip', 'Snip Buddies'], ['turtle', 'Turtle Bay'], ['hero', 'Marvel Heroes'], ['press', 'Pressure Point'], ['yeti', 'Yeti Games'], ['moto', 'Moto Mania']].map(([k, n]) => `<button class="sheet-item" data-h="${k}">${n}</button>`).join('')}`, {
-      onMount(node, close) { node.addEventListener('click', (ev) => { const b = ev.target.closest('[data-h]'); if (!b) return; close(); ({ 2048: help2048, mines: minesHelp, guess: guessHelp, wheel: wheelHelp, pipe: pipeHelp, mahjong: mahjongHelp, spider: spiderHelp, jigsaw: jigsawHelp, sticker: stickerHelp, hashi: hashiHelp, gridlock: gridlockHelp, crate: crateHelp, potion: potionHelp, arrow: arrowHelp, chess: chessHelp, rope: ropeHelp, snip: snipHelp, turtle: () => turtleHelp(), hero: () => heroHelp(), press: () => pressHelp(), yeti: () => yetiHelp(), moto: () => motoHelp() })[b.dataset.h](); }); },
+    else if (a === 'rules-more') sheet(`<h2>How to play</h2>${[['2048', '2048'], ['mines', 'Minesweeper'], ['guess', 'Guesswork'], ['wheel', 'Word Wheel'], ['pipe', 'Pipeline'], ['mahjong', 'Mahjong Garden'], ['spider', 'Spider Solitaire'], ['jigsaw', 'Jigsaw'], ['sticker', 'Sticker Studio'], ['hashi', 'Island Hop'], ['gridlock', 'Gridlock'], ['crate', 'Crate Mate'], ['potion', 'Potion Pour'], ['arrow', 'Arrow Away'], ['chess', 'Chess'], ['rope', 'Sweet Drop'], ['snip', 'Snip Buddies'], ['turtle', 'Turtle Bay'], ['hero', 'Marvel Heroes'], ['duo', 'Play Together'], ['press', 'Pressure Point'], ['yeti', 'Yeti Games'], ['moto', 'Moto Mania']].map(([k, n]) => `<button class="sheet-item" data-h="${k}">${n}</button>`).join('')}`, {
+      onMount(node, close) { node.addEventListener('click', (ev) => { const b = ev.target.closest('[data-h]'); if (!b) return; close(); ({ 2048: help2048, mines: minesHelp, guess: guessHelp, wheel: wheelHelp, pipe: pipeHelp, mahjong: mahjongHelp, spider: spiderHelp, jigsaw: jigsawHelp, sticker: stickerHelp, hashi: hashiHelp, gridlock: gridlockHelp, crate: crateHelp, potion: potionHelp, arrow: arrowHelp, chess: chessHelp, rope: ropeHelp, snip: snipHelp, turtle: () => turtleHelp(), hero: () => heroHelp(), duo: () => duoHelp(), press: () => pressHelp(), yeti: () => yetiHelp(), moto: () => motoHelp() })[b.dataset.h](); }); },
     });
     else if (a === 'wsrules') wsHelp();
     else if (a === 'blockrules') blockHelp();
@@ -625,6 +631,7 @@ function aboutScreen() {
         <p><b>Words.</b> Word lists are based on SCOWL, copyright Kevin Atkinson and contributors, used under its permissive licence (see levels/WORDLIST-LICENSE.txt).</p><br>
         <p><b>Chess.</b> The chess pieces are the Cburnett set by Colin M.L. Burnett, from Wikimedia Commons, used under the BSD licence (see img/chess/LICENSE.txt).</p><br>
         <p><b>Sweet Drop.</b> The sweet, stars, bubbles and spikes are from Kenney's Platformer Art Candy and Jumper Pack, and the frog is from Kenney's Animal Pack (kenney.nl, CC0).</p><br>
+        <p><b>Play Together.</b> Boards, pieces and ships are drawn for this app. The chess pieces are the Cburnett set (see Chess above). Memory Duel's animal pictures are from Kenney's Animal Pack (kenney.nl, CC0). Word Duel checks words against the SCOWL lists used across the app. The pullers, cowboys and goalkeepers in Tug of War, Quick Draw and Penalty Shootout are from Kenney's Toon Characters, and the Sumo Bumpers are from Kenney's Shape Characters, and the tanks, shells and explosions in Tank Duel are from Kenney's Tanks pack (kenney.nl, CC0). Air Hockey, Paddle Ball and the boards are drawn by the app.</p><br>
         <p><b>Snip Buddies.</b> Faces, tiles, balloons and clouds are from Kenney's Shape Characters and Background Elements (kenney.nl, CC0). Snipping uses polygon-clipping by Mike Fogel (MIT licence), with splaytree (MIT) and robust-predicates (Unlicense).</p><br>
         <p><b>Turtle Bay.</b> The turtles, tortoises, crab, jellyfish, gull, kelp, coral and lily pad are by Poly by Google, the green turtle by jeremy, the long-necked turtle by Crispy_Prawn and the seagrass by Laney XR Labs, all under CC-BY 3.0 (creativecommons.org/licenses/by/3.0). The fish, lettuce, log and rock are by Quaternius and the bag by Kenney (CC0). All were found on poly.pizza and rendered into pictures for this app. River Hop's cars and trees come from Moto Mania.</p><br>
         <p><b>Marvel Heroes.</b> An unofficial fan project, not made or endorsed by Marvel or Disney. Marvel characters, names and related marks belong to Marvel. All hero artwork is drawn by the app on Kenney's Toon Characters; robots and gems are from Kenney's Robot Pack and Puzzle Pack 2 (kenney.nl, CC0). Thor's hammer is "mjolner" by OZZYBOI and the arc reactor is "Arc Reactor" by Heiko Jakob, both from poly.pizza under CC-BY 3.0 (creativecommons.org/licenses/by/3.0).</p><br>

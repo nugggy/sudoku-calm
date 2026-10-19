@@ -1,0 +1,13 @@
+# Kenney kits (CC0) used by the Play Together games Light Cycles, Tug of War, Quick Draw, Sumo Bumpers
+# and Penalty Shootout. To rebuild, unzip into tools/duo/kenney-d/<name> (gitignored), then convert the
+# files below to webp (they were drawn onto a canvas in Chrome and saved with toDataURL('image/webp', 0.9)).
+toon-characters|https://kenney.nl/media/pages/assets/toon-characters/4e8a6e4e53-1774770819/kenney_toon-characters.zip
+  Male adventurer/PNG/Poses HD/character_maleAdventurer_{idle,attack0,hurt}.png -> img/duo/quick_p0_{idle,draw,hurt}.webp
+  Female adventurer/PNG/Poses HD/character_femaleAdventurer_{idle,attack0,hurt}.png -> img/duo/quick_p1_{idle,draw,hurt}.webp
+  Male person/PNG/Poses HD/character_malePerson_drag.png -> img/duo/tug_team0.webp
+  Female person/PNG/Poses HD/character_femalePerson_drag.png -> img/duo/tug_team1.webp
+  Male person/PNG/Poses HD/character_malePerson_wide.png -> img/duo/penalty_keeper0.webp
+  Female person/PNG/Poses HD/character_femalePerson_wide.png -> img/duo/penalty_keeper1.webp
+shape-characters|https://kenney.nl/media/pages/assets/shape-characters/c016420b08-1698339465/kenney_shape-characters.zip
+  PNG/Default/{yellow,blue}_body_circle.png -> img/duo/sumo_body{0,1}.webp
+  PNG/Default/face_{f,e,j}.png -> img/duo/sumo_face{0,1,_hurt}.webp

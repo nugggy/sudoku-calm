@@ -49,6 +49,7 @@ const defaults = () => ({
   snip: { level: 0, done: {}, name: '', seenHelp: false },
   turtle: { best: {}, played: {}, seen: {}, trek: { level: 0, stars: {} } },
   hero: { best: {}, played: {}, seen: {}, level: {}, stars: {}, coins: 0, look: null, owned: [], pick: 'spidey', name: '' },
+  duo: { name: '', wins: {}, played: {}, seen: {}, via: 'wifi' },
   arrow: { level: 0, current: null, seenHelp: false },
   press: { reached: 0, seenHelp: false },
   yeti: { best: {}, played: {}, seen: {}, tourBest: 0 },

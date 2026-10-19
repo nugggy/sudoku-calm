@@ -28,6 +28,12 @@ export const lanBridge = N && N.lanHost ? {
   host: (name) => N.lanHost(name), discover: () => N.lanDiscover(), stopDiscover: () => N.lanStopDiscover(),
   join: (id) => N.lanJoin(id), joinIp: (ip, port) => N.lanJoinIp(ip, port), send: (s) => N.lanSend(s),
   close: () => N.lanClose(), ip: () => N.lanIp(),
+  // Bluetooth (BtLink), on app versions that have it. Same events, tagged via: 'bt'.
+  bt: N.btHost ? {
+    available: () => { try { return !!N.btAvailable(); } catch { return false; } },
+    host: (name) => N.btHost(name), discover: () => N.btDiscover(), stopDiscover: () => N.btStopDiscover(),
+    join: (id) => N.btJoin(id), send: (s) => N.btSend(s), close: () => N.btClose(),
+  } : null,
 } : null;
 
 // ---------- Update channel (GitHub Releases) ----------

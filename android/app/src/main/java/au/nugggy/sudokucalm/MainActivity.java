@@ -16,6 +16,11 @@ import android.widget.FrameLayout;
 import androidx.activity.ComponentActivity;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+
+import java.util.Map;
+import java.util.function.Consumer;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -29,6 +34,29 @@ public class MainActivity extends ComponentActivity {
     FrameLayout root;
     WebView web;
     NativeBridge bridge;
+
+    // Runtime permission and system prompts (Bluetooth). One at a time; the callback gets true when allowed.
+    private Consumer<Boolean> permDone, actDone;
+    private final ActivityResultLauncher<String[]> permLauncher = registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), (Map<String, Boolean> r) -> {
+        boolean ok = !r.isEmpty();
+        for (Boolean v : r.values()) ok &= Boolean.TRUE.equals(v);
+        Consumer<Boolean> d = permDone; permDone = null;
+        if (d != null) d.accept(ok);
+    });
+    private final ActivityResultLauncher<Intent> actLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), r -> {
+        Consumer<Boolean> d = actDone; actDone = null;
+        if (d != null) d.accept(r.getResultCode() != RESULT_CANCELED);
+    });
+
+    void askPermissions(String[] perms, Consumer<Boolean> done) {
+        permDone = done;
+        try { permLauncher.launch(perms); } catch (Exception e) { permDone = null; done.accept(false); }
+    }
+
+    void startForResult(Intent i, Consumer<Boolean> done) {
+        actDone = done;
+        try { actLauncher.launch(i); } catch (Exception e) { actDone = null; done.accept(false); }
+    }
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override

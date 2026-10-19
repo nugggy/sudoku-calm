@@ -18,6 +18,7 @@ export const snipHelp = () => helpSheet('How to play Snip Buddies', [
   'You and a friend each control a paper buddy. Work together to solve each little puzzle: fill an outline, pop balloons, roll a ball into place or hold down buttons.',
   'Move, jump, turn and crouch with your buttons. Stand so you overlap your buddy, then press <b>Snip</b> to cut away the part of them that is behind you. Your buddy can snip you too.',
   'Balloons only pop on a sharp point, so snip a corner to make one. The reset button gives you a fresh sheet of paper.',
+  '<b>Stuck?</b> Tap the bulb to see the shape each of you needs to become. It starts to glow after a while, and opens by itself if you have been stuck for a long time or keep starting over.',
   '<b>Two phones:</b> both phones need to be on the same wifi, or turn on the hotspot on one phone and join it from the other. One player taps Host, the other taps Join and picks the game. No internet is needed.',
   '<b>One phone:</b> choose Two players on this phone and share the screen, with a set of buttons each.',
 ], 'snip-btn');
@@ -154,6 +155,24 @@ function padHTML(p, compact) {
     <div class="sp-mid">${btn('RL', 'Turn left')}${btn('RR', 'Turn right')}${btn('C', 'Crouch')}</div>
     <div class="sp-act">${btn('J', 'Jump', 'big jump')}${btn('snip', 'Snip', 'big snip')}</div></div>`;
 }
+// ---------- hints ----------
+// The shape each buddy should become, in buddy units (a sheet is 1.3 x 1.7, centred, y down).
+const WANT = {
+  full: { d: [[-0.65, -0.85], [0.65, -0.85], [0.65, 0.85], [-0.65, 0.85]], say: 'Keep the whole sheet' },
+  point: { d: [[-0.65, 0.85], [-0.65, -0.15], [0, -0.85], [0.65, -0.15], [0.65, 0.85]], say: 'Snip a sharp point' },
+  spike: { d: [[-0.65, 0.85], [-0.65, 0.35], [-0.13, 0.35], [-0.13, -0.85], [0.13, -0.85], [0.13, 0.35], [0.65, 0.35], [0.65, 0.85]], say: 'Snip a long thin spike' },
+  scoop: { d: [[-0.65, -0.85], [-0.38, -0.85], [-0.38, 0.25], [0.38, 0.25], [0.38, -0.85], [0.65, -0.85], [0.65, 0.85], [-0.65, 0.85]], say: 'Snip a scoop out of the top' },
+  flat: { d: [[-0.85, -0.65], [0.85, -0.65], [0.85, 0.65], [-0.85, 0.65]], say: 'Turn over and lie flat' },
+};
+const HINT_PULSE = 40, HINT_AUTO = 75, HINT_RESETS = 3, HINT_SNIPS = 8; // seconds, or tries, before we offer help
+// A small picture of a shape, drawn to the same scale for every shape so sizes can be compared.
+function miniShape(poly, p) {
+  const xs = poly.map((q) => q[0]), ys = poly.map((q) => q[1]), m = 0.12;
+  const x0 = Math.min(...xs) - m, y0 = Math.min(...ys) - m, w = Math.max(...xs) - x0 + m, h = Math.max(...ys) - y0 + m;
+  return `<svg viewBox="${x0.toFixed(2)} ${y0.toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)}" style="width:${Math.round(w * 30)}px;height:${Math.round(h * 30)}px" aria-hidden="true">
+    <path d="M${poly.map((q) => q.map((v) => v.toFixed(3)).join(',')).join('L')}Z" fill="${COLOURS[p]}" stroke="#fff" stroke-width="0.07" stroke-linejoin="round"/></svg>`;
+}
+
 const KEYS = [
   { KeyA: K.L, KeyD: K.R, KeyW: K.J, KeyS: K.C, KeyQ: K.RL, KeyE: K.RR, KeyF: 'snip', KeyR: 'reset' },
   { ArrowLeft: K.L, ArrowRight: K.R, ArrowUp: K.J, ArrowDown: K.C, KeyK: K.RL, KeyL: K.RR, Enter: 'snip', Backspace: 'reset' },
@@ -173,14 +192,41 @@ export function snipGameScreen(app, { idx, mode = 'local' }) {
     <header class="topbar"><button class="icon-btn" data-act="back" aria-label="Back">${icon.back}</button>
       <div class="title">${idx + 1}. ${esc(lv.name)}</div>
       ${mode === 'local' ? '' : `<button class="icon-btn" data-a="reset" aria-label="New paper">${ICONS.reset}</button>`}
+      <button class="icon-btn sp-hintbtn" data-act="hint" aria-label="Hint">${icon.bulb}</button>
       <button class="icon-btn" data-act="help" aria-label="How to play">${icon.help}</button></header>
     <div class="sp-info"><span class="sp-hint">${esc(lv.hint)}</span><b data-el="prog"></b></div>
-    <div class="sp-stage" data-el="stage"><canvas></canvas>${mode === 'guest' ? '<div class="sp-lag" data-el="lag">Connecting</div>' : ''}</div>
+    <div class="sp-stage" data-el="stage"><canvas></canvas>${mode === 'guest' ? '<div class="sp-lag" data-el="lag">Connecting</div>' : ''}
+      <div class="sp-hintcard" data-el="hintcard" hidden></div></div>
     <div class="sp-pads">${mode === 'local' ? padHTML(0, true) + padHTML(1, true) : padHTML(me, false)}</div>
   </section>`);
   const stage = $('[data-el="stage"]', root), cv = $('canvas', stage), ctx = cv.getContext('2d');
   const prog = $('[data-el="prog"]', root);
   let view = { s: 30, ox: 0, oy: 0, dpr: 1 };
+
+  // ----- hints -----
+  // The bulb shows what shape each buddy needs. It starts to glow after a while, and opens by itself
+  // when the team has been stuck for a long time or keeps snipping and starting over.
+  const hintBtn = $('.sp-hintbtn', root), card = $('[data-el="hintcard"]', root);
+  let hintOn = false, autoHinted = false, playT = 0, snips = 0, resets = 0;
+  const who = (p) => (mode === 'local' ? ['Red', 'Blue'][p] : p === me ? 'You' : net.peer || 'Your friend');
+  card.innerHTML = `<div class="sp-hc-head"><b>Hint</b><button class="sp-hc-x" data-act="hint" aria-label="Close hint">${icon.close}</button></div>
+    <div class="sp-hc-rows">${[0, 1].map((p) => {
+    const poly = lv.type === 'fill' ? lv.parts[p] : WANT[(lv.want || ['full', 'full'])[p]].d;
+    const say = lv.type === 'fill' ? 'Make this shape (turn it if you need to)' : WANT[(lv.want || ['full', 'full'])[p]].say;
+    return `<div class="sp-hc-row"><div class="sp-hc-pic">${miniShape(poly, p)}</div><div><b style="color:${DARKER[p]}">${esc(who(p))}</b><span>${say}</span></div></div>`;
+  }).join('')}</div><p>${esc(lv.hint)}${lv.type === 'fill' ? '. The coloured shapes show where each of you fits.' : ''}</p>`;
+  function showHint(on, fromNet = false) {
+    hintOn = on; card.hidden = !on;
+    hintBtn.classList.toggle('on', on); hintBtn.classList.remove('pulse');
+    if (on) sfx.hint();
+    if (!fromNet && mode !== 'local') lan.send({ t: 'hint', on });
+  }
+  function watchStruggle(dt) {
+    if (done || hintOn || autoHinted) return;
+    playT += dt;
+    if (playT > HINT_PULSE) hintBtn.classList.add('pulse');
+    if (playT > HINT_AUTO || resets >= HINT_RESETS || snips >= HINT_SNIPS) { autoHinted = true; showHint(true); toast('Stuck? Here is a hint', 2600); }
+  }
   // Show from a little above the highest thing in the level down to the bottom, so the play area is as big as it can be.
   const viewTop = (() => {
     const ys = [...lv.spawn.map(([, y]) => y - 0.85), ...w.balloons.map((b) => b.y - b.r), ...w.buttons.map((b) => b.y), ...(w.goal ? [w.goal[1]] : []),
@@ -211,6 +257,7 @@ export function snipGameScreen(app, { idx, mode = 'local' }) {
   }
   function action(p, a) {
     if (done) return;
+    if (a === 'snip') snips++; else if (a === 'reset') resets++;
     if (mode === 'guest') { lan.send({ t: a }); if (a === 'snip') face(me, 'face_g', 0.3); return; }
     if (a === 'snip') doSnip(p); else if (a === 'reset') doReset(p);
   }
@@ -252,6 +299,7 @@ export function snipGameScreen(app, { idx, mode = 'local' }) {
     const a = e.target.closest('[data-act]')?.dataset.act;
     if (a === 'back') app.back();
     else if (a === 'help') snipHelp();
+    else if (a === 'hint') { autoHinted = true; showHint(!hintOn); }
     else if (e.target.closest('.topbar [data-a="reset"]')) action(me, 'reset');
   });
 
@@ -261,6 +309,7 @@ export function snipGameScreen(app, { idx, mode = 'local' }) {
     if (e.type === 'closed') { toast('Your friend has left', 3000); net.role = null; moving = true; app.backTo('snip'); return; }
     if (e.type !== 'msg') return;
     const m = e.data;
+    if (m.t === 'hint') { autoHinted = true; showHint(!!m.on, true); return; }
     if (mode === 'host') {
       if (m.t === 'in') remoteBits = m.k | 0;
       else if (m.t === 'snip') doSnip(1);
@@ -357,6 +406,7 @@ export function snipGameScreen(app, { idx, mode = 'local' }) {
         evs.forEach((e) => (e.k === 'win' ? onWin() : react(e)));
       }
     }
+    watchStruggle(dt);
     for (const f of faceT) f.t = Math.max(0, f.t - dt);
     for (const p of parts) { p.vy += 12 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; }
     for (let i = parts.length - 1; i >= 0; i--) if (parts[i].life <= 0) parts.splice(i, 1);
@@ -427,6 +477,11 @@ export function snipGameScreen(app, { idx, mode = 'local' }) {
     if (w.target) {
       path(w.target.ring); ctx.fillStyle = dark() ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.55)'; ctx.fill();
       ctx.setLineDash([0.16, 0.12]); ctx.lineDashOffset = -t * 0.3; ctx.strokeStyle = w.score >= FILL_WIN ? '#2fbf71' : dark() ? '#cfd8ff' : '#3d5a99'; ctx.lineWidth = 0.06; ctx.stroke(); ctx.setLineDash([]);
+      // hint: where each buddy's piece goes, in that buddy's colour
+      if (hintOn && lv.parts) lv.parts.forEach((pt, i) => {
+        path(pt); ctx.globalAlpha = 0.32 + 0.1 * Math.sin(t * 3); ctx.fillStyle = COLOURS[i]; ctx.fill(); ctx.globalAlpha = 1;
+        ctx.setLineDash([0.1, 0.08]); ctx.strokeStyle = DARKER[i]; ctx.lineWidth = 0.04; ctx.stroke(); ctx.setLineDash([]);
+      });
     }
     // goal area: a glowing pocket with a coin bobbing above it
     if (w.goal) {

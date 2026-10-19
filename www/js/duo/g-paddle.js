@@ -1,16 +1,17 @@
 // Paddle Ball: a two-player bat-and-ball game with spin, a rally that speeds up, and power-ups.
-import { makeCanvas, worldTransform, trackPointers, syncLoop, tone, noise, shaker, scoreBar, r3, clamp } from './rt-kit.js';
+import { makeCanvas, worldTransform, trackPointers, syncLoop, tone, noise, shaker, scoreBar, r3, clamp, pic, drawPic } from './rt-kit.js';
 import { W, H, BR, BAT_T, BAT_Y, HW, WIDE, WIN, MAXBALLS, newPaddle, stepPaddle, paddleOver, packPaddle } from './rt-paddle.js';
 
-const COL = ['#ff7a1a', '#18b5a4'];
-const GLOW = ['rgba(255,122,26,.45)', 'rgba(24,181,164,.45)'];
+const COL = ['#e8343f', '#1fa3e0']; // matches the Kenney Puzzle Pack 2 paddles
+const BAT = ['paddle_red', 'paddle_blue'];
+const GLOW = ['rgba(232,52,63,.45)', 'rgba(31,163,224,.45)'];
 
 function art() {
   return `<svg class="rt-art" viewBox="0 0 120 80" aria-hidden="true">
     <rect x="6" y="6" width="108" height="68" rx="10" fill="#1d2440"/>
     <path d="M60 10V70" stroke="#4b5590" stroke-width="2" stroke-dasharray="5 5"/>
-    <rect x="14" y="22" width="7" height="30" rx="3.5" fill="${COL[0]}"/><rect x="99" y="30" width="7" height="30" rx="3.5" fill="${COL[1]}"/>
-    <circle cx="70" cy="33" r="5" fill="#fff"/><circle cx="62" cy="36" r="3.5" fill="#fff" opacity=".35"/><circle cx="55" cy="39" r="2.4" fill="#fff" opacity=".18"/>
+    <image href="img/duo/paddle_red.webp" x="2.5" y="32.5" width="30" height="9" transform="rotate(90 17.5 37)" preserveAspectRatio="none"/><image href="img/duo/paddle_blue.webp" x="87.5" y="40.5" width="30" height="9" transform="rotate(90 102.5 45)" preserveAspectRatio="none"/>
+    <image href="img/duo/paddle_ball.webp" x="65" y="28" width="10" height="10"/><circle cx="62" cy="36" r="3.5" fill="#fff" opacity=".35"/><circle cx="55" cy="39" r="2.4" fill="#fff" opacity=".18"/>
   </svg>`;
 }
 
@@ -23,6 +24,7 @@ export default {
     `First to ${WIN} points wins.`,
   ],
   create(ctx) {
+    [...BAT, 'paddle_ball'].forEach(pic);
     const root = ctx.root;
     root.innerHTML = '';
     const wrap = document.createElement('div');
@@ -79,6 +81,7 @@ export default {
     function drawBat(c, x, i, wide) {
       const hw = wide ? WIDE : HW, y = BAT_Y[i];
       c.shadowColor = GLOW[i]; c.shadowBlur = 0.05 * tf.s;
+      if (drawPic(c, BAT[i], x, y, hw, BAT_T * 0.62)) { c.shadowBlur = 0; return; }
       c.fillStyle = COL[i];
       roundRect(c, x - hw, y - BAT_T / 2, hw * 2, BAT_T, BAT_T / 2); c.fill();
       c.shadowBlur = 0;
@@ -101,7 +104,8 @@ export default {
       tr.push([x, y]); if (tr.length > 8) tr.shift();
       tr.forEach(([tx, ty], i) => { c.fillStyle = `rgba(255,255,255,${(i / tr.length) * 0.22})`; c.beginPath(); c.arc(tx, ty, BR * (0.5 + i / 16), 0, 6.3); c.fill(); });
       c.shadowColor = 'rgba(255,255,255,.8)'; c.shadowBlur = 0.03 * tf.s;
-      c.fillStyle = '#fff'; c.beginPath(); c.arc(x, y, BR, 0, 6.3); c.fill(); c.shadowBlur = 0;
+      if (!drawPic(c, 'paddle_ball', x, y, BR * 1.1)) { c.fillStyle = '#fff'; c.beginPath(); c.arc(x, y, BR, 0, 6.3); c.fill(); }
+      c.shadowBlur = 0;
     }
     function render(view, _a, hostView) {
       const { c2: c, view: v } = cnv;

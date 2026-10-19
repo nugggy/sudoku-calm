@@ -121,7 +121,7 @@ export function duoHubScreen(app) {
         if (!gs.length) return '';
         return `<div class="section-title">${title}</div><div class="duo-grid">${gs.map((g) => `<button class="duo-card" data-id="${g.id}">
           <div class="duo-art">${g.art()}</div><div class="duo-name">${esc(g.name)}</div><div class="duo-tag">${esc(g.tag)}</div>
-          ${DB().played[g.id] ? `<div class="duo-played">Played ${DB().played[g.id]}</div>` : ''}</button>`).join('')}</div>`;
+          ${DB().played[g.id] ? `<div class="duo-played">Played ${DB().played[g.id]}</div>` : '<span class="new-badge">New</span>'}</button>`).join('')}</div>`;
       }).join('')}`;
   }
   root.addEventListener('click', (e) => {

@@ -10,9 +10,9 @@ BG="$K/kenney_boardgame-pack/PNG"
 OUT=${1:-www/img/duo}
 mkdir -p "$OUT"
 # webp at a given size (longest side); keeps transparency
-w() { ffmpeg -loglevel error -y -i "$1" -vf "scale=$3:$3:force_original_aspect_ratio=decrease" -c:v libwebp -lossless 0 -quality 90 -compression_level 6 "$OUT/$2.webp"; }
+w() { ffmpeg -loglevel error -y -i "$1" -vf "scale=$3:$3:force_original_aspect_ratio=decrease,format=rgba" -c:v libwebp -lossless 0 -quality 90 -compression_level 6 "$OUT/$2.webp"; }
 # pixel art: scale by an exact factor with nearest neighbour so it stays crisp
-px() { ffmpeg -loglevel error -y -i "$1" -vf "scale=iw*$3:ih*$3:flags=neighbor${4:+,$4}" -c:v libwebp -lossless 1 "$OUT/$2.webp"; }
+px() { ffmpeg -loglevel error -y -i "$1" -vf "scale=iw*$3:ih*$3:flags=neighbor${4:+,$4},format=rgba" -c:v libwebp -lossless 1 "$OUT/$2.webp"; }
 
 # stones and discs
 w "$PP/Balls/Black/ballBlack_10.png" stone_black 96

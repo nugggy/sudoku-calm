@@ -10,11 +10,11 @@ function seedSpots(pit, n, w, h) {
   const out = [];
   for (let k = 0; k < n; k++) {
     const a = rnd() * Math.PI * 2, r = Math.sqrt(rnd()) * 0.36;
-    out.push([50 + Math.cos(a) * r * w, 50 + Math.sin(a) * r * h, SEED_COLS[Math.floor(rnd() * SEED_COLS.length)]]);
+    out.push([50 + Math.cos(a) * r * w, 50 + Math.sin(a) * r * h, Math.floor(rnd() * SEED_COLS.length)]);
   }
   return out;
 }
-const seedsHTML = (pit, n, w = 100, h = 100) => seedSpots(pit, Math.min(n, 24), w, h).map(([x, y, c]) => `<i style="left:${x}%;top:${y}%;--sc:${c}"></i>`).join('');
+const seedsHTML = (pit, n, w = 100, h = 100) => seedSpots(pit, Math.min(n, 24), w, h).map(([x, y, c]) => `<i style="left:${x}%;top:${y}%;--sc:${SEED_COLS[c]};background-image:url(img/duo/seed_${c}.webp)"></i>`).join('');
 
 export default {
   id: 'mancala', name: 'Mancala', tag: 'Sow the seeds, fill your store', realtime: false, cat: 'board',

@@ -4,11 +4,12 @@ import { mine, esc } from './core.js';
 import { playerBar } from './ui.js';
 
 const SIZES = [3, 4, 5, 6];
+const BOX = ['img/duo/box_red.webp', 'img/duo/box_blue.webp']; // claimed boxes (Kenney Puzzle Pack 2)
 const sw = (p) => `<i class="db-sw p${p}"></i>`;
 
 export default {
   id: 'dots', name: 'Dots and Boxes', tag: 'Close a box, take another turn', cat: 'board', realtime: false,
-  art: () => '<svg class="art-dots" viewBox="0 0 96 64"><rect x="18" y="8" width="24" height="24" class="a"/><rect x="42" y="32" width="24" height="24" class="b"/><path d="M18 8h48M18 8v24h24M42 32V8M42 56h24V32H42M66 8v24" /><g>' +
+  art: () => '<svg class="art-dots" viewBox="0 0 96 64"><image href="img/duo/box_red.webp" x="19" y="9" width="22" height="22"/><image href="img/duo/box_blue.webp" x="43" y="33" width="22" height="22"/><path d="M18 8h48M18 8v24h24M42 32V8M42 56h24V32H42M66 8v24" /><g>' +
     [18, 42, 66].map((x) => [8, 32, 56].map((y) => `<circle cx="${x}" cy="${y}" r="4"/>`).join('')).join('') + '</g></svg>',
   help: [
     'Take turns drawing a line between two neighbouring dots.',
@@ -38,7 +39,7 @@ export default {
         const [r, c] = e.slice(1).split('_').map(Number), [x1, y1] = dot(r, c), [x2, y2] = e[0] === 'h' ? dot(r, c + 1) : dot(r + 1, c);
         return `<g class="db-e" data-e="${e}"><line class="hit" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/><line class="ln" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/></g>`;
       }).join('');
-      const boxes = [...Array(n * n)].map((_, i) => { const [x, y] = dot(Math.floor(i / n), i % n); return `<rect class="db-box" data-b="${i}" x="${x + 4}" y="${y + 4}" width="${G - 8}" height="${G - 8}" rx="6"/>`; }).join('');
+      const boxes = [...Array(n * n)].map((_, i) => { const [x, y] = dot(Math.floor(i / n), i % n); return `<rect class="db-box" data-b="${i}" x="${x + 4}" y="${y + 4}" width="${G - 8}" height="${G - 8}" rx="6"/><image class="db-img" data-bi="${i}" x="${x + 5}" y="${y + 5}" width="${G - 10}" height="${G - 10}" preserveAspectRatio="none"/>`; }).join('');
       const dots = [...Array((n + 1) * (n + 1))].map((_, i) => { const [x, y] = dot(Math.floor(i / (n + 1)), i % (n + 1)); return `<circle class="db-dot" cx="${x}" cy="${y}" r="5.5"/>`; }).join('');
       area.innerHTML = `<svg class="db-board" viewBox="0 0 ${W} ${W}">${boxes}${edgeSvg}${dots}</svg>`;
       draw();
@@ -51,6 +52,7 @@ export default {
         g.setAttribute('class', `db-e${v !== undefined ? ' on p' + v : ''}${g.dataset.e === last ? ' last' : ''}`);
       });
       area.querySelectorAll('.db-box').forEach((r) => { const v = s.boxes[+r.dataset.b]; r.setAttribute('class', `db-box${v >= 0 ? ' p' + v : ''}`); });
+      area.querySelectorAll('.db-img').forEach((m) => { const v = s.boxes[+m.dataset.bi]; if (v >= 0) m.setAttribute('href', BOX[v]); else m.removeAttribute('href'); });
       bar.set({ turn: over ? -1 : turn, score: s.score });
     }
 

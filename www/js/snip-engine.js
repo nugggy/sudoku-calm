@@ -3,16 +3,20 @@
 // the same level and the same inputs always give the same result (no Math.random, fixed time step).
 import pc from './vendor/polygon-clipping/polygon-clipping.js';
 import { LEVELS, DEFAULT_FLOOR } from './snip-levels.js';
+import { BW, BH, LEG_N, LEG_C, LEG_T, uShape } from './snip-body.js';
 
 export { LEVELS };
 export const W = 10, H = 13;
-export const BW = 1.3, BH = 1.7;            // a fresh buddy
+export { BW, BH, LEG_N, LEG_C, LEG_T };
 export const MIN_AREA = 0.3;                // a snip may not leave less paper than this
 export const FILL_WIN = 0.82;               // fill score needed to finish a fill level
 export const DT = 1 / 60;
-const SUB = 2, G = 30, SPEED = 4.2, JUMP = 10, ROT = 2.4, CROUCH = 0.35;
-// input bits
-export const K = { L: 1, R: 2, J: 4, C: 8, RL: 16, RR: 32 };
+const SUB = 2, G = 30, SPEED = 4.2, JUMP = 12, ROT = 2.4;
+const LEG_RATE = 3.2;      // how fast legs bend or stretch, units a second
+const LEG_HW = 0.42;       // half the width of the leg support (both legs and boots)
+const UPRIGHT = 0.7;       // tilt (radians) past which the legs tuck away and the paper rests on the ground
+// input bits (T: stand tall)
+export const K = { L: 1, R: 2, J: 4, C: 8, RL: 16, RR: 32, T: 64 };
 
 // ---------- polygon helpers (rings are arrays of [x, y], not closed) ----------
 export function area(r) { let a = 0; for (let i = 0, n = r.length; i < n; i++) { const p = r[i], q = r[(i + 1) % n]; a += p[0] * q[1] - q[0] * p[1]; } return a / 2; }
@@ -95,22 +99,46 @@ function setShape(b, shape) {
   b.sharp = b.kind === 'buddy' ? sharpPoints(shape) : [];
   b.area = Math.abs(area(shape));
 }
+// A fresh sheet centred on its middle, and where the face sits on it.
+const FRESH = (() => { const u = ccw(uShape(-BW / 2, -BH / 2)), [cx, cy] = centroid(u); return { ring: u.map(([x, y]) => [x - cx, y - cy]), top: -BH / 2 - cy, bottom: BH / 2 - cy }; })();
+export const BODY_AREA = Math.abs(area(FRESH.ring));
+const FACE0 = [0, FRESH.top + 0.62];
+export const freshShape = () => FRESH.ring.map((p) => p.slice());
+// Spawn points in the levels give the middle of the old 1.7 tall sheet on the ground, so the feet are 0.85 below.
 function makeBuddy(i, x, y) {
-  const b = { kind: 'buddy', i, x, y, a: 0, vx: 0, vy: 0, c: 0, im: 1, grounded: false, gvx: 0, jumpT: 0, face: [0, -0.25], spawn: [x, y] };
-  setShape(b, rectRing([-BW / 2, -BH / 2, BW, BH]));
+  const foot = y + 0.85, by = foot - LEG_N - FRESH.bottom;
+  const b = { kind: 'buddy', i, x, y: by, a: 0, vx: 0, vy: 0, leg: LEG_N, im: 1, grounded: false, gvx: 0, jumpT: 0, face: FACE0.slice(), spawn: [x, by] };
+  setShape(b, freshShape());
   return b;
 }
 function makeBall(x, y, r) {
-  const b = { kind: 'ball', x, y, a: 0, vx: 0, vy: 0, c: 0, im: 2.5, r, spawn: [x, y] };
+  const b = { kind: 'ball', x, y, a: 0, vx: 0, vy: 0, im: 2.5, r, spawn: [x, y] };
   setShape(b, circleRing(0, 0, r, 22));
   return b;
 }
-const sy = (b) => 1 - CROUCH * b.c;
-// World ring of a body: crouch squashes it vertically, then it turns and moves.
+// World ring of a body: it turns and moves (the paper never squashes; the legs do the bending).
 export function worldRing(b, ring = b.shape) {
-  const c = Math.cos(b.a), s = Math.sin(b.a), k = sy(b);
-  return ring.map(([px, py]) => { const qy = py * k; return [b.x + px * c - qy * s, b.y + px * s + qy * c]; });
+  const c = Math.cos(b.a), s = Math.sin(b.a);
+  return ring.map(([px, py]) => [b.x + px * c - py * s, b.y + px * s + py * c]);
 }
+
+// ---------- legs ----------
+const wrapA = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+export const isUpright = (b) => Math.abs(wrapA(b.a)) < UPRIGHT;
+// Where the legs join the paper: the lowest point of the paper close under the middle (world y).
+export function hipY(b, wr = worldRing(b, b.col)) {
+  let y = -Infinity, any = -Infinity;
+  for (const p of wr) { if (p[1] > any) any = p[1]; if (Math.abs(p[0] - b.x) <= LEG_HW + 0.03 && p[1] > y) y = p[1]; }
+  return y > -Infinity ? y : any;
+}
+// The legs as something solid: an upright box under the paper, from just inside the paper down to the feet.
+export function legRing(b, wr) {
+  if (b.kind !== 'buddy' || b.leg < 0.03) return null;
+  const hy = hipY(b, wr);
+  return resample(rectRing([b.x - LEG_HW, hy - 0.12, LEG_HW * 2, b.leg + 0.12]), 0.14);
+}
+// Leg length the controls ask for.
+const legWant = (b, k) => (!isUpright(b) ? 0 : k & K.C ? LEG_C : k & K.T ? LEG_T : LEG_N);
 
 // ---------- world ----------
 export function createWorld(idx) {
@@ -143,15 +171,18 @@ export function createWorld(idx) {
   };
   if (lv.parts) {
     const u = pc.union(...lv.parts.map(mp));
-    const ring = u[0][0].slice(0, -1);
-    w.target = { ring: ccw(ring), area: ringsArea(u), mp: u };
+    // the outline can be in several pieces (a buddy standing on another leaves a gap for the legs)
+    const rings = u.map((poly) => ccw(poly[0].slice(0, -1)));
+    w.target = { ring: rings[0], rings, area: ringsArea(u), mp: u };
   }
   return w;
 }
 
 // oneWay (buddy on buddy): paper buddies pass in front of each other, so they only push apart when one
 // lands on top of the other. That lets them overlap to snip and still give each other a lift.
-function resolvePair(A, Ar, B, Br, Bstatic, oneWay = false, Bact = null) {
+// Ag and Bg are all the solid pieces of each body (paper and legs), which move together.
+// legsOf: which side ('A' or 'B') the piece is legs; legs can stand on a buddy but are never stood on.
+function resolvePair(A, Ar, Ag, B, Br, Bg, Bstatic, oneWay = false, Bact = null, legsOf = null) {
   // deepest point of either shape inside the other gives the push direction (from B towards A)
   let best = null;
   for (const v of Ar) if (inside(v[0], v[1], Br)) { const e = nearest(v[0], v[1], Br, Bact); if (e.d < Infinity && (!best || e.d > best.d)) best = e; }
@@ -161,12 +192,13 @@ function resolvePair(A, Ar, B, Br, Bstatic, oneWay = false, Bact = null) {
     if (Math.abs(best.ny) < 0.6 || best.d > 0.35) return false;
     const top = best.ny < 0 ? A : B, low = top === A ? B : A;
     if (top.vy - low.vy < -0.5) return false; // jumping up through: no push
+    if ((legsOf === 'A' && top !== A) || (legsOf === 'B' && top !== B)) return false;
   }
   const { nx, ny } = best, d = Math.min(best.d, 0.5);
   const wa = A.im, wb = Bstatic ? 0 : B.im, sum = wa + wb;
   const da = (d * wa) / sum, db = (d * wb) / sum;
-  A.x += nx * da; A.y += ny * da; shift(Ar, nx * da, ny * da);
-  if (!Bstatic) { B.x -= nx * db; B.y -= ny * db; shift(Br, -nx * db, -ny * db); }
+  A.x += nx * da; A.y += ny * da; for (const r of Ag) shift(r, nx * da, ny * da);
+  if (!Bstatic) { B.x -= nx * db; B.y -= ny * db; for (const r of Bg) shift(r, -nx * db, -ny * db); }
   // velocities: stop moving into each other, with a little bounce for the ball and some friction
   const bvx = Bstatic ? 0 : B.vx, bvy = Bstatic ? 0 : B.vy;
   const rvx = A.vx - bvx, rvy = A.vy - bvy, vn = rvx * nx + rvy * ny;
@@ -202,7 +234,7 @@ export function step(w, inputs) {
       b.jumpT = Math.max(0, b.jumpT - h);
       if (k & K.J && b.grounded && b.jumpT === 0) { b.vy = -JUMP; b.jumpT = 0.3; b.grounded = false; }
       b.a += ((k & K.RR ? 1 : 0) - (k & K.RL ? 1 : 0)) * ROT * h;
-      b.c += Math.max(-6 * h, Math.min(6 * h, (k & K.C ? 1 : 0) - b.c));
+      b.leg += Math.max(-LEG_RATE * h, Math.min(LEG_RATE * h, legWant(b, k) - b.leg));
     }
     const dyn = [...w.buddies, ...w.props];
     for (const b of dyn) {
@@ -219,15 +251,23 @@ export function step(w, inputs) {
         if (b.sharp.some((i) => Math.hypot(wr[i][0] - bl.x, wr[i][1] - bl.y) < bl.r + 0.04)) { bl.popped = true; w.events.push({ k: 'pop', x: bl.x, y: bl.y }); break; }
       }
     }
-    const rings = dyn.map((b) => { const r = worldRing(b, b.col); return r; });
+    // each body is its paper plus, for an upright buddy, its legs
+    const groups = dyn.map((b) => { const r = worldRing(b, b.col), l = legRing(b, r); return l ? [r, l] : [r]; });
     for (let it = 0; it < 5; it++) {
       let any = false;
       for (let i = 0; i < dyn.length; i++) {
-        const A = dyn[i], Ar = rings[i], ab = bbox(Ar);
-        for (const st of w.statics) if (overlaps(ab, st.bb) && resolvePair(A, Ar, null, st.col, true, false, st.act)) any = true;
-        for (const bl of w.balloons) if (!bl.popped && overlaps(ab, [bl.x - bl.r, bl.y - bl.r, bl.x + bl.r, bl.y + bl.r]) && resolvePair(A, Ar, null, bl.ring, true)) any = true;
-        for (let j = i + 1; j < dyn.length; j++) {
-          if (overlaps(bbox(Ar), bbox(rings[j])) && resolvePair(A, Ar, dyn[j], rings[j], false, A.kind === 'buddy' && dyn[j].kind === 'buddy')) any = true;
+        const A = dyn[i], Ag = groups[i];
+        for (let pa = 0; pa < Ag.length; pa++) {
+          const Ar = Ag[pa];
+          for (const st of w.statics) if (overlaps(bbox(Ar), st.bb) && resolvePair(A, Ar, Ag, null, st.col, null, true, false, st.act)) any = true;
+          for (const bl of w.balloons) if (!bl.popped && overlaps(bbox(Ar), [bl.x - bl.r, bl.y - bl.r, bl.x + bl.r, bl.y + bl.r]) && resolvePair(A, Ar, Ag, null, bl.ring, null, true)) any = true;
+          for (let j = i + 1; j < dyn.length; j++) {
+            const B = dyn[j], Bg = groups[j], buddies = A.kind === 'buddy' && B.kind === 'buddy';
+            for (let pb = 0; pb < Bg.length; pb++) {
+              if (buddies && pa === 1 && pb === 1) continue; // legs pass each other
+              if (overlaps(bbox(Ar), bbox(Bg[pb])) && resolvePair(A, Ar, Ag, B, Bg[pb], Bg, false, buddies, null, buddies ? (pa === 1 ? 'A' : pb === 1 ? 'B' : null) : null)) any = true;
+            }
+          }
         }
       }
       if (!any) break;
@@ -258,7 +298,7 @@ function checkGoal(w) {
   if (lv.type === 'pop') ok = w.balloons.every((b) => b.popped);
   if (lv.type === 'goal') { const [x, y, gw, gh] = w.goal, b = w.props[0]; ok = b.x > x && b.x < x + gw && b.y > y && b.y < y + gh; }
   if (lv.type === 'press') {
-    const rings = [...w.buddies, ...w.props].map((b) => worldRing(b, b.col));
+    const rings = [...w.buddies, ...w.props].flatMap((b) => { const r = worldRing(b, b.col), l = legRing(b, r); return l ? [r, l] : [r]; });
     for (const bt of w.buttons) {
       const was = bt.on;
       bt.on = rings.some((r) => r.some((p) => p[0] > bt.x && p[0] < bt.x + bt.w && p[1] > bt.y - 0.1 && p[1] < bt.y + bt.h + 0.05));
@@ -285,14 +325,14 @@ export function snip(w, p) {
   if (bestA > other.area - 0.004) return 'none';
   if (bestA < MIN_AREA) return 'small';
   // back into the partner's own frame, then re-centre on the new middle so it turns about its new centre
-  const c = Math.cos(-other.a), s = Math.sin(-other.a), k = sy(other);
-  let local = best.map(([x, y]) => { const dx = x - other.x, dy = y - other.y; return [dx * c - dy * s, (dx * s + dy * c) / k]; });
+  const c = Math.cos(-other.a), s = Math.sin(-other.a);
+  let local = best.map(([x, y]) => { const dx = x - other.x, dy = y - other.y; return [dx * c - dy * s, dx * s + dy * c]; });
   local = ccw(simplify(local));
   if (local.length < 3) return 'small';
   const [cx, cy] = centroid(local);
   local = local.map(([x, y]) => [x - cx, y - cy]);
   const ca = Math.cos(other.a), sa = Math.sin(other.a);
-  other.x += cx * ca - cy * k * sa; other.y += cx * sa + cy * k * ca;
+  other.x += cx * ca - cy * sa; other.y += cx * sa + cy * ca;
   other.face = [other.face[0] - cx, other.face[1] - cy];
   setShape(other, local);
   w.events.push({ k: 'snip', by: p });
@@ -300,15 +340,15 @@ export function snip(w, p) {
 }
 export function resetShape(w, p) {
   const b = w.buddies[p];
-  const ca = Math.cos(b.a), sa = Math.sin(b.a), k = sy(b);
+  const ca = Math.cos(b.a), sa = Math.sin(b.a), dx = b.face[0] - FACE0[0], dy = b.face[1] - FACE0[1];
   // put the original sheet back where the face is, so the buddy does not jump around
-  b.x += b.face[0] * ca - (b.face[1] + 0.25) * k * sa; b.y += b.face[0] * sa + (b.face[1] + 0.25) * k * ca;
-  b.face = [0, -0.25];
-  setShape(b, rectRing([-BW / 2, -BH / 2, BW, BH]));
+  b.x += dx * ca - dy * sa; b.y += dx * sa + dy * ca;
+  b.face = FACE0.slice();
+  setShape(b, freshShape());
   b.y -= 0.05;
 }
 // Shape data sent over the network and applied on the other phone.
 export const shapeOf = (b) => ({ s: b.shape.map((p) => [+p[0].toFixed(4), +p[1].toFixed(4)]), f: b.face.map((v) => +v.toFixed(4)) });
 export function applyShape(b, d) { b.face = d.f; setShape(b, d.s); }
 // A short fingerprint of the moving parts, used by the tests to check determinism.
-export const stateHash = (w) => [...w.buddies, ...w.props].map((b) => [b.x, b.y, b.a, b.vx, b.vy].map((v) => v.toFixed(6)).join(',')).join('|') + `|${w.score}|${w.won}`;
+export const stateHash = (w) => [...w.buddies, ...w.props].map((b) => [b.x, b.y, b.a, b.vx, b.vy, b.leg || 0].map((v) => v.toFixed(6)).join(',')).join('|') + `|${w.score}|${w.won}`;

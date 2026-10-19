@@ -20,7 +20,7 @@ function balloons(left, popAt = -1) {
     g += `<path d="M${x},${y + 13}Q${(x + 50) / 2 + (k % 2 ? 4 : -4)},${(y + 100) / 2} 50,104" class="wd-str ${alive ? '' : 'gone'}"/>`;
   });
   SPOTS.forEach(([x, y], k) => {
-    if (k < left) g += `<g transform="translate(${x} ${y})"><ellipse rx="11" ry="13.5" fill="${BAL[k]}"/><ellipse cx="-4" cy="-5" rx="3" ry="4.5" fill="#fff" opacity=".45"/><path d="M-2.5,13.5h5l-2.5,3z" fill="${BAL[k]}"/></g>`;
+    if (k < left) g += `<image href="img/duo/balloon_${k}.webp" x="${x - 12}" y="${y - 14}" width="24" height="34.7"/>`;
     else if (k === popAt) g += `<g transform="translate(${x} ${y})" class="wd-pop">${[0, 60, 120, 180, 240, 300].map((a) => `<path d="M0,-6L2,-16L-2,-16Z" transform="rotate(${a})" fill="${BAL[k]}"/>`).join('')}</g>`;
   });
   g += '<rect x="38" y="102" width="24" height="18" rx="3" class="wd-box"/><path d="M50,102v18M38,110h24" class="wd-ribbon"/>';

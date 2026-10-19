@@ -207,3 +207,18 @@ export function scoreBar(names, me, cls = '') {
   };
 }
 function pop(n) { n.classList.remove('pop'); void n.offsetWidth; n.classList.add('pop'); }
+
+// Pictures for the action games (CC0 art in img/duo). Draws centred on (x, y) with radius r;
+// returns false until the picture has loaded so the caller can draw its plain shape instead.
+const pics = new Map();
+export function pic(name) {
+  if (!pics.has(name)) { const i = new Image(); i.src = `img/duo/${name}.webp`; pics.set(name, i); }
+  return pics.get(name);
+}
+export function drawPic(c, name, x, y, rx, ry = rx, rot = 0) {
+  const i = pic(name);
+  if (!i.complete || !i.naturalWidth) return false;
+  if (rot) { c.save(); c.translate(x, y); c.rotate(rot); c.drawImage(i, -rx, -ry, rx * 2, ry * 2); c.restore(); }
+  else c.drawImage(i, x - rx, y - ry, rx * 2, ry * 2);
+  return true;
+}

@@ -1,6 +1,9 @@
 // Light Cycles: two riders leave walls of light behind them. Swipe to turn; whoever crashes into a
 // wall or a trail loses the round. First to 5.
-import { stage, session, touches, keys, COL, play, vib, winText } from './rtd-kit.js';
+import { stage, session, touches, keys, COL, play, vib, winText, img } from './rtd-kit.js';
+
+// Riders are the Kenney Racing Pack motorbikes (CC0), drawn nose first in the direction of travel.
+let BIKE = null; // loaded when a game starts, so the rules can still run in Node tests
 
 export const GW = 28, GH = 44, TO = 5;
 const DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];           // 0 up, 1 right, 2 down, 3 left (board coordinates)
@@ -87,9 +90,10 @@ export const cyclesSpec = {
 // ---------- screen ----------
 export const cyclesCardArt = () => `<svg class="rtd-art" viewBox="0 0 120 80" aria-hidden="true"><rect width="120" height="80" rx="10" fill="#0b1124"/>
   <path d="M10 70V40H44V18H70" stroke="${COL[0]}" stroke-width="5" fill="none" stroke-linejoin="round" stroke-linecap="round"/><path d="M110 10V34H80V58H58" stroke="${COL[1]}" stroke-width="5" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
-  <circle cx="70" cy="18" r="5" fill="#fff"/><circle cx="58" cy="58" r="5" fill="#fff"/></svg>`;
+  <image href="img/duo/cycle_red.webp" x="66" y="9" width="8" height="18" transform="rotate(90 70 18)"/><image href="img/duo/cycle_blue.webp" x="54" y="49" width="8" height="18" transform="rotate(-90 58 58)"/></svg>`;
 
 function create(ctx) {
+  BIKE = BIKE || [img('img/duo/cycle_red.webp'), img('img/duo/cycle_blue.webp')];
   const st = stage(ctx, 'rtd-cycles');
   const flip = () => !ctx.local && ctx.me === 1;
   let crashFx = null, dead = false;
@@ -140,6 +144,13 @@ function create(ctx) {
     g.shadowBlur = 0;
     s.p.forEach((p, i) => {
       const cx = ox + (p.x + 0.5) * c, cy = oy + (p.y + 0.5) * c;
+      const bk = BIKE[i];
+      if (bk.complete && bk.naturalWidth) {
+        const bh2 = c * 2.6, bw2 = bh2 * bk.naturalWidth / bk.naturalHeight;
+        g.save(); g.translate(cx, cy); g.rotate(p.d * Math.PI / 2); if (!p.a) g.globalAlpha = 0.45;
+        g.drawImage(bk, -bw2 / 2, -bh2 / 2, bw2, bh2); g.restore();
+        return;
+      }
       g.fillStyle = p.a ? '#fff' : '#555'; g.beginPath(); g.arc(cx, cy, c * 0.62, 0, Math.PI * 2); g.fill();
       g.strokeStyle = COL[i]; g.lineWidth = 2.5; g.stroke();
       if (p.a) { g.fillStyle = COL[i]; g.beginPath(); g.arc(cx + DX[p.d] * c * 0.3, cy + DY[p.d] * c * 0.3, c * 0.2, 0, Math.PI * 2); g.fill(); }

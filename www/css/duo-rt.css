@@ -15,7 +15,7 @@
 .rt-score.swap .p1 { order: 3; flex-direction: row-reverse; } .rt-score.swap .rt-mid { order: 2; } .rt-score.swap .p0 { order: 1; flex-direction: row-reverse; }
 .rt-mid { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; }
 .rt-hockey .p0 b { background: #ff4d5e; } .rt-hockey .p1 b { background: #2f8cff; }
-.rt-paddle .p0 b { background: #ff7a1a; } .rt-paddle .p1 b { background: #18b5a4; }
+.rt-paddle .p0 b { background: #e8343f; } .rt-paddle .p1 b { background: #1fa3e0; }
 /* one phone shared by two: the top player reads their score upside down */
 .rt-game.local .rt-side.p1 { transform: rotate(180deg); }
 .rt-game.local .rt-score { padding-bottom: 2px; }

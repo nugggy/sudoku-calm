@@ -2,6 +2,7 @@
 // that every level can be solved in principle, and scripted solves for one level of each kind.
 // Run with: node tools/test-snip.mjs
 import * as E from '../www/js/snip-engine.js';
+import { uShape, LEG_N } from '../www/js/snip-body.js';
 
 const { K, LEVELS, BW, BH } = E;
 let fail = 0;
@@ -26,6 +27,7 @@ for (let i = 0; i < LEVELS.length; i++) {
   check(bodies.every((b) => Number.isFinite(b.x) && Number.isFinite(b.y)), `level ${i + 1} has a broken position`);
   check(bodies.every((b) => b.x > 0 && b.x < E.W && b.y > 0 && b.y < E.H), `level ${i + 1}: something left the world`);
   check(w.buddies.every((b) => b.grounded), `level ${i + 1}: a buddy did not land`);
+  check(w.buddies.every((b) => Math.abs(b.leg - LEG_N) < 1e-6), `level ${i + 1}: legs did not settle at their normal length`);
   check(!w.won, `level ${i + 1} is won without doing anything`);
 }
 
@@ -37,6 +39,22 @@ for (let i = 0; i < LEVELS.length; i++) {
 }
 
 // ---------- 4. solvable in principle ----------
+// A part fits in one buddy when, turned some quarter turn, it lies inside a fresh U (tried against its top, middle
+// and bottom).
+function fitsInBuddy(part) {
+  const body = uShape(0, 0);
+  for (let q = 0; q < 4; q++) {
+    const c = Math.round(Math.cos((q * Math.PI) / 2)), sn = Math.round(Math.sin((q * Math.PI) / 2));
+    const t = part.map(([x, y]) => [x * c - y * sn, x * sn + y * c]);
+    const xs = t.map((v) => v[0]), ys = t.map((v) => v[1]), x0 = Math.min(...xs), y0 = Math.min(...ys), pw = Math.max(...xs) - x0, ph = Math.max(...ys) - y0;
+    if (pw > BW + 1e-6 || ph > BH + 1e-6) continue;
+    for (const oy of [0, (BH - ph) / 2, BH - ph]) {
+      const placed = t.map(([x, y]) => [x - x0 + (BW - pw) / 2, y - y0 + oy]);
+      if (E.multiArea(E.difference(placed, body)) < 0.012) return true;
+    }
+  }
+  return false;
+}
 const surfaces = (w) => w.statics.filter((s) => s.r).map((s) => ({ x0: s.r[0], x1: s.r[0] + s.r[2], y: s.r[1] }));
 const surfaceBelow = (w, x, y) => surfaces(w).filter((s) => x >= s.x0 - 0.3 && x <= s.x1 + 0.3 && s.y >= y - 0.05).sort((a, b) => a.y - b.y)[0];
 const REACH = 4.6; // standing on a buddy and jumping, with a point held up
@@ -44,14 +62,14 @@ for (let i = 0; i < LEVELS.length; i++) {
   const lv = LEVELS[i], w = E.createWorld(i), name = `level ${i + 1} (${lv.name})`;
   if (lv.type === 'fill') {
     for (const p of lv.parts) {
-      const xs = p.map((q) => q[0]), ys = p.map((q) => q[1]), pw = Math.max(...xs) - Math.min(...xs), ph = Math.max(...ys) - Math.min(...ys);
-      check((pw <= BW + 1e-6 && ph <= BH + 1e-6) || (pw <= BH + 1e-6 && ph <= BW + 1e-6), `${name}: a part does not fit inside one buddy`);
+      check(fitsInBuddy(p), `${name}: a part does not fit inside one buddy`);
       check(Math.abs(E.area(p)) >= E.MIN_AREA, `${name}: a part is smaller than the smallest allowed buddy`);
     }
-    const ys = w.target.ring.map((q) => q[1]), bottom = Math.max(...ys);
-    const cx = w.target.ring.reduce((s, q) => s + q[0], 0) / w.target.ring.length;
+    // the lowest piece rests on a surface: on the ground (a buddy lying on its side) or at standing height
+    const all = w.target.rings.flat(), bottom = Math.max(...all.map((q) => q[1]));
+    const low = all.filter((q) => q[1] > bottom - 0.05), cx = low.reduce((t, q) => t + q[0], 0) / low.length;
     const s = surfaceBelow(w, cx, bottom);
-    check(s && Math.abs(s.y - bottom) < 0.05, `${name}: the outline does not rest on a surface`);
+    check(s && (Math.abs(s.y - bottom) < 0.05 || Math.abs(s.y - LEG_N - bottom) < 0.05), `${name}: the outline does not rest on a surface`);
   }
   if (lv.type === 'pop') for (const [x, y, r] of lv.balloons) { const s = surfaceBelow(w, x, y); check(s && s.y - (y + r) <= REACH, `${name}: a balloon is out of reach`); }
   if (lv.type === 'goal') {
@@ -76,7 +94,7 @@ function solve(i, ctl, frames = 1200) {
 let w = solve(0, (w) => [steer(w.buddies[0], 4.35), steer(w.buddies[1], 5.65)]);
 check(w.won, `scripted solve of level 1 failed (score ${w.score.toFixed(2)})`);
 // fill: stand on your buddy
-w = solve(2, (w) => { const [a, b] = w.buddies; return [steer(a, 5) | (Math.abs(a.x - b.x) < 1.6 && a.y > 11 && a.grounded ? K.J : 0), steer(b, 5)]; });
+w = solve(2, (w) => { const [a, b] = w.buddies; return [steer(a, 5) | (Math.abs(a.x - b.x) < 1.6 && a.y > 10 && a.grounded ? K.J : 0), steer(b, 5)]; });
 check(w.won, `scripted solve of level 3 failed (score ${w.score.toFixed(2)})`);
 // pop: snip a point, turn it upwards, jump under the balloon
 w = E.createWorld(3);
@@ -101,7 +119,25 @@ w = E.createWorld(0);
 w.buddies[0].x = w.buddies[1].x; w.buddies[0].y = w.buddies[1].y;
 check(E.snip(w, 0) === 'small', 'a snip that removes the whole buddy should be refused');
 E.resetShape(w, 1);
-check(Math.abs(w.buddies[1].area - BW * BH) < 1e-6, 'reset should give a full sheet');
+check(Math.abs(w.buddies[1].area - E.BODY_AREA) < 1e-6, 'reset should give a full sheet');
+
+// ---------- 6. legs: crouch and stand tall move the paper, never change its shape ----------
+{
+  const w = E.createWorld(0), b = w.buddies[0], shape0 = JSON.stringify(b.shape);
+  for (let f = 0; f < 120; f++) E.step(w, [0, 0]);
+  const y0 = b.y;
+  for (let f = 0; f < 120; f++) E.step(w, [K.C, 0]);
+  const yc = b.y;
+  for (let f = 0; f < 120; f++) E.step(w, [K.T, 0]);
+  const yt = b.y;
+  check(yc - y0 > 0.25, `crouching should lower the paper (moved ${(yc - y0).toFixed(2)})`);
+  check(y0 - yt > 0.45, `standing tall should lift the paper (moved ${(y0 - yt).toFixed(2)})`);
+  check(JSON.stringify(b.shape) === shape0, 'the paper changed shape while crouching or standing tall');
+  check(b.grounded, 'a buddy standing tall should still be on the ground');
+  for (let f = 0; f < 60; f++) E.step(w, [K.RR, 0]);
+  for (let f = 0; f < 90; f++) E.step(w, [0, 0]);
+  check(b.leg < 0.03 && b.grounded, 'a buddy on its side should tuck its legs away and rest on the ground');
+}
 
 console.log(fail ? `\n${fail} check(s) failed` : `Snip Buddies: ${LEVELS.length} levels load, settle, are deterministic and solvable in principle; snipping maths and 5 scripted solves pass.`);
 process.exit(fail ? 1 : 0);

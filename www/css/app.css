@@ -829,3 +829,9 @@ h1, h2, h3, p { margin: 0; }
 
 @media (min-height: 760px) { .num { height: 72px; } }
 @media (max-height: 640px) { .tool .ic { width: 42px; height: 42px; } .num { height: 54px; } .game-info { padding-bottom: 4px; } }
+
+/* "New" badge on games that have never been opened (landing cards and hub cards) */
+.new-badge { position: absolute; top: 10px; right: 10px; z-index: 2; padding: 3px 9px 4px; border-radius: 11px; background: #ffd23f; color: #3a2a00;
+  font-size: 11px; font-weight: 900; letter-spacing: .4px; text-transform: uppercase; line-height: 1.2; box-shadow: 0 2px 0 rgba(0, 0, 0, .18); pointer-events: none;
+  animation: new-badge-in .4s cubic-bezier(.3, 1.6, .5, 1) both; }
+@keyframes new-badge-in { from { transform: scale(.4); opacity: 0; } }

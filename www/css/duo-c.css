@@ -29,7 +29,7 @@
 .mc-pit b, .mc-store b { position: absolute; right: 9px; bottom: 4px; font-size: 13px; font-weight: 900; text-shadow: 0 1px 2px rgba(0, 0, 0, .6); }
 .mc-store b { right: 16px; top: 50%; bottom: auto; transform: translateY(-50%); font-size: 20px; }
 .mc-seeds { position: absolute; inset: 8% 10%; pointer-events: none; }
-.mc-seeds i { position: absolute; width: 11px; height: 11px; margin: -5.5px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff 0 12%, var(--sc) 35%, color-mix(in srgb, var(--sc) 70%, #000) 100%); box-shadow: 0 1px 1px rgba(0, 0, 0, .35); }
+.mc-seeds i { position: absolute; width: 12px; height: 12px; margin: -6px; border-radius: 50%; background: var(--sc) center / contain no-repeat; box-shadow: 0 1px 1px rgba(0, 0, 0, .35); }
 .mc-pit.can { box-shadow: inset 0 3px 6px rgba(0, 0, 0, .35), 0 0 0 3px #ffd34d; cursor: pointer; }
 .mc-pit.can:active { transform: scale(.96); }
 .mc-pit.last { outline: 2px dashed rgba(255, 255, 255, .7); outline-offset: -4px; }
@@ -49,8 +49,7 @@
 .mr-pt.tgt { fill: #ffd34d; stroke: var(--tbc-line); stroke-width: 1.5; }
 .mr-pt.from { fill: none; stroke: var(--tbc-line); stroke-width: 1.5; stroke-dasharray: 2 2; }
 .mr-hit { fill: transparent; cursor: pointer; }
-.mr-stone .mr-shine { fill: none; stroke: rgba(0, 0, 0, .35); stroke-width: 1.4; }
-.mr-stone .mr-ring { fill: none; stroke: rgba(255, 255, 255, .45); stroke-width: 1.6; }
+.mr-stone image, .gm-stone image { pointer-events: none; }
 .mr-stone.last circle:first-child { stroke: #ffd34d; stroke-width: 2.5; }
 .mr-stone.can circle:first-child { stroke: rgba(255, 255, 255, .9); stroke-width: 2; }
 .mr-stone.sel { transform-box: fill-box; }
@@ -60,7 +59,8 @@
 .mr-mill { fill: rgba(255, 211, 77, .35); animation: tbc-glow 1s ease-in-out 2; }
 @keyframes tbc-glow { 50% { fill: rgba(255, 211, 77, .7); } }
 .mr-hand { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px; min-height: 22px; font-size: 12px; font-weight: 700; color: var(--tbc-muted); }
-.mr-hand i { width: 14px; height: 14px; border-radius: 50%; background: var(--pc); box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .25); }
+.mr-hand i { width: 16px; height: 16px; border-radius: 50%; background: url(../img/duo/disc_red.webp) center / contain no-repeat; }
+.mr-hand[data-p="1"] i { background: url(../img/duo/disc_blue.webp) center / contain no-repeat; }
 .mr-hand span { margin-left: 6px; }
 .tbc-art-morris { width: 68px; height: 68px; filter: drop-shadow(0 4px 4px rgba(60, 30, 10, .3)); }
 .tbc-art-morris .mr-wood { fill: #e9c58f; stroke: #b98447; }
@@ -74,7 +74,6 @@
 .gm-wood { fill: var(--tbc-wood); stroke: var(--tbc-wood-d); stroke-width: .08; }
 .gm-line { stroke: var(--tbc-line); stroke-width: .045; }
 .gm-dot { fill: var(--tbc-line); }
-.gm-stone .gm-shine { fill: none; stroke: rgba(0, 0, 0, .3); stroke-width: .05; }
 .gm-stone circle:first-child { filter: drop-shadow(0 .05px .05px rgba(0, 0, 0, .3)); }
 .gm-stone.ghost { opacity: .45; }
 .gm-stone.last circle:first-child { stroke: #ffd34d; stroke-width: .1; }
@@ -133,7 +132,7 @@
 .mm-grid { --cols: 4; width: min(100%, calc((100vh - 230px) * var(--cols) / (var(--cols) + 2)), 480px); display: grid; grid-template-columns: repeat(var(--cols), 1fr); gap: 7px; }
 .mm-card { position: relative; aspect-ratio: .8; border: 0; padding: 0; background: none; perspective: 600px; }
 .mm-card .mm-back, .mm-card .mm-face { position: absolute; inset: 0; border-radius: 10px; backface-visibility: hidden; transition: transform .35s ease; }
-.mm-back { background: repeating-linear-gradient(45deg, #3b7ddd 0 8px, #4a8ae6 8px 16px); box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .6), 0 3px 0 rgba(0, 0, 0, .2); }
+.mm-back { background: #fff url(../img/duo/card_back.webp) center / cover no-repeat; box-shadow: inset 0 0 0 3px #fff, 0 3px 0 rgba(0, 0, 0, .2); }
 .mm-face { display: grid; place-items: center; background: #fffaf2; box-shadow: inset 0 0 0 3px #f2b631, 0 3px 0 rgba(0, 0, 0, .2); transform: rotateY(180deg); }
 .mm-face img { width: 78%; height: auto; }
 .mm-card.up .mm-back { transform: rotateY(180deg); }
@@ -144,5 +143,5 @@
 :root[data-theme="dark"] .mm-face { background: #2b2620; }
 .tbc-art-memory { display: grid; grid-template-columns: repeat(4, 36px); gap: 5px; }
 .tbc-art-memory .mm-card { width: 36px; height: 46px; border-radius: 8px; display: grid; place-items: center; background: #fffaf2; box-shadow: inset 0 0 0 2px #f2b631, 0 3px 0 rgba(0, 0, 0, .25); }
-.tbc-art-memory .mm-card.back { background: repeating-linear-gradient(45deg, #3b7ddd 0 6px, #4a8ae6 6px 12px); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .6), 0 3px 0 rgba(0, 0, 0, .25); }
+.tbc-art-memory .mm-card.back { background: #fff url(../img/duo/card_back.webp) center / cover no-repeat; box-shadow: inset 0 0 0 2px #fff, 0 3px 0 rgba(0, 0, 0, .25); }
 .tbc-art-memory img { width: 80%; }

@@ -4,22 +4,22 @@ import { FLEET, SHIP_NAMES, shipCells, fleetValid, randomFleet, answerShot } fro
 import { mine, whoName, esc } from './core.js';
 import { playerBar, passCover } from './ui.js';
 
-// A grey hull drawn to any length, lying across (or down when vert).
-function hullSvg(len, vert, sunk = false) {
-  const L = len * 40, w = 40;
-  const body = `<path d="M6 20 Q10 7 26 6 H${L - 26} Q${L - 4} 8 ${L - 2} 20 Q${L - 4} 32 ${L - 26} 34 H26 Q10 33 6 20 Z" class="sh-hull"/>
-    <path d="M14 20 H${L - 16}" class="sh-deck"/>${[...Array(len)].map((_, k) => `<rect x="${k * 40 + 14}" y="13" width="12" height="14" rx="3" class="sh-turret"/>`).join('')}`;
-  return `<svg class="sh-ship${sunk ? ' sunk' : ''}" viewBox="0 0 ${vert ? w : L} ${vert ? L : w}" preserveAspectRatio="none">${vert ? `<g transform="translate(40 0) rotate(90)">${body}</g>` : body}</svg>`;
+// Ship pictures from the CC0 Sea Warfare set by Lowder2, stretched to the ship's length.
+// FLEET is [5, 4, 3, 3, 2]; the second 3 is the submarine.
+const SHIP_PIC = { 5: 'carrier', 4: 'battleship', 3: 'cruiser', 2: 'patrol' };
+function hullSvg(len, vert, sunk = false, k = -1) {
+  const pic = len === 3 && k === 3 ? 'submarine' : SHIP_PIC[len] || 'cruiser';
+  return `<img class="sh-ship${sunk ? ' sunk' : ''}" src="img/duo/ship_${pic}_${vert ? 'v' : 'h'}.webp" alt="" draggable="false">`;
 }
-const MISS = '<svg viewBox="0 0 20 20" class="sh-miss"><circle cx="10" cy="10" r="3.4"/><circle cx="10" cy="10" r="7" fill="none"/></svg>';
-const HIT = '<svg viewBox="0 0 20 20" class="sh-hit"><path d="M10 1l2.2 5.2L17.8 4l-2.6 5.4L19 12l-5.6.8L14 19l-4-4.4L6 19l.6-6.2L1 12l3.8-2.6L2.2 4l5.6 2.2Z"/></svg>';
+const MISS = '<img class="sh-miss" src="img/duo/ship_miss.webp" alt="">';
+const HIT = '<img class="sh-hit" src="img/duo/ship_hit.webp" alt="">';
 
 export default {
   id: 'ships', name: 'Battleships', tag: 'Hide your fleet, sink theirs', cat: 'board', realtime: false,
   art: () => `<div class="art-ships">${hullSvg(4, false)}<i class="m1">${MISS}</i><i class="h1">${HIT}</i><i class="m2">${MISS}</i></div>`,
   help: [
     'First place your five ships: drag a ship to move it and tap it to turn it. Shuffle places them at random. Ships may touch but not overlap.',
-    'Then take turns firing at your friend\'s waters. A star marks a hit, a ring marks a miss. Sink a whole ship and your friend has to tell you which one.',
+    'Then take turns firing at your friend\'s waters. A burst marks a hit, a white peg marks a miss. Sink a whole ship and your friend has to tell you which one.',
     'Sink all five ships to win. On one phone, pass the phone when asked so each player\'s fleet stays secret.',
   ],
   create(ctx) {
@@ -53,7 +53,7 @@ export default {
       bar.set({ text: 'Place your ships' });
     }
     const cellsHtml = () => [...Array(100)].map((_, i) => `<i class="sh-c" data-i="${i}"></i>`).join('');
-    const shipHtml = (s, k, sunk = false) => `<div class="sh-at" data-k="${k}" style="left:calc(${s.c} * var(--g));top:calc(${s.r} * var(--g));width:calc(${s.vert ? 1 : s.len} * var(--g));height:calc(${s.vert ? s.len : 1} * var(--g))">${hullSvg(s.len, s.vert, sunk)}</div>`;
+    const shipHtml = (s, k, sunk = false) => `<div class="sh-at" data-k="${k}" style="left:calc(${s.c} * var(--g));top:calc(${s.r} * var(--g));width:calc(${s.vert ? 1 : s.len} * var(--g));height:calc(${s.vert ? s.len : 1} * var(--g))">${hullSvg(s.len, s.vert, sunk, k)}</div>`;
     function sizeGrids() {
       area.querySelectorAll('.sh-grid').forEach((g) => {
         const big = g.classList.contains('big');

@@ -358,6 +358,28 @@ registerGame({
   progress: () => (store.press.reached ? `Best: level ${store.press.reached}` : 'New game'),
 });
 
+// ---------- "New" badges ----------
+// A game card shows New until the game has been opened once. The first time this runs, games that already
+// have saved progress count as opened, so an update does not mark old favourites as new.
+const STORE_KEY = { 2048: 'g2048' };
+function hasProgress(id) {
+  if (id === 'sudoku') return !!store.game || DIFFICULTIES.some((d) => store.stats[d].started > 0);
+  if (id === 'chess') return !!store.chess.current || store.chess.stats.played > 0; // chess.level is the chosen difficulty
+  const s = store[STORE_KEY[id] || id];
+  if (!s || typeof s !== 'object') return false;
+  const any = (o) => !!o && typeof o === 'object' && Object.keys(o).length > 0;
+  return !!(s.level > 0 || s.current || s.games > 0 || s.reached > 0 || s.best > 0 || s.coins > 0
+    || any(s.played) || any(s.done) || any(s.placed) || any(s.won) || any(s.stars)
+    || (s.stats && (s.stats.played > 0 || s.stats.started > 0 || s.stats.won > 0)) || s.dailyState || s.practice);
+}
+function seedOpened() {
+  const m = store.meta;
+  if (m.openedSeeded) return;
+  GAMES.forEach((g) => { if (hasProgress(g.id)) m.opened[g.id] = true; });
+  m.openedSeeded = true; save();
+}
+const isNew = (g) => !store.meta.opened[g.id];
+
 function landingScreen() {
   const root = el(`<section class="screen landing with-tabbar">
     <header class="topbar"><div class="spacer"></div><div class="title"></div>
@@ -374,7 +396,7 @@ function landingScreen() {
       <div class="landing-head"><h1>${greeting()}</h1><p>What would you like to play?</p></div>
       ${CATEGORIES.map((cat) => `<div class="cat-title">${cat}</div><div class="game-grid">${GAMES.filter((g) => g.cat === cat).map((g) => `
         <button class="game-card ${g.theme}" data-game="${g.id}">
-          <div class="game-art">${g.art()}</div>
+          ${isNew(g) ? '<span class="new-badge">New</span>' : ''}<div class="game-art">${g.art()}</div>
           <div class="game-name">${esc(g.name)}</div>
           <div class="game-tag">${esc(g.tag)}</div>
           <div class="game-progress">${esc(g.progress())}</div>
@@ -387,6 +409,7 @@ function landingScreen() {
     if (!c) return;
     sfx.tap();
     const g = GAMES.find((x) => x.id === c.dataset.game);
+    if (isNew(g)) { store.meta.opened[g.id] = true; save(); }
     app.go(g.screen, g.params);
   });
   render();
@@ -631,7 +654,7 @@ function aboutScreen() {
         <p><b>Words.</b> Word lists are based on SCOWL, copyright Kevin Atkinson and contributors, used under its permissive licence (see levels/WORDLIST-LICENSE.txt).</p><br>
         <p><b>Chess.</b> The chess pieces are the Cburnett set by Colin M.L. Burnett, from Wikimedia Commons, used under the BSD licence (see img/chess/LICENSE.txt).</p><br>
         <p><b>Sweet Drop.</b> The sweet, stars, bubbles and spikes are from Kenney's Platformer Art Candy and Jumper Pack, and the frog is from Kenney's Animal Pack (kenney.nl, CC0).</p><br>
-        <p><b>Play Together.</b> Boards, pieces and ships are drawn for this app. The chess pieces are the Cburnett set (see Chess above). Memory Duel's animal pictures are from Kenney's Animal Pack (kenney.nl, CC0). Word Duel checks words against the SCOWL lists used across the app. The pullers, cowboys and goalkeepers in Tug of War, Quick Draw and Penalty Shootout are from Kenney's Toon Characters, and the Sumo Bumpers are from Kenney's Shape Characters, and the tanks, shells and explosions in Tank Duel are from Kenney's Tanks pack (kenney.nl, CC0). Air Hockey, Paddle Ball and the boards are drawn by the app.</p><br>
+        <p><b>Play Together.</b> Discs, stones, chips, beads, box tiles, card backs, X and O marks, paddles, motorbikes and explosions are from Kenney's Puzzle Pack 2, Boardgame Pack, UI Pack, Racing Pack and Pirate Pack (kenney.nl, CC0). The warships are the Sea Warfare set by Lowder2, the balloons are by emacsabino and the football is by gothicfan95, all CC0 from opengameart.org. The chess pieces are the Cburnett set (see Chess above). Memory Duel's animal pictures are from Kenney's Animal Pack (kenney.nl, CC0). Word Duel checks words against the SCOWL lists used across the app. The pullers, cowboys and goalkeepers in Tug of War, Quick Draw and Penalty Shootout are from Kenney's Toon Characters, and the Sumo Bumpers are from Kenney's Shape Characters, and the tanks, shells and explosions in Tank Duel are from Kenney's Tanks pack (kenney.nl, CC0). Air Hockey, Paddle Ball and the boards are drawn by the app.</p><br>
         <p><b>Snip Buddies.</b> Faces, tiles, balloons and clouds are from Kenney's Shape Characters and Background Elements (kenney.nl, CC0). Snipping uses polygon-clipping by Mike Fogel (MIT licence), with splaytree (MIT) and robust-predicates (Unlicense).</p><br>
         <p><b>Turtle Bay.</b> The turtles, tortoises, crab, jellyfish, gull, kelp, coral and lily pad are by Poly by Google, the green turtle by jeremy, the long-necked turtle by Crispy_Prawn and the seagrass by Laney XR Labs, all under CC-BY 3.0 (creativecommons.org/licenses/by/3.0). The fish, lettuce, log and rock are by Quaternius and the bag by Kenney (CC0). All were found on poly.pizza and rendered into pictures for this app. River Hop's cars and trees come from Moto Mania.</p><br>
         <p><b>Marvel Heroes.</b> An unofficial fan project, not made or endorsed by Marvel or Disney. Marvel characters, names and related marks belong to Marvel. All hero artwork is drawn by the app on Kenney's Toon Characters; robots and gems are from Kenney's Robot Pack and Puzzle Pack 2 (kenney.nl, CC0). Thor's hammer is "mjolner" by OZZYBOI and the arc reactor is "Arc Reactor" by Heiko Jakob, both from poly.pizza under CC-BY 3.0 (creativecommons.org/licenses/by/3.0).</p><br>
@@ -684,6 +707,7 @@ async function runUpdateCheck(manual = false) {
 
 // ---------- Boot ----------
 applyTheme();
+seedOpened();
 app.reset('games');
 loadLevels();
 prefetch('easy');

@@ -1,19 +1,19 @@
 // Air Hockey for two phones (or two players on one phone). The host runs the table; the guest
 // sends where its finger is and draws its own mallet straight away so it feels instant.
-import { makeCanvas, worldTransform, trackPointers, syncLoop, tone, noise, shaker, scoreBar, r3 } from './rt-kit.js';
+import { makeCanvas, worldTransform, trackPointers, syncLoop, tone, noise, shaker, scoreBar, r3, pic, drawPic } from './rt-kit.js';
 import { W, H, GOAL, MR, PR, WIN, newHockey, stepHockey, hockeyOver, packHockey, moveMallet } from './rt-hockey.js';
 
 const COL = ['#ff4d5e', '#2f8cff'];
 const DARK = ['#b3182f', '#1559b8'];
+const MALLET = ['mallet_red', 'mallet_blue']; // Kenney Puzzle Pack 2 (CC0)
 
 function art() {
   return `<svg class="rt-art" viewBox="0 0 120 80" aria-hidden="true">
     <rect x="6" y="6" width="108" height="68" rx="14" fill="#e9f6ff" stroke="#9cc8e8" stroke-width="3"/>
     <path d="M60 8V72" stroke="#ff8a95" stroke-width="2"/><circle cx="60" cy="40" r="13" fill="none" stroke="#ff8a95" stroke-width="2"/>
     <rect x="2" y="27" width="5" height="26" rx="2" fill="#24344d"/><rect x="113" y="27" width="5" height="26" rx="2" fill="#24344d"/>
-    <circle cx="30" cy="46" r="11" fill="${COL[0]}"/><circle cx="30" cy="46" r="5" fill="${DARK[0]}"/>
-    <circle cx="92" cy="30" r="11" fill="${COL[1]}"/><circle cx="92" cy="30" r="5" fill="${DARK[1]}"/>
-    <circle cx="62" cy="34" r="6" fill="#26303d"/><circle cx="60.5" cy="32.5" r="2" fill="#fff" opacity=".5"/>
+    <image href="img/duo/mallet_red.webp" x="19" y="35" width="22" height="22"/><image href="img/duo/mallet_blue.webp" x="81" y="19" width="22" height="22"/>
+    <image href="img/duo/puck.webp" x="56" y="28" width="12" height="12"/>
   </svg>`;
 }
 
@@ -25,6 +25,7 @@ export default {
     `First to ${WIN} goals wins. After a goal, the player who let it in gets the puck.`,
   ],
   create(ctx) {
+    ['mallet_red', 'mallet_blue', 'puck', 'stone_white'].forEach(pic);
     const root = ctx.root;
     root.innerHTML = '';
     const wrap = document.createElement('div');
@@ -89,6 +90,7 @@ export default {
     }
     function drawMallet(c, x, y, i) {
       c.fillStyle = 'rgba(0,0,0,.18)'; c.beginPath(); c.arc(x + 0.008, y + 0.012, MR, 0, 6.3); c.fill();
+      if (drawPic(c, MALLET[i], x, y, MR)) return;
       c.fillStyle = COL[i]; c.beginPath(); c.arc(x, y, MR, 0, 6.3); c.fill();
       c.strokeStyle = DARK[i]; c.lineWidth = 0.012; c.beginPath(); c.arc(x, y, MR * 0.72, 0, 6.3); c.stroke();
       c.fillStyle = DARK[i]; c.beginPath(); c.arc(x, y, MR * 0.4, 0, 6.3); c.fill();
@@ -101,6 +103,7 @@ export default {
       trail.forEach(([tx, ty], i) => { c.fillStyle = `rgba(40,55,75,${(i / trail.length) * 0.12})`; c.beginPath(); c.arc(tx, ty, PR * (0.6 + i / 20), 0, 6.3); c.fill(); });
       c.fillStyle = 'rgba(0,0,0,.2)'; c.beginPath(); c.arc(x + 0.006, y + 0.009, PR, 0, 6.3); c.fill();
       // a dark puck on the light table, a pale one on the dark table
+      if (drawPic(c, document.documentElement.dataset.theme === 'dark' ? 'stone_white' : 'puck', x, y, PR)) return;
       c.fillStyle = document.documentElement.dataset.theme === 'dark' ? '#e3ebf5' : '#232c38'; c.beginPath(); c.arc(x, y, PR, 0, 6.3); c.fill();
       c.strokeStyle = '#f5b400'; c.lineWidth = 0.008; c.beginPath(); c.arc(x, y, PR * 0.62, 0, 6.3); c.stroke();
     }

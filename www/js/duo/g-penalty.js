@@ -123,14 +123,14 @@ export const penaltyCardArtSvg = () => `<svg class="rtd-art" viewBox="0 0 120 80
   <path d="M0 22h120M0 44h120M0 66h120" stroke="#48a955" stroke-width="11"/><path d="M22 34V10h76v24" stroke="#fff" stroke-width="4" fill="none"/>
   <path d="M26 12h68M26 18h68M26 24h68M26 30h68M34 10v24M46 10v24M58 10v24M70 10v24M82 10v24" stroke="rgba(255,255,255,.35)" stroke-width="1"/>
   <rect x="62" y="16" width="9" height="16" rx="4" fill="${COL[1]}" transform="rotate(-35 66 24)"/><circle cx="74" cy="15" r="4" fill="#f1c9a5"/>
-  <circle cx="40" cy="62" r="7" fill="#fff" stroke="#222" stroke-width="1.5"/><path d="M40 57l3 3-1 4h-4l-1-4z" fill="#222"/></svg>`;
+  <image href="img/duo/penalty_ball.webp" x="33" y="55" width="14" height="14"/></svg>`;
 
 function create(ctx) {
   const st = stage(ctx, 'rtd-penalty');
   const names = ctx.names || ['Player 1', 'Player 2'];
   const first = ctx.first === 1 ? 1 : 0;
   const spec = penaltySpec(first);
-  const pics = { keeper: [img('img/duo/penalty_keeper0.webp'), img('img/duo/penalty_keeper1.webp')] };
+  const pics = { keeper: [img('img/duo/penalty_keeper0.webp'), img('img/duo/penalty_keeper1.webp')], ball: img('img/duo/penalty_ball.webp') };
   let dead = false, localShot = null, localDive = null, localKx = 0, localKick = -1, shake = 0, myTarget = 0;
   const ses = session(ctx, spec, {
     event(e) {
@@ -281,10 +281,14 @@ function create(ctx) {
       bx = lerp(sx, X(q.x), e); by = lerp(sy, Y(q.h), e); br = lerp(br, BALL_R * u, e);
     }
     g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(bx + 2, Math.max(by, gy) + br * 0.6, br, br * 0.35, 0, 0, Math.PI * 2); g.fill();
-    // the ball: white with a ring of dark patches
-    g.fillStyle = '#fff'; g.beginPath(); g.arc(bx, by, br, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#222'; g.lineWidth = Math.max(1, br * 0.1); g.stroke();
-    g.fillStyle = '#222'; g.beginPath(); g.arc(bx, by, br * 0.32, 0, Math.PI * 2); g.fill();
-    for (let q = 0; q < 5; q++) { const a = q * 1.2566 - 1.57; g.beginPath(); g.arc(bx + Math.cos(a) * br * 0.78, by + Math.sin(a) * br * 0.78, br * 0.2, 0, Math.PI * 2); g.fill(); }
+    // the ball: a CC0 football picture (gothicfan95), spinning as it flies; a drawn one until it loads
+    if (pics.ball.complete && pics.ball.naturalWidth) {
+      g.save(); g.translate(bx, by); g.rotate((bx + by) / Math.max(4, br) * 0.5); g.drawImage(pics.ball, -br, -br, br * 2, br * 2); g.restore();
+    } else {
+      g.fillStyle = '#fff'; g.beginPath(); g.arc(bx, by, br, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#222'; g.lineWidth = Math.max(1, br * 0.1); g.stroke();
+      g.fillStyle = '#222'; g.beginPath(); g.arc(bx, by, br * 0.32, 0, Math.PI * 2); g.fill();
+      for (let q = 0; q < 5; q++) { const a = q * 1.2566 - 1.57; g.beginPath(); g.arc(bx + Math.cos(a) * br * 0.78, by + Math.sin(a) * br * 0.78, br * 0.2, 0, Math.PI * 2); g.fill(); }
+    }
     // swipe trails under fingers
     for (const w of swipes.values()) {
       if (w.role !== 'shoot' || w.pts.length < 2) continue;

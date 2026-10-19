@@ -7,7 +7,8 @@ import { el, $, $$, dialog, toast, confetti, sheet, esc, closeTopOverlay } from 
 import { sfx, buzz } from './sound.js';
 import { helpSheet, levelHome } from './kit.js';
 import { lan } from './lan.js';
-import { LEVELS, W, H, K, DT, FILL_WIN, createWorld, step, snip, resetShape, worldRing, shapeOf, applyShape } from './snip-engine.js';
+import { LEVELS, W, H, K, DT, FILL_WIN, createWorld, step, snip, resetShape, worldRing, shapeOf, applyShape, hipY } from './snip-engine.js';
+import { BW, BH, uWithTop } from './snip-body.js';
 
 const SB = () => store.snip || (store.snip = { level: 0, done: {}, name: '' });
 const COLOURS = ['#ff7a6b', '#4fa8ff'];
@@ -16,7 +17,8 @@ const FACES = ['face_a', 'face_f'];
 
 export const snipHelp = () => helpSheet('How to play Snip Buddies', [
   'You and a friend each control a paper buddy. Work together to solve each little puzzle: fill an outline, pop balloons, roll a ball into place or hold down buttons.',
-  'Move, jump, turn and crouch with your buttons. Stand so you overlap your buddy, then press <b>Snip</b> to cut away the part of them that is behind you. Your buddy can snip you too.',
+  'Move, jump and turn with your buttons. Your legs bend to <b>crouch</b> and stretch to <b>stand tall</b>, so you can go lower or reach higher. Turn right over and your legs tuck away.',
+  'Stand so you overlap your buddy, then press <b>Snip</b> to cut away the part of them that is behind you. Your buddy can snip you too.',
   'Balloons only pop on a sharp point, so snip a corner to make one. The reset button gives you a fresh sheet of paper.',
   '<b>Stuck?</b> Tap the bulb to see the shape each of you needs to become. It starts to glow after a while, and opens by itself if you have been stuck for a long time or keep starting over.',
   '<b>Two phones:</b> both phones need to be on the same wifi, or turn on the hotspot on one phone and join it from the other. One player taps Host, the other taps Join and picks the game. No internet is needed.',
@@ -31,7 +33,8 @@ for (const n of ['face_a', 'face_e', 'face_f', 'face_g', 'face_j', 'face_k', 'fa
 const ready = (im) => im && im.complete && im.naturalWidth > 0;
 
 // ---------- picker and home art ----------
-export const snipCardArt = (cls = 'art-snip') => `<div class="${cls}"><div class="sb sb-a"><img src="img/snip/face_a.png" alt=""></div><div class="sb sb-b"><img src="img/snip/face_f.png" alt=""></div><svg class="sb-scissors" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12"/></svg></div>`;
+const LEGS = '<i class="sb-leg l"></i><i class="sb-leg r"></i>';
+export const snipCardArt = (cls = 'art-snip') => `<div class="${cls}"><div class="sb sb-a">${LEGS}<img src="img/snip/face_a.png" alt=""></div><div class="sb sb-b">${LEGS}<img src="img/snip/face_f.png" alt=""></div><svg class="sb-scissors" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12"/></svg></div>`;
 
 // ---------- the connection, shared by the lobby and the game screen ----------
 const net = { role: null, peer: '', inGame: false };
@@ -142,6 +145,7 @@ const ICONS = {
   L: SVG('<path d="M15 5l-7 7 7 7"/>'), R: SVG('<path d="M9 5l7 7-7 7"/>'),
   RL: SVG('<path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4v5h5"/>'), RR: SVG('<path d="M20 12a8 8 0 1 1-2.5-5.8"/><path d="M20 4v5h-5"/>'),
   C: SVG('<path d="M6 9l6 6 6-6"/><path d="M5 19h14"/>'), J: SVG('<path d="M6 15l6-6 6 6"/><path d="M5 5h14"/>'),
+  T: SVG('<path d="M12 18V5"/><path d="M8 9l4-4 4 4"/><path d="M8 21l2-3M16 21l-2-3"/>'),
   snip: SVG('<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12"/>'),
   reset: SVG('<rect x="6" y="4" width="12" height="16" rx="1.5"/><path d="M9 9h6M9 13h6"/>'),
 };
@@ -149,20 +153,21 @@ const btn = (k, label, cls = '') => `<button class="sp-b ${cls}" ${K[k] ? `data-
 function padHTML(p, compact) {
   if (compact) return `<div class="sp-pad sp-c p${p}" data-pad="${p}">
     <div class="sp-row">${btn('L', 'Left')}${btn('R', 'Right')}${btn('RL', 'Turn left')}${btn('RR', 'Turn right')}</div>
-    <div class="sp-row">${btn('C', 'Crouch')}${btn('J', 'Jump', 'jump')}${btn('snip', 'Snip', 'snip')}${btn('reset', 'New paper')}</div></div>`;
+    <div class="sp-row">${btn('C', 'Crouch')}${btn('T', 'Stand tall')}${btn('J', 'Jump', 'jump')}${btn('snip', 'Snip', 'snip')}${btn('reset', 'New paper')}</div></div>`;
   return `<div class="sp-pad sp-full p${p}" data-pad="${p}">
     <div class="sp-move">${btn('L', 'Left', 'mv')}${btn('R', 'Right', 'mv')}</div>
-    <div class="sp-mid">${btn('RL', 'Turn left')}${btn('RR', 'Turn right')}${btn('C', 'Crouch')}</div>
+    <div class="sp-mid">${btn('RL', 'Turn left')}${btn('RR', 'Turn right')}${btn('C', 'Crouch')}${btn('T', 'Stand tall')}</div>
     <div class="sp-act">${btn('J', 'Jump', 'big jump')}${btn('snip', 'Snip', 'big snip')}</div></div>`;
 }
 // ---------- hints ----------
-// The shape each buddy should become, in buddy units (a sheet is 1.3 x 1.7, centred, y down).
+// The shape each buddy should become, in buddy units (a fresh buddy is a U 1.3 wide and 1.8 tall, y down).
+// Each keeps the round bottom of a fresh buddy and has its top cut to the shape needed.
 const WANT = {
-  full: { d: [[-0.65, -0.85], [0.65, -0.85], [0.65, 0.85], [-0.65, 0.85]], say: 'Keep the whole sheet' },
-  point: { d: [[-0.65, 0.85], [-0.65, -0.15], [0, -0.85], [0.65, -0.15], [0.65, 0.85]], say: 'Snip a sharp point' },
-  spike: { d: [[-0.65, 0.85], [-0.65, 0.35], [-0.13, 0.35], [-0.13, -0.85], [0.13, -0.85], [0.13, 0.35], [0.65, 0.35], [0.65, 0.85]], say: 'Snip a long thin spike' },
-  scoop: { d: [[-0.65, -0.85], [-0.38, -0.85], [-0.38, 0.25], [0.38, 0.25], [0.38, -0.85], [0.65, -0.85], [0.65, 0.85], [-0.65, 0.85]], say: 'Snip a scoop out of the top' },
-  flat: { d: [[-0.85, -0.65], [0.85, -0.65], [0.85, 0.65], [-0.85, 0.65]], say: 'Turn over and lie flat' },
+  full: { d: uWithTop([[0, 0], [BW, 0]]), say: 'Keep the whole sheet' },
+  point: { d: uWithTop([[0, 0.75], [BW / 2, 0], [BW, 0.75]]), say: 'Snip a sharp point' },
+  spike: { d: uWithTop([[0, 0.95], [0.52, 0.95], [0.52, 0], [0.78, 0], [0.78, 0.95], [BW, 0.95]]), say: 'Snip a long thin spike' },
+  scoop: { d: uWithTop([[0, 0], [0.27, 0], [0.27, 0.85], [1.03, 0.85], [1.03, 0], [BW, 0]]), say: 'Snip a scoop out of the top' },
+  flat: { d: uWithTop([[0, 0], [BW, 0]]).map(([x, y]) => [BH - y, x]), say: 'Turn over and lie flat (your legs tuck away)' },
 };
 const HINT_PULSE = 40, HINT_AUTO = 75, HINT_RESETS = 3, HINT_SNIPS = 8; // seconds, or tries, before we offer help
 // A small picture of a shape, drawn to the same scale for every shape so sizes can be compared.
@@ -174,8 +179,8 @@ function miniShape(poly, p) {
 }
 
 const KEYS = [
-  { KeyA: K.L, KeyD: K.R, KeyW: K.J, KeyS: K.C, KeyQ: K.RL, KeyE: K.RR, KeyF: 'snip', KeyR: 'reset' },
-  { ArrowLeft: K.L, ArrowRight: K.R, ArrowUp: K.J, ArrowDown: K.C, KeyK: K.RL, KeyL: K.RR, Enter: 'snip', Backspace: 'reset' },
+  { KeyA: K.L, KeyD: K.R, KeyW: K.J, KeyS: K.C, KeyX: K.T, KeyQ: K.RL, KeyE: K.RR, KeyF: 'snip', KeyR: 'reset' },
+  { ArrowLeft: K.L, ArrowRight: K.R, ArrowUp: K.J, ArrowDown: K.C, KeyI: K.T, KeyK: K.RL, KeyL: K.RR, Enter: 'snip', Backspace: 'reset' },
 ];
 
 // ---------- game ----------
@@ -229,8 +234,8 @@ export function snipGameScreen(app, { idx, mode = 'local' }) {
   }
   // Show from a little above the highest thing in the level down to the bottom, so the play area is as big as it can be.
   const viewTop = (() => {
-    const ys = [...lv.spawn.map(([, y]) => y - 0.85), ...w.balloons.map((b) => b.y - b.r), ...w.buttons.map((b) => b.y), ...(w.goal ? [w.goal[1]] : []),
-      ...(w.target ? w.target.ring.map((q) => q[1]) : []), ...w.statics.filter((st) => st.bb[2] > 0.01 && st.bb[0] < W - 0.01).map((st) => st.bb[1])];
+    const ys = [...w.buddies.flatMap((b) => worldRing(b).map((q) => q[1])), ...w.balloons.map((b) => b.y - b.r), ...w.buttons.map((b) => b.y), ...(w.goal ? [w.goal[1]] : []),
+      ...(w.target ? w.target.rings.flat().map((q) => q[1]) : []), ...w.statics.filter((st) => st.bb[2] > 0.01 && st.bb[0] < W - 0.01).map((st) => st.bb[1])];
     return Math.max(0, Math.min(...ys) - 3.6);
   })();
 
@@ -328,12 +333,12 @@ export function snipGameScreen(app, { idx, mode = 'local' }) {
   // compact snapshot: buddy and prop poses, balloon and button states, score
   const r3 = (v) => Math.round(v * 1000) / 1000;
   function snapshot() {
-    return { t: 's', f: w.frame, b: w.buddies.map((b) => [r3(b.x), r3(b.y), r3(b.a), r3(b.c)]), o: w.props.map((b) => [r3(b.x), r3(b.y), r3(b.a)]),
+    return { t: 's', f: w.frame, b: w.buddies.map((b) => [r3(b.x), r3(b.y), r3(b.a), r3(b.leg), b.grounded ? 1 : 0]), o: w.props.map((b) => [r3(b.x), r3(b.y), r3(b.a)]),
       p: w.balloons.reduce((s, b, i) => s | (b.popped ? 1 << i : 0), 0), n: w.buttons.reduce((s, b, i) => s | (b.on ? 1 << i : 0), 0), sc: r3(w.score) };
   }
   function applySnap(m, m2, t) {
     const L = (a, b) => (m2 ? a + (b - a) * t : a);
-    m.b.forEach((v, i) => { const b = w.buddies[i], v2 = m2 ? m2.b[i] : v; b.x = L(v[0], v2[0]); b.y = L(v[1], v2[1]); b.a = L(v[2], v2[2]); b.c = L(v[3], v2[3]); });
+    m.b.forEach((v, i) => { const b = w.buddies[i], v2 = m2 ? m2.b[i] : v; b.x = L(v[0], v2[0]); b.y = L(v[1], v2[1]); b.a = L(v[2], v2[2]); b.leg = L(v[3], v2[3]); b.grounded = !!(m2 || m).b[i][4]; });
     m.o.forEach((v, i) => { const b = w.props[i], v2 = m2 ? m2.o[i] : v; b.x = L(v[0], v2[0]); b.y = L(v[1], v2[1]); b.a = L(v[2], v2[2]); });
     const s = m2 || m;
     w.balloons.forEach((b, i) => { b.popped = !!(s.p & (1 << i)); });
@@ -441,11 +446,57 @@ export function snipGameScreen(app, { idx, mode = 'local' }) {
       ctx.stroke(); ctx.restore();
     }
   }
+  // Legs: walking swaps the feet, landing bends the knees for a moment, and in the air they dangle.
+  const legAnim = [0, 1].map(() => ({ ph: 0, px: null, py: null, dir: 1, walk: 0, land: 0, wasG: true }));
+  // Lowest edge of the paper at a given x (where a leg meets it), or null when the paper is not above x.
+  function paperBottomAt(wr, x) {
+    let y = null;
+    for (let i = 0; i < wr.length; i++) {
+      const a = wr[i], c = wr[(i + 1) % wr.length];
+      if ((a[0] - x) * (c[0] - x) > 0 || a[0] === c[0]) continue;
+      const yy = a[1] + ((c[1] - a[1]) * (x - a[0])) / (c[0] - a[0]);
+      if (y === null || yy > y) y = yy;
+    }
+    return y;
+  }
+  function drawLegs(b, t, dt) {
+    const A = legAnim[b.i];
+    if (A.px !== null && dt > 0) {
+      const vx = (b.x - A.px) / dt;
+      if (Math.abs(vx) > 0.2) A.dir = Math.sign(vx);
+      A.walk += (Math.min(1, Math.abs(vx) / 3) * (b.grounded ? 1 : 0) - A.walk) * Math.min(1, dt * 10);
+      A.ph += (b.x - A.px) * 7 * A.dir;
+      if (b.grounded && !A.wasG && A.py !== null) A.land = 1;
+    }
+    A.px = b.x; A.py = b.y; A.wasG = b.grounded; A.land = Math.max(0, A.land - dt * 4);
+    if (b.leg < 0.03) return;
+    const wr = worldRing(b, b.col), hy = hipY(b, wr), foot = hy + b.leg;
+    const S = 0.27; // each leg bone, so normal legs are nearly straight and crouching bends the knees
+    for (const side of [-1, 1]) {
+      const lx = b.x + side * 0.3, top = Math.min(foot - 0.02, (paperBottomAt(wr, lx) ?? hy) - 0.06);
+      const ph = A.ph + (side > 0 ? Math.PI : 0);
+      const swing = b.grounded ? Math.sin(ph) * 0.17 * A.walk : Math.sin(t * 7 + side) * 0.05;
+      const fx = lx + swing, fy = foot - (b.grounded ? Math.max(0, Math.cos(ph)) * 0.1 * A.walk : 0);
+      const dx = fx - lx, dy = fy - top, d = Math.hypot(dx, dy) || 1;
+      const bend = Math.sqrt(Math.max(0, S * S - (d / 2) ** 2)) + A.land * 0.08;
+      // knees bend outwards, like a squat, so a crouch shows below the paper
+      const kx = lx + dx / 2 + (-dy / d) * bend * -side, ky = top + dy / 2 + (dx / d) * bend * -side;
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      if (dark()) { ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 0.115; ctx.beginPath(); ctx.moveTo(lx, top); ctx.lineTo(kx, ky); ctx.lineTo(fx, fy - 0.05); ctx.stroke(); }
+      ctx.strokeStyle = '#1b1b22'; ctx.lineWidth = 0.075; ctx.beginPath(); ctx.moveTo(lx, top); ctx.lineTo(kx, ky); ctx.lineTo(fx, fy - 0.05); ctx.stroke();
+      // a chunky boot with its toe forward
+      const bx = fx + A.dir * 0.05, bw = 0.34, bh = 0.17;
+      ctx.beginPath(); ctx.roundRect ? ctx.roundRect(bx - bw / 2, fy - bh, bw, bh, [0.07, 0.09, 0.03, 0.03]) : ctx.rect(bx - bw / 2, fy - bh, bw, bh);
+      ctx.fillStyle = '#1b1b22'; ctx.fill();
+      if (dark()) { ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 0.02; ctx.stroke(); }
+      ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(bx - bw / 2 + 0.05, fy - bh + 0.03, bw * 0.45, 0.03);
+    }
+  }
   function drawBuddy(b, t) {
-    const k = 1 - 0.35 * b.c, p = b.i;
-    ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.a); ctx.scale(1, k);
+    const p = b.i;
+    ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.a);
     // paper shadow, fill and white edge
-    ctx.save(); ctx.translate(0.06, 0.08 / k); path(b.shape); ctx.fillStyle = 'rgba(30,40,70,.18)'; ctx.fill(); ctx.restore();
+    ctx.save(); ctx.translate(0.06, 0.08); path(b.shape); ctx.fillStyle = 'rgba(30,40,70,.18)'; ctx.fill(); ctx.restore();
     path(b.shape); ctx.fillStyle = COLOURS[p]; ctx.fill();
     ctx.save(); ctx.clip();
     ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.fillRect(-2, -2, 4, 1.55); // soft light from above
@@ -458,6 +509,7 @@ export function snipGameScreen(app, { idx, mode = 'local' }) {
     if (lv.type === 'pop') for (const i of b.sharp) { const [x, y] = b.shape[i]; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, y, 0.06 + 0.02 * Math.sin(t * 8), 0, 7); ctx.fill(); }
     ctx.restore();
   }
+  let lastDraw = 0;
   function draw(t) {
     const { s, ox, oy, dpr } = view;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -475,8 +527,10 @@ export function snipGameScreen(app, { idx, mode = 'local' }) {
     ctx.globalAlpha = 1;
     // target outline
     if (w.target) {
-      path(w.target.ring); ctx.fillStyle = dark() ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.55)'; ctx.fill();
-      ctx.setLineDash([0.16, 0.12]); ctx.lineDashOffset = -t * 0.3; ctx.strokeStyle = w.score >= FILL_WIN ? '#2fbf71' : dark() ? '#cfd8ff' : '#3d5a99'; ctx.lineWidth = 0.06; ctx.stroke(); ctx.setLineDash([]);
+      for (const ring of w.target.rings) {
+        path(ring); ctx.fillStyle = dark() ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.55)'; ctx.fill();
+        ctx.setLineDash([0.16, 0.12]); ctx.lineDashOffset = -t * 0.3; ctx.strokeStyle = w.score >= FILL_WIN ? '#2fbf71' : dark() ? '#cfd8ff' : '#3d5a99'; ctx.lineWidth = 0.06; ctx.stroke(); ctx.setLineDash([]);
+      }
       // hint: where each buddy's piece goes, in that buddy's colour
       if (hintOn && lv.parts) lv.parts.forEach((pt, i) => {
         path(pt); ctx.globalAlpha = 0.32 + 0.1 * Math.sin(t * 3); ctx.fillStyle = COLOURS[i]; ctx.fill(); ctx.globalAlpha = 1;
@@ -512,6 +566,8 @@ export function snipGameScreen(app, { idx, mode = 'local' }) {
       if (ready(IMG.face_l)) ctx.drawImage(IMG.face_l, -b.r * 0.6, -b.r * 0.35, b.r * 1.2, b.r * 0.84);
       ctx.restore();
     }
+    const dt = lastDraw ? Math.min(0.1, t - lastDraw) : 0; lastDraw = t;
+    w.buddies.forEach((b) => drawLegs(b, t, dt));
     w.buddies.forEach((b) => drawBuddy(b, t));
     for (const p of parts) { ctx.globalAlpha = Math.max(0, Math.min(1, p.life * 2)); ctx.fillStyle = p.c; ctx.fillRect(p.x - p.r, p.y - p.r, p.r * 2, p.r * 2); }
     ctx.globalAlpha = 1;

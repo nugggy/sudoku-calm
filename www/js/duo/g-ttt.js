@@ -3,8 +3,8 @@ import { tttWin, tttFull } from './rules.js';
 import { mine, whoName } from './core.js';
 import { playerBar, fitBoard } from './ui.js';
 
-const X = '<svg viewBox="0 0 40 40" class="tt-x"><path d="M9 9l22 22M31 9 9 31"/></svg>';
-const O = '<svg viewBox="0 0 40 40" class="tt-o"><circle cx="20" cy="20" r="12"/></svg>';
+const X = '<img class="tt-x" src="img/duo/mark_x.svg" alt="">';
+const O = '<img class="tt-o" src="img/duo/mark_o.svg" alt="">';
 const mark = (p) => (p === 0 ? X : O);
 
 export default {

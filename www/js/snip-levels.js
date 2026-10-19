@@ -1,12 +1,18 @@
 // Snip Buddies levels. The world is 10 units wide and 13 tall, y grows downwards, and the floor top is at y = 12.
-// A buddy is a 1.3 x 1.7 sheet of paper. Every level has a floor and side walls unless it lists its own floor.
+// A buddy is a U of paper 1.3 wide and 1.8 tall (see snip-body.js) standing on legs, so the bottom of the paper is
+// LEG_N above the ground (STAND on the main floor). A buddy turned on its side tucks its legs away and rests on the
+// ground. Every level has a floor and side walls unless it lists its own floor. Spawn points are given as the middle
+// of a 1.7 tall sheet on the ground (feet 0.85 below), and the engine lifts the paper onto its legs.
 //   type fill:  stand together so your shapes fill the outline. `parts` are two shapes that each fit inside one
-//               buddy (any quarter turn), so the outline can always be made. The target is their union.
+//               buddy (any quarter turn), so the outline can always be made. The target is their union. Upright
+//               pieces sit at standing height; a piece standing on another leaves a leg-sized gap.
 //   type pop:   pop every balloon with a sharp point (blunt corners just bump them).
 //   type goal:  get the ball into the goal box.
 //   type press: hold every button down at the same time.
 // `want` (levels that are not fill) names the shape each buddy should end up as, for the hint picture:
 //   full (whole sheet), point (sharp point), spike (long thin spike), scoop (notch out of the top), flat (lying down).
+import { BW, BH, LEG_N, STAND, uStand, uLying } from './snip-body.js';
+
 const R = (x, y, w, h) => ({ r: [x, y, w, h] });
 const rect = (x, y, w, h) => [[x, y], [x + w, y], [x + w, y + h], [x, y + h]];
 const halfDisc = (cx, cy, r, n = 12) => [...Array(n + 1)].map((_, i) => [cx - r * Math.cos((Math.PI * i) / n), cy - r * Math.sin((Math.PI * i) / n)]);
@@ -14,13 +20,13 @@ const FLOOR = [R(-1, 12, 12, 2)];
 
 export const LEVELS = [
   { name: 'Side by side', type: 'fill', spawn: [[1.5, 11.15], [8.5, 11.15]],
-    parts: [rect(3.7, 10.3, 1.3, 1.7), rect(5.0, 10.3, 1.3, 1.7)],
+    parts: [uStand(3.7), uStand(5.0)],
     hint: 'Walk into the outline together' },
   { name: 'Lie down', type: 'fill', spawn: [[6.8, 11.15], [8.6, 11.15]],
-    parts: [rect(2.6, 10.7, 1.7, 1.3), rect(4.3, 10.3, 1.3, 1.7)],
-    hint: 'Use the turn buttons to lie flat' },
+    parts: [uLying(2.4, 12, 'left'), uStand(4.3)],
+    hint: 'Use the turn buttons to lie flat. Your legs tuck away' },
   { name: 'Piggyback', type: 'fill', spawn: [[1.5, 11.15], [8.5, 11.15]],
-    parts: [rect(4.35, 10.3, 1.3, 1.7), rect(4.35, 8.6, 1.3, 1.7)],
+    parts: [uStand(4.35), uStand(4.35, STAND - BH - LEG_N)],
     hint: 'Jump up and stand on your buddy' },
   { name: 'First snip', type: 'pop', want: ['point', 'full'], spawn: [[2.5, 11.15], [7.5, 11.15]],
     balloons: [[5, 9.2, 0.45]],
@@ -29,8 +35,8 @@ export const LEVELS = [
     buttons: [[1.0, 11.85, 1.2, 0.15], [7.8, 11.85, 1.2, 0.15]],
     hint: 'Both buttons at once' },
   { name: 'Little house', type: 'fill', spawn: [[1.5, 11.15], [8.5, 11.15]],
-    parts: [rect(4.35, 10.7, 1.3, 1.3), [[4.35, 10.7], [5.65, 10.7], [5.0, 9.75]]],
-    hint: 'Snip a square and a roof' },
+    parts: [rect(4.35, STAND - 1.1, 1.3, 1.1), [[4.35, STAND - 1.1 - LEG_N], [5.65, STAND - 1.1 - LEG_N], [5.0, STAND - 2.05 - LEG_N]]],
+    hint: 'Snip a square and a roof, then hop on top' },
   { name: 'Up the ramp', type: 'goal', want: ['full', 'full'], spawn: [[0.7, 11.15], [1.75, 11.15]],
     static: [{ p: [[3, 12], [7, 9.6], [7, 12]] }, R(7, 9.6, 1.0, 2.4), R(9.0, 9.6, 1.0, 2.4), R(8.0, 11.0, 1.0, 1.0)],
     ball: [2.75, 11.6, 0.38], goal: [8.0, 9.8, 1.0, 1.2],
@@ -44,7 +50,7 @@ export const LEVELS = [
     buttons: [[1.2, 11.85, 1.2, 0.15], [8.0, 9.35, 1.2, 0.15]],
     hint: 'One button on the floor, one on the ledge' },
   { name: 'Wedge', type: 'fill', spawn: [[1.5, 11.15], [8.5, 11.15]],
-    parts: [rect(3.2, 11.2, 1.7, 0.8), [[4.9, 10.6], [4.9, 12.0], [6.2, 12.0]]],
+    parts: [rect(3.2, 11.2, 1.6, 0.8), [[4.8, STAND - 1.15], [4.8, STAND], [6.1, STAND]]],
     hint: 'One long and flat, one sloping' },
   { name: 'Tight squeeze', type: 'pop', want: ['spike', 'full'], spawn: [[1.5, 11.15], [8.5, 11.15]],
     static: [R(3.6, 9.2, 1.0, 2.8), R(5.3, 9.2, 1.0, 2.8)],
@@ -60,8 +66,8 @@ export const LEVELS = [
     buttons: [[0.8, 11.85, 1.2, 0.15], [4.4, 12.65, 1.2, 0.15], [8.0, 11.85, 1.2, 0.15]],
     hint: 'The ball can hold a button down too' },
   { name: 'Diamond', type: 'fill', spawn: [[1.5, 11.15], [8.5, 11.15]],
-    parts: [[[4.2, 11.2], [5.8, 11.2], [5.0, 10.4]], [[4.2, 11.2], [5.0, 12.0], [5.8, 11.2]]],
-    hint: 'Two triangles, one upside down' },
+    parts: [[[4.35, STAND - 0.8 - LEG_N], [5.65, STAND - 0.8 - LEG_N], [5.0, STAND - 1.6 - LEG_N]], [[4.35, STAND - 0.8], [5.0, STAND], [5.65, STAND - 0.8]]],
+    hint: 'Two triangles, one upside down, one on top' },
   { name: 'Balloon party', type: 'pop', want: ['point', 'point'], spawn: [[3, 11.15], [5.5, 11.15]],
     static: [R(6.5, 9.6, 3.5, 0.4)],
     balloons: [[2, 9.3, 0.4], [8.2, 6.9, 0.4], [4.5, 7.4, 0.4]],
@@ -75,7 +81,7 @@ export const LEVELS = [
     buttons: [[2.0, 11.85, 1.2, 0.15], [8.6, 10.75, 0.3, 0.5]],
     hint: 'Snip a long spike to reach into the slot' },
   { name: 'Cup', type: 'fill', spawn: [[1.5, 11.15], [8.5, 11.15]],
-    parts: [[[3.4, 10.7], [3.75, 10.7], [3.75, 11.5], [4.75, 11.5], [4.75, 10.7], [5.1, 10.7], [5.1, 12], [3.4, 12]], rect(5.1, 10.3, 1.3, 1.7)],
+    parts: [[[3.4, STAND - 1.15], [3.7, STAND - 1.15], [3.7, STAND - 0.45], [4.4, STAND - 0.45], [4.4, STAND - 1.15], [4.7, STAND - 1.15], [4.7, STAND], [3.4, STAND]], uStand(4.7)],
     hint: 'Cut a notch out of the top' },
   { name: 'Over the pit', type: 'pop', want: ['point', 'point'], spawn: [[1.2, 11.15], [8.6, 11.15]],
     floor: [R(-1, 12, 4, 2), R(7, 12, 4, 2)],
@@ -86,8 +92,8 @@ export const LEVELS = [
     ball: [1.8, 11.6, 0.38], goal: [8.5, 10.7, 1.0, 0.9],
     hint: 'Lift the ball onto the step and roll it in' },
   { name: 'Mushroom', type: 'fill', spawn: [[1.5, 11.15], [8.5, 11.15]],
-    parts: [rect(4.65, 11.0, 0.7, 1.0), halfDisc(5.0, 11.0, 0.85)],
-    hint: 'A thin stem and a round cap' },
+    parts: [rect(4.7, STAND - 1.0, 0.6, 1.0), halfDisc(5.0, STAND - 1.0, 0.65)],
+    hint: 'A thin stem, and a round cap turned upside down' },
   { name: 'Everyone on', type: 'press', want: ['full', 'full'], spawn: [[3.3, 11.15], [7.0, 10.15]],
     static: [R(0, 10.2, 2.4, 0.4), R(6.0, 11.0, 1.5, 1.0), R(7.5, 10.0, 2.5, 0.4)],
     ball: [1.4, 11.6, 0.38],

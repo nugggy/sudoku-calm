@@ -5,7 +5,8 @@ import { gomokuNew, gomokuLegal, gomokuPlay, GOMOKU_N } from './tbc-rules.js';
 import { frame, mover, canAct, turnText, finish, winText, fx, PCOL } from './tbc-ui.js';
 
 const N = GOMOKU_N, STAR = [3, 7, 11];
-const st = (x, y, p, cls = '') => `<g class="gm-stone ${cls}" transform="translate(${x} ${y})"><circle r=".43" fill="${PCOL[p]}"/><circle r=".43" class="gm-shine"/></g>`;
+const STONE = ['img/duo/disc_red.webp', 'img/duo/disc_blue.webp'];
+const st = (x, y, p, cls = '') => `<g class="gm-stone ${cls}" transform="translate(${x} ${y})"><circle r=".44" fill="${PCOL[p]}"/><image href="${STONE[p]}" x="-.46" y="-.46" width=".92" height=".92"/></g>`;
 const grid = (n) => {
   let g = `<rect x="-.6" y="-.6" width="${n + 0.2}" height="${n + 0.2}" rx=".35" class="gm-wood"/>`;
   for (let k = 0; k < n; k++) g += `<line x1="0" y1="${k}" x2="${n - 1}" y2="${k}" class="gm-line"/><line x1="${k}" y1="0" x2="${k}" y2="${n - 1}" class="gm-line"/>`;

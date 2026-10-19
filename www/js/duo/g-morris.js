@@ -9,7 +9,8 @@ const PT = [...Array(24)].map((_, i) => {
 });
 const LINES = (() => { const seen = new Set(), out = []; MORRIS_ADJ.forEach((n, a) => n.forEach((b) => { const k = Math.min(a, b) + '-' + Math.max(a, b); if (!seen.has(k)) { seen.add(k); out.push([a, b]); } })); return out; })();
 const X = (v) => 17 + v * (166 / 6);
-const stone = (x, y, p, cls = '') => `<g class="mr-stone ${cls}" transform="translate(${x} ${y})"><circle r="11.5" fill="${PCOL[p]}"/><circle r="11.5" class="mr-shine"/><circle r="6" class="mr-ring"/></g>`;
+const STONE = ['img/duo/disc_red.webp', 'img/duo/disc_blue.webp'];
+const stone = (x, y, p, cls = '') => `<g class="mr-stone ${cls}" transform="translate(${x} ${y})"><circle r="11.8" fill="${PCOL[p]}"/><image href="${STONE[p]}" x="-12.5" y="-12.5" width="25" height="25"/></g>`;
 const boardLines = () => `<rect x="4" y="4" width="192" height="192" rx="10" class="mr-wood"/>${LINES.map(([a, b]) => `<line x1="${X(PT[a][0])}" y1="${X(PT[a][1])}" x2="${X(PT[b][0])}" y2="${X(PT[b][1])}" class="mr-line"/>`).join('')}`;
 
 export default {
@@ -52,7 +53,7 @@ export default {
         else g += `<circle cx="${cx}" cy="${cy}" r="${targets.has(i) ? 6 : 4}" class="mr-pt ${targets.has(i) ? 'tgt' : ''} ${last && last.from === i ? 'from' : ''}"/>`;
         g += `<circle cx="${cx}" cy="${cy}" r="15" class="mr-hit" data-pt="${i}"/>`;
       }
-      const hand = (p) => `<div class="mr-hand" style="--pc:${PCOL[p]}">${[...Array(s.hand[p])].map(() => '<i></i>').join('')}<span>${s.hand[p] ? `${s.hand[p]} to place` : `${morrisCount(s, p)} on the board`}</span></div>`;
+      const hand = (p) => `<div class="mr-hand" data-p="${p}" style="--pc:${PCOL[p]}">${[...Array(s.hand[p])].map(() => '<i></i>').join('')}<span>${s.hand[p] ? `${s.hand[p]} to place` : `${morrisCount(s, p)} on the board`}</span></div>`;
       ui.body.innerHTML = `${hand(1)}<svg class="mr-board" viewBox="0 0 200 200">${g}</svg>${hand(0)}`;
       ui.turn(s.over ? -1 : s.turn);
       ui.score([morrisCount(s, 0) + s.hand[0], morrisCount(s, 1) + s.hand[1]]);

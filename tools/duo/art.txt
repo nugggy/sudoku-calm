@@ -1,0 +1,34 @@
+# Images for the Play Together games. All CC0 (public domain). Built into www/img/duo/ by tools/duo/build-art.sh.
+# Kits are unzipped into tools/duo/kenney-art/ (gitignored); Puzzle Pack 2 is shared with tools/hero/kenney/.
+
+kenney_boardgame-pack|https://kenney.nl/media/pages/assets/boardgame-pack/a1656828d2-1677667644/kenney_boardgame-pack.zip
+  PNG/Chips/chipRedWhite_border.png -> draught_red
+  PNG/Chips/chipWhiteBlue_border.png -> draught_white
+  PNG/Cards/cardBack_blue2.png -> card_back
+kenney_ui-pack|https://kenney.nl/media/pages/assets/ui-pack/f651646eab-1718203990/kenney_ui-pack.zip
+  Vector/Red/icon_cross.svg -> mark_x.svg
+  Vector/Blue/icon_outline_circle.svg -> mark_o.svg
+kenney_racing-pack|https://kenney.nl/media/pages/assets/racing-pack/c4cd68480a-1677662443/kenney_racing-pack.zip
+  PNG/Motorcycles/motorcycle_red.png, motorcycle_blue.png -> cycle_red, cycle_blue
+kenney_pirate-pack|https://kenney.nl/media/pages/assets/pirate-pack/8574474ce6-1677579020/kenney_pirate-pack.zip
+  PNG/Retina/Effects/explosion3.png -> ship_hit
+kenney_sports-pack|https://kenney.nl/media/pages/assets/sports-pack/ede5629412-1677693282/kenney_sports-pack.zip
+  (looked at; balls too small at 18 px, not used)
+kenney_board-game-icons|https://kenney.nl/media/pages/assets/board-game-icons/19cae04050-1721645690/kenney_board-game-icons.zip
+  (looked at; not used)
+puzzle-pack-2 (Kenney, in tools/hero/kenney/)
+  PNG/Balls/Black/ballBlack_10.png -> stone_black, puck
+  PNG/Balls/Grey/ballGrey_10.png -> stone_white, paddle_ball, ship_miss
+  PNG/Tiles red|yellow|blue/tile*_35.png (bordered circle) -> disc_red, disc_yellow, disc_blue, mallet_red, mallet_blue
+  PNG/Tiles red|blue/tile*_25.png (bordered square) -> box_red, box_blue
+  PNG/Tiles <colour>/tile*_23.png (shaded circle; orange is _22) -> seed_0 .. seed_6
+  PNG/Paddles/paddle_01.png, paddle_05.png -> paddle_red, paddle_blue
+
+sea-warfare|https://opengameart.org/content/sea-warfare-set-ships-and-more (Lowder2, CC0)
+  https://opengameart.org/sites/default/files/Sea%20Warfare%20Set.zip
+  Carrier, Battleship, Cruiser, Submarine, PatrolBoat hulls -> ship_<name>_v and ship_<name>_h (2x, nearest neighbour)
+balloon-rising|https://opengameart.org/content/balloon-rising (emacsabino, CC0)
+  https://opengameart.org/sites/default/files/balao_anime.zip
+  0.png, cropped and tinted to the seven Word Duel colours -> balloon_0 .. balloon_6
+soccer-ball|https://opengameart.org/content/soccer-ball (gothicfan95, CC0)
+  https://opengameart.org/sites/default/files/SoccerBall.png -> penalty_ball

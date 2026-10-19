@@ -4,6 +4,7 @@
 //    checking both sides finish with the same result and the same final state. Skip with --rules-only.
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { join, extname, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -148,13 +149,17 @@ const server = http.createServer(async (q, r) => {
   try { const b = await readFile(join(ROOT, p)); r.writeHead(200, { 'content-type': T[extname(p)] || 'application/octet-stream' }); r.end(b); } catch { r.writeHead(404); r.end(); }
 });
 await new Promise((res) => server.listen(0, '127.0.0.1', res));
-const port = server.address().port, dbg = 9400 + Math.floor(Math.random() * 400);
+const port = server.address().port;
 const profile = mkdtempSync(join(tmpdir(), 'duo-test-'));
-const chrome = spawn(CHROME, ['--headless=new', `--remote-debugging-port=${dbg}`, `--user-data-dir=${profile}`, '--no-first-run', '--window-size=900,800', 'about:blank'], { stdio: 'ignore' });
+const chrome = spawn(CHROME, ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--no-first-run', '--window-size=900,800', 'about:blank'], { stdio: 'ignore' });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const done = (code) => { try { chrome.kill(); } catch {} server.close(); setTimeout(() => { try { rmSync(profile, { recursive: true, force: true }); } catch {} process.exit(code); }, 300); };
+// a hard limit, so a stuck browser can never hold up a release
+const watchdog = setTimeout(() => { console.log('FAIL: the two-phone games did not finish within 4 minutes'); done(1); }, 240000);
+const done = (code) => { clearTimeout(watchdog); try { chrome.kill(); } catch {} server.close(); setTimeout(() => { try { rmSync(profile, { recursive: true, force: true }); } catch {} process.exit(code); }, 300); };
 let targets = null;
-for (let i = 0; i < 60 && !targets; i++) { await sleep(200); try { targets = await (await fetch(`http://127.0.0.1:${dbg}/json`)).json(); } catch {} }
+// Chrome picks a free debugging port and writes it to DevToolsActivePort, so this never talks to another browser
+let dbg = 0;
+for (let i = 0; i < 60 && !targets; i++) { await sleep(200); try { dbg = dbg || +readFileSync(join(profile, 'DevToolsActivePort'), 'utf8').split(/\r?\n/)[0]; if (dbg) targets = await (await fetch(`http://127.0.0.1:${dbg}/json`)).json(); } catch {} }
 if (!targets) { console.log('Chrome did not start: skipped the two-phone games'); done(fail ? 1 : 0); }
 else {
   const ws = new WebSocket(targets.find((t) => t.type === 'page').webSocketDebuggerUrl);

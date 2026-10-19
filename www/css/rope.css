@@ -1,0 +1,49 @@
+/* ---------- Sweet Drop ---------- */
+.rope-theme {
+  --kit-accent: #e2557a; --kit-done: #ffe0ea; --rp-text: #5a2d3c; --rp-board: rgba(255, 255, 255, .45);
+  color: var(--rp-text);
+  background-color: #cdeefc;
+  background-image:
+    radial-gradient(circle at 18% 12%, rgba(255, 255, 255, .7) 0 42px, transparent 43px),
+    radial-gradient(circle at 26% 10%, rgba(255, 255, 255, .7) 0 30px, transparent 31px),
+    radial-gradient(circle at 82% 22%, rgba(255, 255, 255, .55) 0 36px, transparent 37px),
+    linear-gradient(180deg, #bfe8fb 0%, #e3f6ff 55%, #fbe3ec 100%);
+}
+:root[data-theme="dark"] .rope-theme {
+  --kit-accent: #e2557a; --kit-done: #5a2d3c; --rp-text: #f7dbe4; --rp-board: rgba(255, 255, 255, .07);
+  background-color: #1b2233;
+  background-image:
+    radial-gradient(circle at 20% 10%, rgba(255, 255, 255, .06) 0 42px, transparent 43px),
+    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, .05) 0 36px, transparent 37px),
+    linear-gradient(180deg, #1d2a40 0%, #1a2234 60%, #2a1d2c 100%);
+}
+.rope-theme .icon-btn, .rope-theme .kit-title { color: var(--rp-text); }
+.rope-theme .kit-btn { box-shadow: 0 4px 0 #a8304f; }
+.rope-theme .kit-level.done { color: #a8304f; }
+:root[data-theme="dark"] .rope-theme .kit-level.done { color: #f7dbe4; }
+.rope-btn { background: #e2557a; }
+.g-rope { background: linear-gradient(150deg, #7fd3f7, #3b8fd9); }
+
+/* level stars on the level buttons */
+.rp-lvst { position: absolute; left: 0; right: 0; bottom: 5px; display: flex; justify-content: center; gap: 1px; }
+.rp-lvst i { width: 9px; height: 9px; background: rgba(0, 0, 0, .18); clip-path: polygon(50% 0, 62% 35%, 100% 38%, 70% 60%, 80% 100%, 50% 77%, 20% 100%, 30% 60%, 0 38%, 38% 35%); }
+.rp-lvst i.on { background: #f5b301; }
+.kit-level:has(.rp-lvst) { padding-bottom: 8px; }
+
+/* home hero and picker art: a sweet on a rope above the frog */
+.rp-hero, .art-rope { position: relative; width: 120px; height: 120px; }
+.rp-hero { width: 150px; height: 150px; }
+.rp-hero .rp-pin, .art-rope .rp-pin { position: absolute; left: 50%; top: 2%; width: 12%; aspect-ratio: 1; margin-left: -6%; border-radius: 50%; background: #d9dee6; border: 2px solid #5b6170; box-sizing: border-box; z-index: 2; }
+.rp-hero .rp-line, .art-rope .rp-line { position: absolute; left: 50%; top: 8%; width: 4px; height: 30%; margin-left: -2px; background: repeating-linear-gradient(180deg, #7a4c26 0 5px, #d9a066 5px 9px); border-radius: 2px; transform-origin: 50% 0; transform: rotate(14deg); }
+.rp-hero .rp-candy, .art-rope .rp-candy { position: absolute; left: 30%; top: 30%; width: 22%; animation: rp-swing 2.4s ease-in-out infinite; }
+.rp-hero .rp-star, .art-rope .rp-star { position: absolute; right: 8%; top: 22%; width: 18%; }
+.rp-hero .rp-frog, .art-rope .rp-frog { position: absolute; left: 50%; bottom: 0; width: 42%; margin-left: -21%; }
+@keyframes rp-swing { 50% { transform: translateX(10%) rotate(20deg); } }
+
+/* game screen */
+.rope-game .topbar .title { font-weight: 800; }
+.rp-hud { display: flex; justify-content: center; gap: 8px; padding: 0 0 4px; }
+.rp-hud img { width: 30px; height: 30px; filter: grayscale(1) opacity(.35); transition: filter .2s, transform .2s; }
+.rp-hud img.on { filter: none; transform: scale(1.12); }
+.rp-wrap { flex: 1; min-height: 0; position: relative; margin: 0 10px calc(10px + var(--safe-bottom)); touch-action: none; }
+.rp-canvas { position: absolute; inset: 0; display: block; touch-action: none; }

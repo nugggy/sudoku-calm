@@ -1,0 +1,4 @@
+# Marvel Heroes 3D models (fan-made, downloaded from poly.pizza, rendered to pictures by tools/hero/render.html)
+# key|file id on static.poly.pizza|licence (0 = CC0, B = CC-BY 3.0)|author|title|poly.pizza model id
+hammer|677ba798-2813-4cd7-82d1-4f893225d08b|B|OZZYBOI|mjolner|dmZcQxpEZl5
+reactor|a044d325-5a97-42e4-8e5e-18e0961d8da0|B|Heiko Jakob|Arc Reactor|efgURjIpJbm

@@ -1,0 +1,7 @@
+# Kenney kits (CC0), unzipped into tools/rope/kenney/<name>. Sweet Drop uses a few images from these.
+platformer-art-candy|https://kenney.nl/media/pages/assets/platformer-art-candy/85fe3ec6ed-1677696339/kenney_platformer-art-candy.zip
+jumper-pack|https://kenney.nl/media/pages/assets/jumper-pack/4654b2d2e5-1677666699/kenney_jumper-pack.zip
+# candy.png  = platformer-art-candy/Tiles/lollipopWhiteRed.png
+# star.png   = jumper-pack/PNG/Items/gold_1.png
+# bubble.png = jumper-pack/PNG/Items/bubble.png
+# spikes.png = jumper-pack/PNG/Environment/spikes_bottom.png

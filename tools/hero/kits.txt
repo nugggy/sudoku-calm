@@ -1,0 +1,5 @@
+# Kenney kits (CC0) used by Marvel Heroes, unzipped into tools/hero/kenney/<name>
+# Only the files listed after each kit are copied into www/img/hero.
+toon-characters|https://kenney.nl/media/pages/assets/toon-characters/4e8a6e4e53-1774770819/kenney_toon-characters.zip|Parts HD of Male person, Female person, Male adventurer, Female adventurer, Robot -> img/hero/parts/{mp,fp,ma,fa,rb}
+robot-pack|https://kenney.nl/media/pages/assets/robot-pack/e545150528-1677670212/kenney_robot-pack.zip|PNG/Side view robot_{blue,green,red,yellow}{Body,Hurt,Damage1,Damage2,Drive1} -> img/hero/robots
+puzzle-pack-2|https://kenney.nl/media/pages/assets/puzzle-pack-2/2b69820372-1677667476/kenney_puzzle-pack-2.zip|PNG/Tiles <colour>/tile<Colour>_{40,42,44,45,46,48} (orange tiles are numbered one lower) -> img/hero/gems

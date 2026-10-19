@@ -22,6 +22,14 @@ export const native = {
   exit() { if (N) N.exitApp(); },
 };
 
+// ---------- Local two-phone games (see LanLink.java) ----------
+// Null in a browser or on an older app shell. Events come back through window.__lan.
+export const lanBridge = N && N.lanHost ? {
+  host: (name) => N.lanHost(name), discover: () => N.lanDiscover(), stopDiscover: () => N.lanStopDiscover(),
+  join: (id) => N.lanJoin(id), joinIp: (ip, port) => N.lanJoinIp(ip, port), send: (s) => N.lanSend(s),
+  close: () => N.lanClose(), ip: () => N.lanIp(),
+} : null;
+
 // ---------- Update channel (GitHub Releases) ----------
 const parse = (v) => (String(v).replace(/^v/i, '').split(/[.-]/).slice(0, 3).map((x) => parseInt(x, 10) || 0));
 export function newer(a, b) {

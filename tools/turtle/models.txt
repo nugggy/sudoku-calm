@@ -1,0 +1,19 @@
+# key|file id on static.poly.pizza|licence (0 = CC0, B = CC-BY 3.0)|author|title|poly.pizza model id
+sea|dd5284e5-8ed7-4005-8653-58fb365ebde0|B|jeremy|Turtle|0Sylqo1dCfu
+hatch|7c64cc2c-b9aa-4edd-bc32-9e95d66ca5e0|B|Poly by Google|Turtle|fklSEvGm1Q8
+tort|4a6957fa-543c-4e64-b6cf-7e9d5523026a|B|Poly by Google|Turtle|2LCcq8vhqJ3
+box|c7cd2a8e-fdc1-4a65-a42b-a923e358ad02|B|Poly by Google|Turtle|bXreDp3oSqy
+grey|9cb91751-8639-4800-abd2-3ac61fe1aea5|B|Poly by Google|Turtle|c6n73UnGEP4
+long|f9594f12-1551-4700-8e69-370939900b34|B|Crispy_Prawn|Long-Necked Turtle|4kQR07PFTq
+crab|15379421-a6c9-4266-913b-7d6a46c4a2f0|B|Poly by Google|Crab|1O5Q4pE8X6e
+jelly|5025e994-da02-45bc-9b98-fde96366b0ca|B|Poly by Google|Jellyfish|dA5osnS0Rzj
+gull|882c4ff3-c97b-4ae2-aedf-953c8d692898|B|Poly by Google|Flying gull|eMNhHDZakYp
+fish|6805b99c-5fd7-4aab-bf57-3bb645e1108a|0|Quaternius|Fish|BEcU9rjiAq
+kelp|8c51572a-1938-4c61-b971-63c3b69f3ea7|B|Poly by Google|Kelp|4cFllH6Iazk
+coral|7fc1ccd0-aa82-4eff-8881-dd7a83ebf6ea|B|Poly by Google|Coral|4KUXdtDdgHR
+seagrass|baa9d489-8f0b-4747-8e8c-c2deb0674eb1|B|Laney XR Labs|Seaweed 2|b_eanaL8C6j
+lettuce|043e31a4-34b4-4c15-b973-91ffcd919f40|0|Quaternius|Lettuce|MEmUwHUHNR
+lilypad|ed91b246-b3df-4327-b67c-f6088b438d09|B|Poly by Google|Lily pad|8xHS2Js0MA_
+log|89d5c7b9-0735-4640-913d-87261dfecd32|0|Quaternius|Wood Log|L4E32Wee6C
+rock|87d3dfd2-de47-4b03-b9f1-4c84c2a605b0|0|Quaternius|Rock|RtLRqYjfMs
+bag|b12886cb-f4ea-4e4c-bce5-7f4b74e7f2b7|0|Kenney|Bag Flat|Sha0HgXqqG

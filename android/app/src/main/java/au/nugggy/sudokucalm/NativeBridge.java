@@ -28,7 +28,21 @@ public class NativeBridge {
     private volatile boolean downloading = false;
     private File pendingApk = null;
 
+    private LanLink lan;
+
     NativeBridge(MainActivity activity) { this.activity = activity; }
+
+    private synchronized LanLink lan() { if (lan == null) lan = new LanLink(activity); return lan; }
+
+    // ---------- Local two-phone games (see LanLink) ----------
+    @JavascriptInterface public void lanHost(String name) { lan().host(name); }
+    @JavascriptInterface public void lanDiscover() { lan().discover(); }
+    @JavascriptInterface public void lanStopDiscover() { lan().stopDiscover(); }
+    @JavascriptInterface public void lanJoin(String id) { lan().join(id); }
+    @JavascriptInterface public void lanJoinIp(String ip, int port) { lan().joinIp(ip, port); }
+    @JavascriptInterface public void lanSend(String json) { lan().send(json); }
+    @JavascriptInterface public void lanClose() { lan().close(); }
+    @JavascriptInterface public String lanIp() { return LanLink.localIp(); }
 
     @JavascriptInterface
     public String getVersionName() {
@@ -161,5 +175,5 @@ public class NativeBridge {
         }
     }
 
-    void release() { }
+    void release() { if (lan != null) lan.close(); }
 }

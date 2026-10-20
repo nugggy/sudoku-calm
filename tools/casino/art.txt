@@ -1,0 +1,14 @@
+Casino Night art sources (all CC0, found with Claude in Chrome). Rebuild with: bash tools/casino/build-art.sh
+
+Kenney "Boardgame Pack" (kenney.nl/assets/boardgame-pack), CC0
+  PNG/Cards/card<Suit><Rank>.png  -> card_<R><S>.webp (52 cards)
+  PNG/Cards/cardBack_red2.png     -> card_back.webp
+  PNG/Chips/chipRedWhite_border.png   -> chip_5.webp
+  PNG/Chips/chipGreenWhite_border.png -> chip_25.webp
+  PNG/Chips/chipBlackWhite_border.png -> chip_100.webp
+  PNG/Chips/chipBlueWhite_border.png  -> chip_500.webp
+  PNG/Chips/chipWhiteBlue_border.png  -> chip_1000.webp
+  PNG/Dice/dieWhite_border1-6.png     -> die_1.webp to die_6.webp
+
+"Felt Backgrounds" by jbp4444 (opengameart.org/content/felt-backgrounds), CC0
+  felt_grey.jpg, tinted -> felt.webp (green), felt_red.webp, felt_blue.webp

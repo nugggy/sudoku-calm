@@ -1,0 +1,13 @@
+# Casino Night images for Roulette, Craps and Pokies (fork B). Downloads live in tools/casino/art-src-b/ (gitignored).
+
+Slot Machine Resource Pack by Molly "Cougarmint" Willits, CC-BY 3.0 (also OGA-BY 3.0)
+  https://opengameart.org/content/slot-machine-resource-pack
+  zip: https://opengameart.org/sites/default/files/Slot%20Machine%20Resource%20Pack.zip
+  Bar1, Bar2, Bar3, bell, cherries, clover, heart, horseshoe, lemon, melon, Lucky7_rainbow, Variations/Lucky7
+  -> www/img/casino/pokies_*.webp (scaled 2x with lanczos, lossless webp)
+
+Kenney Boardgame Pack, CC0 (kenney.nl/assets/boardgame-pack; already downloaded to tools/duo/kenney-art/)
+  PNG/Dice/dieRed_border1..6.png -> www/img/casino/craps_die1..6.webp
+
+The roulette wheel, table, ball, craps layout and pokies cabinet are drawn by the app (canvas and CSS).
+Chips are the shared Casino Night chips from fork A (www/img/casino/chip_*.webp).

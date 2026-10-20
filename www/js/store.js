@@ -50,6 +50,7 @@ const defaults = () => ({
   turtle: { best: {}, played: {}, seen: {}, trek: { level: 0, stars: {} } },
   hero: { best: {}, played: {}, seen: {}, level: {}, stars: {}, coins: 0, look: null, owned: [], pick: 'spidey', name: '' },
   duo: { name: '', wins: {}, played: {}, seen: {}, via: 'wifi' },
+  casino: { chips: 1000, best: 1000, topups: 0, lastTopup: 0, stats: {}, seenHelp: false, seenGames: {} },
   arrow: { level: 0, current: null, seenHelp: false },
   press: { reached: 0, seenHelp: false },
   yeti: { best: {}, played: {}, seen: {}, tourBest: 0 },

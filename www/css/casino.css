@@ -1,0 +1,152 @@
+/* ---------- Casino Night ---------- */
+.g-casino { background: linear-gradient(150deg, #1f7a4a, #0b3b24); }
+.art-casino { position: relative; width: 120px; height: 88px; }
+.art-casino img { position: absolute; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .35)); }
+.art-casino .c1 { width: 50px; left: 24px; top: 4px; transform: rotate(-12deg); }
+.art-casino .c2 { width: 50px; left: 50px; top: 2px; transform: rotate(9deg); }
+.art-casino .ch1, .art-casino .ch2, .art-casino .ch3 { width: 30px; }
+.art-casino .ch1 { left: 8px; top: 56px; } .art-casino .ch2 { left: 14px; top: 50px; } .art-casino .ch3 { left: 84px; top: 56px; }
+
+.casino-theme { --cs-gold: #f5c542; --cs-gold-d: #b8860b; --cs-ink: #fdf6e3; color: var(--cs-ink);
+  background: #0e4d2e url('../img/casino/felt.webp') center / 384px; }
+.casino-theme::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 120% 80% at 50% 30%, rgba(255, 255, 255, .08), rgba(0, 0, 0, .45)); }
+.casino-theme > * { position: relative; }
+:root[data-theme="dark"] .casino-theme::before { background: radial-gradient(ellipse 120% 80% at 50% 30%, rgba(255, 255, 255, .03), rgba(0, 0, 0, .65)); }
+.casino-theme .icon-btn, .casino-theme .topbar .title { color: var(--cs-ink); }
+.cs-g-baccarat { background-image: url('../img/casino/felt_red.webp'); background-color: #5a1218; }
+.cs-g-videopoker, .cs-g-pokies { background-image: url('../img/casino/felt_blue.webp'); background-color: #102a5a; }
+.cs-note { font-size: 12px; opacity: .8; text-align: center; margin: 14px 0 0; }
+.cs-gold-btn, .cs-btn.gold { background: linear-gradient(#ffd866, #e0a923); color: #3b2500; box-shadow: 0 4px 0 #8a5f00; }
+.cs-loading { display: grid; place-items: center; padding: 60px 0; }
+
+/* hub */
+.cs-hero { display: flex; justify-content: center; margin-top: 4px; transform: scale(1.3); transform-origin: 50% 0; height: 116px; }
+.cs-title { text-align: center; font-size: 28px; margin: 0 0 8px; color: var(--cs-gold); text-shadow: 0 2px 0 rgba(0, 0, 0, .4); }
+.cs-bal-row { display: flex; justify-content: center; margin-bottom: 12px; }
+.casino-hub .cs-gold-btn { margin-bottom: 12px; }
+.cs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cs-card-btn { position: relative; display: flex; flex-direction: column; align-items: flex-start; text-align: left; padding: 10px 12px 12px; border-radius: 18px; border: 1px solid rgba(245, 197, 66, .35);
+  background: linear-gradient(160deg, rgba(0, 0, 0, .25), rgba(0, 0, 0, .45)); color: var(--cs-ink); box-shadow: 0 6px 14px rgba(0, 0, 0, .3); }
+.cs-card-btn:active { transform: scale(.97); }
+.cs-art { width: 100%; height: 76px; display: grid; place-items: center; margin-bottom: 6px; overflow: hidden; }
+.cs-art img { max-height: 70px; }
+.cs-name { font-weight: 800; font-size: 16px; color: var(--cs-gold); }
+.cs-tag { font-size: 12px; opacity: .85; line-height: 1.3; margin-top: 2px; }
+.cs-played { font-size: 11px; opacity: .7; margin-top: 4px; }
+
+/* balance pill */
+.cs-balance { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px 4px 4px; border-radius: 20px; background: rgba(0, 0, 0, .45); border: 1px solid rgba(245, 197, 66, .5); font-weight: 800; font-variant-numeric: tabular-nums; }
+.cs-balance img { width: 24px; height: 24px; }
+.cs-balance.up { animation: cs-up .5s; } .cs-balance.down { animation: cs-down .5s; }
+@keyframes cs-up { 40% { transform: scale(1.12); box-shadow: 0 0 14px rgba(245, 197, 66, .8); } }
+@keyframes cs-down { 40% { transform: scale(.94); } }
+.cs-top-bal { margin-left: auto; margin-right: 4px; }
+.cs-top-bal .cs-balance { font-size: 14px; }
+
+/* game stage */
+.cs-stage { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding: 0 10px calc(10px + var(--safe-bottom)); }
+.cs-picker { display: flex; justify-content: center; gap: 6px; padding: 6px 0; }
+.cs-chip { position: relative; width: 52px; height: 52px; padding: 0; border: 0; background: none; border-radius: 50%; transition: transform .12s; }
+.cs-chip img { width: 100%; height: 100%; filter: drop-shadow(0 3px 2px rgba(0, 0, 0, .45)); }
+.cs-chip span { position: absolute; inset: 0; display: grid; place-items: center; font-size: 12px; font-weight: 900; color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, .9); }
+.cs-chip.on { transform: translateY(-6px) scale(1.08); }
+.cs-chip.on img { filter: drop-shadow(0 0 8px rgba(255, 230, 120, .95)) drop-shadow(0 3px 2px rgba(0, 0, 0, .45)); }
+.cs-stack { position: relative; display: inline-block; width: 40px; margin-bottom: 18px; }
+.cs-stack img { position: absolute; left: 0; width: 40px; height: 40px; filter: drop-shadow(0 2px 1px rgba(0, 0, 0, .5)); }
+.cs-stack b { position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: 12px; background: rgba(0, 0, 0, .55); padding: 1px 7px; border-radius: 9px; white-space: nowrap; }
+.cs-spot { position: relative; display: grid; place-items: center; min-width: 76px; min-height: 76px; border: 2px dashed rgba(245, 197, 66, .7); border-radius: 50%; color: rgba(253, 246, 227, .8); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; padding: 4px 4px 20px; }
+.cs-spot.has { border-style: solid; }
+.cs-row-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; padding: 6px 0; }
+.cs-btn { min-width: 74px; padding: 11px 14px; border-radius: 14px; border: 0; font-weight: 800; font-size: 15px; color: #fff; background: rgba(0, 0, 0, .45); box-shadow: 0 3px 0 rgba(0, 0, 0, .5), inset 0 0 0 1px rgba(255, 255, 255, .15); }
+.cs-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0, 0, 0, .5); }
+.cs-btn:disabled { opacity: .4; }
+.cs-btn.red { background: linear-gradient(#e2504a, #b02a26); } .cs-btn.blue { background: linear-gradient(#4a8fe2, #2a5fb0); }
+
+/* cards */
+.cs-hand { display: flex; justify-content: center; min-height: 96px; padding: 4px 0; }
+.cs-card { position: relative; width: 64px; height: 87px; margin: 0 -14px; perspective: 600px; flex: none; }
+.cs-card img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 6px; box-shadow: 0 3px 6px rgba(0, 0, 0, .45); backface-visibility: hidden; transition: transform .35s; }
+.cs-card .b { transform: rotateY(180deg); }
+.cs-card.down .f { transform: rotateY(180deg); } .cs-card.down .b { transform: rotateY(0); }
+.cs-card.deal { animation: cs-deal .38s cubic-bezier(.2, .8, .3, 1) both; }
+@keyframes cs-deal { from { transform: translate(140px, -160px) rotate(25deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.cs-card.hl img { box-shadow: 0 0 0 3px var(--cs-gold), 0 0 14px rgba(245, 197, 66, .9); }
+.cs-card.dim { opacity: .45; }
+.cs-total { display: inline-block; min-width: 34px; padding: 2px 9px; border-radius: 10px; background: rgba(0, 0, 0, .55); font-weight: 800; text-align: center; font-size: 14px; }
+.cs-label { text-align: center; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; opacity: .85; }
+
+/* banner */
+.cs-banner { position: absolute; left: 50%; top: 40%; z-index: 20; transform: translate(-50%, -50%); min-width: 200px; padding: 14px 24px; border-radius: 18px; text-align: center;
+  background: rgba(0, 0, 0, .78); border: 2px solid var(--cs-gold); animation: cs-ban .35s cubic-bezier(.3, 1.6, .5, 1); pointer-events: none; }
+.cs-banner b { display: block; font-size: 22px; color: var(--cs-gold); }
+.cs-banner span { display: block; font-size: 26px; font-weight: 900; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.cs-banner.cs-lost { border-color: rgba(255, 255, 255, .4); } .cs-banner.cs-lost b { color: #fff; }
+.cs-banner.out { opacity: 0; transition: opacity .35s; }
+@keyframes cs-ban { from { transform: translate(-50%, -50%) scale(.5); opacity: 0; } }
+
+/* blackjack */
+.bj-table { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-around; }
+.bj-dealer, .bj-player { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.bj-hands { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; }
+.bj-hand { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 14px; }
+.bj-hand.active { background: rgba(245, 197, 66, .15); box-shadow: 0 0 0 2px rgba(245, 197, 66, .6); }
+.bj-hand .cs-stack { transform: scale(.8); transform-origin: 50% 100%; }
+.bj-table .cs-card { width: 78px; height: 106px; margin: 0 -18px; }
+.bj-table .cs-hand { min-height: 112px; }
+.bj-shoe { position: absolute; right: 4px; top: 4px; display: flex; flex-direction: column; align-items: center; font-size: 10px; opacity: .85; }
+.bj-shoe i { display: block; width: 34px; height: 8px; border-radius: 3px; background: rgba(0, 0, 0, .5); overflow: hidden; }
+.bj-shoe i u { display: block; height: 100%; background: var(--cs-gold); }
+.bj-hint { min-height: 20px; text-align: center; font-size: 13px; color: var(--cs-gold); font-weight: 700; }
+
+/* hold'em */
+.he-table { position: relative; flex: 1; min-height: 0; display: grid; grid-template-rows: auto 1fr auto; gap: 4px; }
+.he-opps { display: flex; justify-content: space-around; gap: 4px; padding-top: 4px; }
+.he-seat { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 92px; padding: 6px 6px 8px; border-radius: 14px; background: rgba(0, 0, 0, .3); }
+.he-seat.turn { box-shadow: 0 0 0 2px var(--cs-gold), 0 0 14px rgba(245, 197, 66, .6); }
+.he-seat.out { opacity: .4; }
+.he-seat .nm { font-weight: 800; font-size: 13px; } .he-seat .sty { font-size: 10px; opacity: .7; text-transform: uppercase; letter-spacing: .4px; }
+.he-seat .stk { font-size: 13px; font-variant-numeric: tabular-nums; }
+.he-seat .cs-hand { min-height: 0; padding: 0; transform: scale(.62); margin: -16px 0 -16px; }
+.he-seat .act { position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 11px; font-weight: 800; background: var(--cs-gold); color: #3b2500; padding: 1px 8px; border-radius: 9px; }
+.he-seat .dl { position: absolute; top: -6px; right: -4px; width: 20px; height: 20px; border-radius: 50%; background: #fff; color: #222; font-size: 11px; font-weight: 900; display: grid; place-items: center; box-shadow: 0 1px 2px rgba(0, 0, 0, .5); }
+.he-mid { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+.he-board { display: flex; justify-content: center; gap: 4px; min-height: 87px; }
+.he-board .cs-card { margin: 0; width: 56px; height: 76px; }
+.he-pot { display: flex; align-items: center; gap: 6px; font-weight: 800; }
+.he-pot img { width: 26px; }
+.he-me { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.he-me .he-seat { flex-direction: row; gap: 12px; min-width: 0; margin-bottom: 6px; }
+.he-me .he-seat .cs-hand { transform: none; margin: 0 8px; }
+.he-msg { min-height: 18px; font-size: 13px; text-align: center; color: var(--cs-gold); font-weight: 700; }
+.he-raise { display: flex; align-items: center; gap: 8px; width: 100%; padding: 0 6px; }
+.he-raise input { flex: 1; accent-color: var(--cs-gold); }
+.he-raise b { min-width: 64px; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* baccarat */
+.bac-table { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-around; }
+.bac-sides { display: flex; justify-content: space-around; }
+.bac-side { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.bac-side .cs-card { width: 56px; height: 76px; margin: 0 -12px; }
+.bac-spots { display: flex; justify-content: center; gap: 10px; }
+.bac-spots .cs-spot { border-radius: 16px; min-width: 96px; }
+.bac-spots .cs-spot small { display: block; font-size: 10px; opacity: .8; text-transform: none; letter-spacing: 0; }
+.bac-spots .cs-spot.player { border-color: #6fb1ff; } .bac-spots .cs-spot.banker { border-color: #ff7b72; } .bac-spots .cs-spot.tie { border-color: #8be28b; }
+.bac-road { align-self: center; min-width: 120px; display: grid; grid-auto-flow: column; grid-template-rows: repeat(6, 16px); grid-auto-columns: 16px; gap: 2px; justify-content: start; padding: 6px; border-radius: 10px; background: rgba(255, 255, 255, .9); overflow-x: auto; max-width: 100%; }
+.bac-road i { width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; font-size: 9px; font-weight: 900; color: #fff; font-style: normal; }
+.bac-road i.p { background: #2a6fdb; } .bac-road i.b { background: #d8342c; } .bac-road i.t { background: #2f9e44; }
+
+/* video poker */
+.vp-table { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; }
+.vp-pay { width: 100%; border-collapse: collapse; font-size: 12px; background: rgba(0, 0, 20, .45); border-radius: 10px; overflow: hidden; }
+.vp-pay td { padding: 3px 6px; text-align: right; font-variant-numeric: tabular-nums; color: #ffe08a; }
+.vp-pay td:first-child { text-align: left; color: #fff; font-weight: 700; }
+.vp-pay td.col { background: rgba(255, 60, 60, .35); }
+.vp-pay tr.hit td { background: rgba(245, 197, 66, .55); color: #2a1a00; }
+.vp-hand { display: flex; justify-content: center; gap: 5px; }
+.vp-hand .slot { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.vp-hand .cs-card { margin: 0; width: 62px; height: 84px; }
+.vp-hold { font-size: 11px; font-weight: 900; letter-spacing: .5px; padding: 6px 0; width: 62px; border-radius: 8px; border: 0; background: rgba(0, 0, 0, .45); color: #fff; }
+.vp-hold.on { background: var(--cs-gold); color: #3b2500; }
+.vp-held { height: 16px; font-size: 11px; font-weight: 900; color: var(--cs-gold); }
+.vp-bet { display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 700; }
+.vp-msg { text-align: center; min-height: 22px; font-weight: 800; color: var(--cs-gold); }

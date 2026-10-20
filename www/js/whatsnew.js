@@ -2,6 +2,11 @@
 // tools/release.mjs uses the same text for the GitHub release notes (it will not publish a version missing here).
 // Keep each line short and plain: what was added or changed, from the player's point of view.
 export const WHATS_NEW = [
+  { v: '1.17.0', items: [
+    "New: Casino Night, seven casino games with free play chips: Blackjack, Texas Hold'em, Roulette, Craps, Baccarat, Video Poker and Pokies.",
+    'Play chips only. No real money is used or won, and you get a free top-up if you run out.',
+    "Blackjack has a strategy hint, Hold'em has three computer players with their own styles, and Craps explains every bet.",
+  ] },
   { v: '1.16.0', items: [
     'Web Swing has been rebuilt: smoother swinging, a glowing target, perfect releases for a speed boost, wall runs and rooftop running.',
     'Tap in the air to flip, kick drones, fly through speed rings and build swing combos as the city turns from day to night.',

@@ -24,6 +24,7 @@ import { snipHomeScreen, snipLobbyScreen, snipGameScreen, snipHelp, snipCardArt,
 import { turtleHubScreen, turtleGameScreen, turtleHelp, turtleCardArt, TURTLE_GAMES } from './turtle/hub.js';
 import { heroHubScreen, heroBuilderScreen, heroGameScreen, heroHelp, heroCardArt } from './hero/hub.js';
 import { duoHubScreen, duoLobbyScreen, duoGameScreen, duoHelp, duoCardArt } from './duo/hub.js';
+import { casinoHubScreen, casinoGameScreen, casinoHelp, casinoCardArt } from './casino/hub.js';
 import { potionHomeScreen, potionGameScreen, potionHelp, potionCardArt } from './potion-game.js';
 import { motoHubScreen, motoGarageScreen, motoGameScreen, motoHelp, motoCardArt } from './moto/hub.js';
 import { yetiHubScreen, yetiGameScreen, yetiHelp, yetiCardArt, YETI_GAMES } from './yeti/hub.js';
@@ -71,7 +72,7 @@ const SCREENS = {
   treat: treatHomeScreen, treatgame: treatGameScreen, block: blockScreen,
   cross: crossHomeScreen, crossgame: crossGameScreen, ws: wsHomeScreen, wsgame: wsGameScreen,
   g2048: screen2048, mines: minesHomeScreen, minesgame: minesGameScreen, guess: guessHomeScreen, guessgame: guessGameScreen,
-  hashi: hashiHomeScreen, hashigame: hashiGameScreen, gridlock: gridlockHomeScreen, gridlockgame: gridlockGameScreen, crate: crateHomeScreen, crategame: crateGameScreen, potion: potionHomeScreen, potiongame: potionGameScreen, arrow: arrowHomeScreen, arrowgame: arrowGameScreen, chess: chessHomeScreen, chessgame: chessGameScreen, rope: ropeHomeScreen, ropegame: ropeGameScreen, snip: snipHomeScreen, sniplobby: snipLobbyScreen, snipgame: snipGameScreen, turtle: turtleHubScreen, turtlegame: turtleGameScreen, hero: heroHubScreen, herobuilder: heroBuilderScreen, herogame: heroGameScreen, duo: duoHubScreen, duolobby: duoLobbyScreen, duogame: duoGameScreen, press: pressHomeScreen, pressgame: pressGameScreen, yeti: yetiHubScreen, yetigame: yetiGameScreen, moto: motoHubScreen, motogarage: motoGarageScreen, motogame: motoGameScreen,
+  hashi: hashiHomeScreen, hashigame: hashiGameScreen, gridlock: gridlockHomeScreen, gridlockgame: gridlockGameScreen, crate: crateHomeScreen, crategame: crateGameScreen, potion: potionHomeScreen, potiongame: potionGameScreen, arrow: arrowHomeScreen, arrowgame: arrowGameScreen, chess: chessHomeScreen, chessgame: chessGameScreen, rope: ropeHomeScreen, ropegame: ropeGameScreen, snip: snipHomeScreen, sniplobby: snipLobbyScreen, snipgame: snipGameScreen, turtle: turtleHubScreen, turtlegame: turtleGameScreen, hero: heroHubScreen, herobuilder: heroBuilderScreen, herogame: heroGameScreen, duo: duoHubScreen, duolobby: duoLobbyScreen, duogame: duoGameScreen, casino: casinoHubScreen, casinogame: casinoGameScreen, press: pressHomeScreen, pressgame: pressGameScreen, yeti: yetiHubScreen, yetigame: yetiGameScreen, moto: motoHubScreen, motogarage: motoGarageScreen, motogame: motoGameScreen,
   mahjong: mahjongHomeScreen, mjgame: mahjongGameScreen,
   wheel: wheelHomeScreen, wheelgame: wheelGameScreen, pipe: pipeHomeScreen, pipegame: pipeGameScreen,
   spider: spiderHomeScreen, spidergame: spiderGameScreen,
@@ -221,6 +222,11 @@ registerGame({
   id: 'sol', cat: 'Cards and tiles', screen: 'solitaire', name: 'Solitaire', tag: 'Classic Klondike, every deal winnable', theme: 'g-sol',
   art: () => `<div class="art-sol">${[['A', '♠', ''], ['K', '♥', 'red'], ['Q', '♦', 'red']].map(([r, s, c], i) => `<div class="mini-card ${c}" style="transform:rotate(${(i - 1) * 12}deg) translateY(${Math.abs(i - 1) * 6}px)"><b>${r}</b><i>${s}</i></div>`).join('')}</div>`,
   progress: () => store.sol.current ? 'Game in progress' : `${store.sol.stats.won} won`,
+});
+registerGame({
+  id: 'casino', cat: 'Cards and tiles', screen: 'casino', name: 'Casino Night', tag: 'Blackjack, poker, roulette and more with free chips', theme: 'g-casino',
+  art: () => casinoCardArt(),
+  progress: () => `${(store.casino.chips || 0).toLocaleString('en-AU')} chips`,
 });
 registerGame({
   id: 'treat', cat: 'Casual', screen: 'treat', name: 'Treat Twist', tag: 'Swap and match the candies', theme: 'g-treat',
@@ -497,6 +503,8 @@ function statsScreen() {
         ${row('sparkles', 'Arrow Away levels', store.arrow.level)}
         ${row('star', 'Sweet Drop stars', Object.values(store.rope.stars).reduce((a, b) => a + b, 0))}
         ${row('star', 'Infinity Stones claimed', store.hero.level.stones || 0)}
+        ${row('gem-stone', 'Casino Night chips', (store.casino.chips || 0).toLocaleString('en-AU'))}
+        ${row('crown', 'Casino Night best balance', (store.casino.best || 0).toLocaleString('en-AU'))}
         ${row('crown', 'Chess games won', store.chess.stats.won)}
         ${row('trophy', 'Chess best level beaten', store.chess.stats.bestLevelBeaten || '-')}
       </div>
@@ -628,8 +636,8 @@ function settingsScreen() {
     else if (a === 'solrules') solHelp();
     else if (a === 'treatrules') treatHelp();
     else if (a === 'crossrules') crossHelp();
-    else if (a === 'rules-more') sheet(`<h2>How to play</h2>${[['2048', '2048'], ['mines', 'Minesweeper'], ['guess', 'Guesswork'], ['wheel', 'Word Wheel'], ['pipe', 'Pipeline'], ['mahjong', 'Mahjong Garden'], ['spider', 'Spider Solitaire'], ['jigsaw', 'Jigsaw'], ['sticker', 'Sticker Studio'], ['hashi', 'Island Hop'], ['gridlock', 'Gridlock'], ['crate', 'Crate Mate'], ['potion', 'Potion Pour'], ['arrow', 'Arrow Away'], ['chess', 'Chess'], ['rope', 'Sweet Drop'], ['snip', 'Snip Buddies'], ['turtle', 'Turtle Bay'], ['hero', 'Marvel Heroes'], ['duo', 'Play Together'], ['press', 'Pressure Point'], ['yeti', 'Yeti Games'], ['moto', 'Moto Mania']].map(([k, n]) => `<button class="sheet-item" data-h="${k}">${n}</button>`).join('')}`, {
-      onMount(node, close) { node.addEventListener('click', (ev) => { const b = ev.target.closest('[data-h]'); if (!b) return; close(); ({ 2048: help2048, mines: minesHelp, guess: guessHelp, wheel: wheelHelp, pipe: pipeHelp, mahjong: mahjongHelp, spider: spiderHelp, jigsaw: jigsawHelp, sticker: stickerHelp, hashi: hashiHelp, gridlock: gridlockHelp, crate: crateHelp, potion: potionHelp, arrow: arrowHelp, chess: chessHelp, rope: ropeHelp, snip: snipHelp, turtle: () => turtleHelp(), hero: () => heroHelp(), duo: () => duoHelp(), press: () => pressHelp(), yeti: () => yetiHelp(), moto: () => motoHelp() })[b.dataset.h](); }); },
+    else if (a === 'rules-more') sheet(`<h2>How to play</h2>${[['2048', '2048'], ['mines', 'Minesweeper'], ['guess', 'Guesswork'], ['wheel', 'Word Wheel'], ['pipe', 'Pipeline'], ['mahjong', 'Mahjong Garden'], ['spider', 'Spider Solitaire'], ['jigsaw', 'Jigsaw'], ['sticker', 'Sticker Studio'], ['hashi', 'Island Hop'], ['gridlock', 'Gridlock'], ['crate', 'Crate Mate'], ['potion', 'Potion Pour'], ['arrow', 'Arrow Away'], ['chess', 'Chess'], ['rope', 'Sweet Drop'], ['snip', 'Snip Buddies'], ['turtle', 'Turtle Bay'], ['hero', 'Marvel Heroes'], ['duo', 'Play Together'], ['casino', 'Casino Night'], ['press', 'Pressure Point'], ['yeti', 'Yeti Games'], ['moto', 'Moto Mania']].map(([k, n]) => `<button class="sheet-item" data-h="${k}">${n}</button>`).join('')}`, {
+      onMount(node, close) { node.addEventListener('click', (ev) => { const b = ev.target.closest('[data-h]'); if (!b) return; close(); ({ 2048: help2048, mines: minesHelp, guess: guessHelp, wheel: wheelHelp, pipe: pipeHelp, mahjong: mahjongHelp, spider: spiderHelp, jigsaw: jigsawHelp, sticker: stickerHelp, hashi: hashiHelp, gridlock: gridlockHelp, crate: crateHelp, potion: potionHelp, arrow: arrowHelp, chess: chessHelp, rope: ropeHelp, snip: snipHelp, turtle: () => turtleHelp(), hero: () => heroHelp(), duo: () => duoHelp(), casino: () => casinoHelp(), press: () => pressHelp(), yeti: () => yetiHelp(), moto: () => motoHelp() })[b.dataset.h](); }); },
     });
     else if (a === 'wsrules') wsHelp();
     else if (a === 'blockrules') blockHelp();
@@ -655,6 +663,7 @@ function aboutScreen() {
         <p>An ad-free collection of logic puzzles. Every Sudoku is generated on your phone with exactly one solution, and every Meowdoku level can be solved with logic alone.</p><br>
         <p>Your progress stays on this device. The app only goes online to check GitHub for updates, which you can turn off in Settings.</p><br>
         <p><b>Words.</b> Word lists are based on SCOWL, copyright Kevin Atkinson and contributors, used under its permissive licence (see levels/WORDLIST-LICENSE.txt).</p><br>
+        <p><b>Casino Night.</b> Play chips only; no real money is used or won. Cards, chips and dice are from Kenney's Boardgame Pack (kenney.nl, CC0), and the table felt is "Felt Backgrounds" by jbp4444 (opengameart.org, CC0). The pokies symbols are from the Slot Machine Resource Pack by Molly "Cougarmint" Willits (opengameart.org, CC-BY 3.0). The roulette wheel and tables are drawn by the app.</p><br>
         <p><b>Treat Twist.</b> The candies, jelly, biscuits, chocolate, bow, sweets, scenery and burst are from Melissa Krautheim's Candy Match 3, and the lollipop is from lumimae's candy pack 1, both CC0 from opengameart.org. The pink star, wrapped treats and liquorice lock were drawn for GameHub.</p><br>
         <p><b>Chess.</b> The chess pieces are the Cburnett set by Colin M.L. Burnett, from Wikimedia Commons, used under the BSD licence (see img/chess/LICENSE.txt).</p><br>
         <p><b>Sweet Drop.</b> The sweet, stars, bubbles and spikes are from Kenney's Platformer Art Candy and Jumper Pack, and the frog is from Kenney's Animal Pack (kenney.nl, CC0).</p><br>

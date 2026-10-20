@@ -2,6 +2,9 @@
 // tools/release.mjs uses the same text for the GitHub release notes (it will not publish a version missing here).
 // Keep each line short and plain: what was added or changed, from the player's point of view.
 export const WHATS_NEW = [
+  { v: '1.15.1', items: [
+    'Treat Twist: jelly is much easier to see. Jelly tiles are bright pink with a glowing edge, and double jelly is deeper pink with two rings.',
+  ] },
   { v: '1.15.0', items: [
     'Treat Twist has been rebuilt: glossy new candies, a winding level map across eight worlds and 120 new levels.',
     'Make striped, wrapped and rainbow candies, and swap two specials together for huge combos.',

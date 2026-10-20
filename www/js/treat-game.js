@@ -302,7 +302,15 @@ export function treatGameScreen(app, { level }) {
       const [x, y] = cellXY(i);
       ctx.fillStyle = dark() ? ((x + y) % 2 ? 'rgba(40,22,70,.62)' : 'rgba(55,30,90,.62)') : ((x + y) % 2 ? 'rgba(255,255,255,.5)' : 'rgba(255,255,255,.38)');
       roundRect(x * cs + 1, y * cs + 1, cs - 2, cs - 2, cs * 0.16); ctx.fill();
-      if (st.jelly[i]) { drawImg('jelly', x, y, 1.0, st.jelly[i] > 1 ? 0.95 : 0.55); if (st.jelly[i] > 1) drawImg('jellytop', x, y, 1.0, 0.85); }
+      // jelly: a solid pink tile (deeper for two layers) with a glossy shine, so it shows around the candy
+      if (st.jelly[i]) {
+        const two = st.jelly[i] > 1, px = x * cs + 1, py = y * cs + 1, w = cs - 2, r = cs * 0.16;
+        ctx.fillStyle = two ? 'rgba(214,40,150,.92)' : 'rgba(255,128,205,.88)'; roundRect(px, py, w, w, r); ctx.fill();
+        const g = ctx.createLinearGradient(0, py, 0, py + w * 0.55); g.addColorStop(0, 'rgba(255,255,255,.55)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = g; roundRect(px + w * 0.08, py + w * 0.05, w * 0.84, w * 0.45, r * 0.8); ctx.fill();
+        drawImg('jelly', x, y, 1.0, two ? 0.22 : 0.45);
+        if (two) drawImg('jellytop', x, y, 1.0, 0.3);
+      }
     }
     // hint shimmer
     const hintOn = hintCells && !busy;
@@ -316,6 +324,16 @@ export function treatGameScreen(app, { level }) {
       if (sp.kind === E.BOMB) sp.rot = t * 0.9;
       drawImg(itemImg(sp.kind, sp.c, sp.s), sp.x, sp.y, 0.9, sp.a, sc, sp.rot);
       if (extra) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; drawImg(itemImg(sp.kind, sp.c, sp.s), sp.x, sp.y, 0.9, 0.25 + 0.2 * Math.sin(t * 9), sc); ctx.restore(); }
+    }
+    // jelly rims on top of the candies, so jelly cells stand out at a glance (two rings for double jelly)
+    const rimW = Math.max(2, cs * 0.07), pulse = 0.82 + 0.18 * Math.sin(t * 3);
+    for (let i = 0; i < st.n; i++) {
+      if (!st.cell[i] || !st.jelly[i]) continue;
+      const [x, y] = cellXY(i), two = st.jelly[i] > 1, px = x * cs + 1, py = y * cs + 1, w = cs - 2;
+      ctx.save(); ctx.globalAlpha = pulse; ctx.lineWidth = rimW;
+      ctx.strokeStyle = two ? '#c2187f' : '#ff3fae'; roundRect(px + rimW / 2, py + rimW / 2, w - rimW, w - rimW, cs * 0.15); ctx.stroke();
+      if (two) { ctx.lineWidth = rimW * 0.6; ctx.strokeStyle = '#ffd1ec'; const k = rimW * 1.55; roundRect(px + k, py + k, w - 2 * k, w - 2 * k, cs * 0.11); ctx.stroke(); }
+      ctx.restore();
     }
     // blockers and locks on top
     for (let i = 0; i < st.n; i++) {

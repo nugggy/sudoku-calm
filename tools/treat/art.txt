@@ -1,0 +1,20 @@
+Treat Twist art sources (all CC0, public domain)
+
+Candy Match 3 by Melissa Krautheim (MELLE), CC0
+  https://opengameart.org/content/candy-match-3
+  assets_candy_1.png     candies, striped candies, rainbow bomb, jelly, biscuits, chocolate, wrapper bow, toffee wedge, rocket bonbon
+  background_29.png      map scene (map.webp)
+  background_blur.png    game background (board.webp)
+  explotion.png          pop burst animation (burst.webp)
+
+candy pack 1 by lumimae, CC0
+  https://opengameart.org/content/candy-pack-1
+  yaycandies/size3/lollipop_rainbow.png   lollipop hammer booster
+
+Drawn for GameHub in tools/treat/build-art.html
+  c5*.webp               the pink star candy and its striped and wrapped versions
+  c*_w.webp              wrapped treats (sheet candy plus the sheet's bow, tinted)
+  lock.webp              liquorice lock
+
+Rebuild: download the two packs into tools/treat/art-src (unzip yaycandies_0.zip into art-src/yaycandies),
+then run: node tools/treat/build-art.mjs   (needs Chrome and ffmpeg)

@@ -5,10 +5,11 @@ import { icon, logoSvg, brandSvg } from './icons.js';
 import { el, $, $$, sheet, dialog, toast, closeTopOverlay, esc } from './ui.js';
 import { sfx } from './sound.js';
 import { native, checkForUpdate, REPO } from './native.js';
+import { WHATS_NEW, cmpVersion } from './whatsnew.js';
 import { sudokuScreen, startGame, continueLabel, prefetch } from './sudoku-game.js';
 import { sortHomeScreen, sortGameScreen, sortLevelsScreen, sortHelp, cutie } from './sort-game.js';
 import { solitaireScreen, solHelp } from './solitaire-game.js';
-import { treatHomeScreen, treatGameScreen, treatHelp, candySvg } from './treat-game.js';
+import { treatHomeScreen, treatGameScreen, treatHelp, treatCardArt } from './treat-game.js';
 import { blockScreen, blockHelp } from './block-game.js';
 import { screen2048, help2048 } from './g2048.js';
 import { minesHomeScreen, minesGameScreen, minesHelp } from './mines-game.js';
@@ -223,7 +224,7 @@ registerGame({
 });
 registerGame({
   id: 'treat', cat: 'Casual', screen: 'treat', name: 'Treat Twist', tag: 'Swap and match the candies', theme: 'g-treat',
-  art: () => `<div class="art-treat">${[0, 4, 2, 5, 1, 3, 4, 0, 2].map((t) => candySvg(t)).join('')}</div>`,
+  art: () => treatCardArt(),
   progress: () => `Level ${store.treat.level + 1}`,
 });
 registerGame({
@@ -602,6 +603,7 @@ function settingsScreen() {
         <button class="set-row" data-act="wsrules"><div class="txt">How to play Word Search</div></button>
         <button class="set-row" data-act="treatrules"><div class="txt">How to play Treat Twist</div></button>
         <button class="set-row" data-act="blockrules"><div class="txt">How to play Block Pounce</div></button>
+        <button class="set-row" data-act="whatsnew"><div class="txt">What's new</div></button>
         <button class="set-row" data-act="about"><div class="txt">About and credits</div></button>
         <button class="set-row" data-act="reset"><div class="txt" style="color:var(--err)">Reset all progress</div></button>
       </div>`;
@@ -632,6 +634,7 @@ function settingsScreen() {
     else if (a === 'wsrules') wsHelp();
     else if (a === 'blockrules') blockHelp();
     else if (a === 'about') app.go('about');
+    else if (a === 'whatsnew') whatsNewSheet(WHATS_NEW.slice(0, 2));
     else if (a === 'reset') {
       const ok = await dialog({ title: 'Reset all progress?', text: 'This deletes your statistics, saved games, progress in every game. Your settings stay. This cannot be undone.',
         buttons: [{ label: 'Reset everything', value: true, cls: 'danger' }, { label: 'Cancel', value: false, cls: 'ghost' }] });
@@ -652,6 +655,7 @@ function aboutScreen() {
         <p>An ad-free collection of logic puzzles. Every Sudoku is generated on your phone with exactly one solution, and every Meowdoku level can be solved with logic alone.</p><br>
         <p>Your progress stays on this device. The app only goes online to check GitHub for updates, which you can turn off in Settings.</p><br>
         <p><b>Words.</b> Word lists are based on SCOWL, copyright Kevin Atkinson and contributors, used under its permissive licence (see levels/WORDLIST-LICENSE.txt).</p><br>
+        <p><b>Treat Twist.</b> The candies, jelly, biscuits, chocolate, bow, sweets, scenery and burst are from Melissa Krautheim's Candy Match 3, and the lollipop is from lumimae's candy pack 1, both CC0 from opengameart.org. The pink star, wrapped treats and liquorice lock were drawn for GameHub.</p><br>
         <p><b>Chess.</b> The chess pieces are the Cburnett set by Colin M.L. Burnett, from Wikimedia Commons, used under the BSD licence (see img/chess/LICENSE.txt).</p><br>
         <p><b>Sweet Drop.</b> The sweet, stars, bubbles and spikes are from Kenney's Platformer Art Candy and Jumper Pack, and the frog is from Kenney's Animal Pack (kenney.nl, CC0).</p><br>
         <p><b>Play Together.</b> Discs, stones, chips, beads, box tiles, card backs, X and O marks, paddles, motorbikes and explosions are from Kenney's Puzzle Pack 2, Boardgame Pack, UI Pack, Racing Pack and Pirate Pack (kenney.nl, CC0). The warships are the Sea Warfare set by Lowder2, the balloons are by emacsabino and the football is by gothicfan95, all CC0 from opengameart.org. The chess pieces are the Cburnett set (see Chess above). Memory Duel's animal pictures are from Kenney's Animal Pack (kenney.nl, CC0). Word Duel checks words against the SCOWL lists used across the app. The pullers, cowboys and goalkeepers in Tug of War, Quick Draw and Penalty Shootout are from Kenney's Toon Characters, and the Sumo Bumpers are from Kenney's Shape Characters, and the tanks, shells and explosions in Tank Duel are from Kenney's Tanks pack (kenney.nl, CC0). Air Hockey, Paddle Ball and the boards are drawn by the app.</p><br>
@@ -671,6 +675,25 @@ function aboutScreen() {
     if (a === 'src') { e.preventDefault(); native.openUrl(`https://github.com/${REPO}`); }
   });
   return { root };
+}
+
+// ---------- What's new ----------
+// Shown once after the app updates: the notes for every version since the one last opened (up to three).
+function whatsNewSheet(entries) {
+  if (!entries.length) return;
+  sheet(`<h2>What's new</h2><div class="wn-body">${entries.map((e) => `<div class="wn-ver">Version ${esc(e.v)}</div><ul>${e.items.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>`).join('')}</div>
+    <button class="btn" data-x>Let's play</button>`, { onMount: (n, close) => { $('[data-x]', n).onclick = close; } });
+}
+function checkWhatsNew() {
+  const m = store.meta, cur = native.versionName();
+  if (!native.isApp || /web/.test(cur)) return;
+  // first run with this feature: a fresh install shows nothing, an existing player sees this version's notes
+  if (!m.seenVersion) m.seenVersion = m.openedSeeded ? '0.0.0' : cur;
+  if (cmpVersion(m.seenVersion, cur) >= 0) { m.seenVersion = cur; save(); return; }
+  const since = m.seenVersion === '0.0.0' ? cur : null;
+  const entries = WHATS_NEW.filter((e) => cmpVersion(e.v, cur) <= 0 && (since ? e.v === since : cmpVersion(e.v, m.seenVersion) > 0)).slice(0, 3);
+  m.seenVersion = cur; save();
+  setTimeout(() => whatsNewSheet(entries), 700);
 }
 
 // ---------- Updates ----------
@@ -707,6 +730,7 @@ async function runUpdateCheck(manual = false) {
 
 // ---------- Boot ----------
 applyTheme();
+checkWhatsNew(); // before seedOpened, which tells it whether this is an existing player
 seedOpened();
 app.reset('games');
 loadLevels();

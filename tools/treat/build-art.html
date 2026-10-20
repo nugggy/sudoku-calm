@@ -1,0 +1,113 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Treat Twist art</title>
+<body style="background:#888">
+<script type="module">
+// Cuts Melissa Krautheim's CC0 "Candy Match 3" sheet into the pictures Treat Twist uses, draws a sixth candy
+// (a pink star) in the same glossy style, tints the wrapper bow for each colour and draws the liquorice lock.
+// tools/treat/build-art.mjs opens this page in headless Chrome and saves window.__out.
+const load = (src) => new Promise((ok, bad) => { const im = new Image(); im.onload = () => ok(im); im.onerror = bad; im.src = src; });
+const sheet = await load('art-src/assets_candy_1.png');
+const yay = await load('art-src/yaycandies/yaycandies/size3/lollipop_rainbow.png');
+const out = {};
+const S = 100;
+const canvas = (w = S, h = S) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+const cell = (cx, cy) => { const c = canvas(); c.getContext('2d').drawImage(sheet, cx * S, cy * S, S, S, 0, 0, S, S); return c; };
+const save = (name, c) => { out[name] = c.toDataURL('image/png'); document.body.appendChild(c); };
+
+// The five sheet candies: plain, sideways stripes, up-and-down stripes
+const sheetCandies = [0, 1, 2, 3, 4];
+sheetCandies.forEach((k) => { save(`c${k}`, cell(k, 0)); save(`c${k}_h`, cell(k, 1)); save(`c${k}_v`, cell(k, 2)); });
+
+// The sixth candy: a glossy pink star drawn to match
+function starPath(g, cx, cy, R, r, pts = 5, round = 0.18) {
+  const p = [];
+  for (let i = 0; i < pts * 2; i++) { const a = -Math.PI / 2 + (i * Math.PI) / pts, rr = i % 2 ? r : R; p.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr]); }
+  g.beginPath();
+  for (let i = 0; i < p.length; i++) {
+    const a = p[i], b = p[(i + 1) % p.length], c = p[(i - 1 + p.length) % p.length];
+    const ax = a[0] + (c[0] - a[0]) * round, ay = a[1] + (c[1] - a[1]) * round, bx = a[0] + (b[0] - a[0]) * round, by = a[1] + (b[1] - a[1]) * round;
+    if (i === 0) g.moveTo(ax, ay); else g.lineTo(ax, ay);
+    g.quadraticCurveTo(a[0], a[1], bx, by);
+  }
+  g.closePath();
+}
+function pinkStar(stripes = null) {
+  const c = canvas(), g = c.getContext('2d');
+  // soft shadow like the sheet candies
+  g.save(); g.shadowColor = 'rgba(0,0,0,.35)'; g.shadowBlur = 6; g.shadowOffsetX = 2; g.shadowOffsetY = 4;
+  starPath(g, 50, 52, 44, 22); g.fillStyle = '#c81a74'; g.fill(); g.restore();
+  // body
+  starPath(g, 50, 51, 41, 20.5);
+  const rg = g.createRadialGradient(42, 38, 4, 50, 52, 46); rg.addColorStop(0, '#ff9fd6'); rg.addColorStop(0.3, '#ff3fae'); rg.addColorStop(0.75, '#d9127f'); rg.addColorStop(1, '#8e0a52');
+  g.fillStyle = rg; g.fill();
+  if (stripes) {
+    g.save(); starPath(g, 50, 51, 41, 20.5); g.clip();
+    g.fillStyle = 'rgba(255,255,255,.95)';
+    for (let k = -1; k <= 1; k++) {
+      if (stripes === 'h') g.fillRect(0, 53 + k * 17 - 4, 100, 9); else g.fillRect(50 + k * 17 - 4.5, 0, 9, 100);
+    }
+    // keep the stripes shaded like the body
+    const sh = g.createLinearGradient(0, 15, 0, 95); sh.addColorStop(0, 'rgba(255,255,255,0)'); sh.addColorStop(1, 'rgba(120,10,70,.35)');
+    g.fillStyle = sh; g.fillRect(0, 0, 100, 100);
+    g.restore();
+  }
+  // rim and gloss
+  starPath(g, 50, 51, 41, 20.5); g.lineWidth = 2.2; g.strokeStyle = 'rgba(150,10,85,.85)'; g.stroke();
+  g.save(); starPath(g, 50, 51, 41, 20.5); g.clip();
+  const gl = g.createLinearGradient(30, 18, 50, 55); gl.addColorStop(0, 'rgba(255,255,255,.95)'); gl.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gl; g.beginPath(); g.ellipse(40, 35, 19, 10, -0.55, 0, Math.PI * 2); g.fill();
+  const low = g.createRadialGradient(62, 72, 2, 62, 72, 26); low.addColorStop(0, 'rgba(255,170,220,.55)'); low.addColorStop(1, 'rgba(255,170,220,0)');
+  g.fillStyle = low; g.fillRect(30, 45, 60, 50);
+  g.fillStyle = 'rgba(255,255,255,.95)'; g.beginPath(); g.ellipse(36, 32, 5, 3, -0.6, 0, Math.PI * 2); g.fill();
+  g.restore();
+  return c;
+}
+save('c5', pinkStar()); save('c5_h', pinkStar('h')); save('c5_v', pinkStar('v'));
+
+// Wrapped treats: the candy with the sheet's bow tied over it, tinted to the candy's colour
+const bow = cell(5, 3);
+const hue = [-175, 0, 145, -95, 70, 115]; // blue bow turned to gold, blue, red, green, purple and pink
+for (let k = 0; k < 6; k++) {
+  const base = k < 5 ? cell(k, 0) : pinkStar();
+  const c = canvas(), g = c.getContext('2d');
+  g.drawImage(base, 0, 0);
+  g.filter = `hue-rotate(${hue[k]}deg) saturate(1.2) drop-shadow(0 2px 2px rgba(0,0,0,.35))`; g.drawImage(bow, 20, 20, 60, 60); g.filter = 'none';
+  save(`c${k}_w`, c);
+}
+
+save('bomb', cell(5, 0));
+save('jelly', cell(1, 3));      // full jelly square
+save('jellytop', cell(0, 3));   // jelly with a drip, drawn over a second layer
+save('frost1', cell(2, 3));     // cracked biscuit (last layer)
+save('frost2', cell(3, 3));     // biscuit
+save('frost3', cell(4, 3));     // iced biscuit with sprinkles
+save('choc', cell(0, 5));
+save('ing0', cell(3, 4));       // toffee wedge
+save('ing1', cell(0, 4));       // rocket bonbon
+
+// Liquorice lock: two twisted ropes crossing over the candy
+{
+  const c = canvas(), g = c.getContext('2d');
+  const rope = (x1, y1, x2, y2) => {
+    g.lineCap = 'round';
+    g.strokeStyle = '#1b0f12'; g.lineWidth = 15; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke();
+    g.strokeStyle = '#3d2027'; g.lineWidth = 10; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke();
+    // twists
+    const n = 8, dx = (x2 - x1) / n, dy = (y2 - y1) / n, len = Math.hypot(dx, dy), nx = -dy / len, ny = dx / len;
+    g.strokeStyle = 'rgba(255,255,255,.28)'; g.lineWidth = 2.4;
+    for (let k = 0; k < n; k++) { const cx = x1 + dx * (k + 0.5), cy = y1 + dy * (k + 0.5); g.beginPath(); g.moveTo(cx - nx * 4 - dx * 0.2, cy - ny * 4 - dy * 0.2); g.lineTo(cx + nx * 4 + dx * 0.2, cy + ny * 4 + dy * 0.2); g.stroke(); }
+  };
+  g.save(); g.shadowColor = 'rgba(0,0,0,.4)'; g.shadowBlur = 4; g.shadowOffsetY = 2;
+  rope(14, 14, 86, 86); rope(86, 14, 14, 86); g.restore();
+  g.fillStyle = '#2a1519'; g.beginPath(); g.arc(50, 50, 9, 0, 7); g.fill();
+  g.fillStyle = 'rgba(255,255,255,.3)'; g.beginPath(); g.arc(47, 47, 3, 0, 7); g.fill();
+  save('lock', c);
+}
+
+// Booster: the lollipop hammer
+{ const c = canvas(), g = c.getContext('2d'); g.drawImage(yay, 0, 0, yay.width, yay.height, 6, 2, 88, 88 * yay.height / yay.width); save('lollipop', c); }
+
+window.__out = out;
+document.title = 'DONE';
+</script>

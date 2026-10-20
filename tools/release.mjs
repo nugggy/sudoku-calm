@@ -17,7 +17,7 @@ const version = args.find((a) => /^\d+\.\d+\.\d+/.test(a));
 const beta = args.includes('--beta');
 const dry = args.includes('--dry-run');
 const ni = args.indexOf('--notes');
-const notes = ni >= 0 ? args[ni + 1] : '';
+let notes = ni >= 0 ? args[ni + 1] : '';
 
 const run = (cmd, opts = {}) => { console.log('> ' + cmd); return execSync(cmd, { cwd: ROOT, stdio: 'inherit', ...opts }); };
 const out = (cmd) => execSync(cmd, { cwd: ROOT, encoding: 'utf8' }).trim();
@@ -30,6 +30,12 @@ if (!dry) {
   if (out(`git tag -l v${version}`)) fail(`v${version} already exists. Pick a higher version number.`);
 }
 
+// The app shows www/js/whatsnew.js after an update, so every release needs an entry there.
+const { WHATS_NEW } = await import(new URL('../www/js/whatsnew.js', import.meta.url));
+const entry = WHATS_NEW.find((e) => e.v === version.split('-')[0]);
+if (!entry) fail(`Add a "${version.split('-')[0]}" entry to www/js/whatsnew.js first, so phones can show what changed.`);
+if (!notes) notes = entry.items.map((t) => '- ' + t).join(String.fromCharCode(10));
+
 // 1. bump the version inside the app
 const propsPath = join(ROOT, 'android', 'gradle.properties');
 let props = readFileSync(propsPath, 'utf8');
@@ -39,7 +45,7 @@ writeFileSync(propsPath, props);
 console.log(`Version ${version} (build ${code})`);
 
 // 2. tests, then a signed release build
-for (const t of ['test-sudoku.mjs', 'test-sort.mjs', 'test-press.mjs', 'test-arrow.mjs', 'test-chess.mjs', 'test-rope.mjs', 'test-snip.mjs', 'test-turtle.mjs', 'test-hero.mjs', 'test-duo.mjs', 'test-duo-rt.mjs', 'test-duo-c.mjs', 'test-duo-d.mjs']) run(`node tools/${t}`);
+for (const t of ['test-sudoku.mjs', 'test-sort.mjs', 'test-press.mjs', 'test-arrow.mjs', 'test-chess.mjs', 'test-rope.mjs', 'test-snip.mjs', 'test-turtle.mjs', 'test-hero.mjs', 'test-duo.mjs', 'test-duo-rt.mjs', 'test-duo-c.mjs', 'test-duo-d.mjs', 'test-treat.mjs']) run(`node tools/${t}`);
 const gradlew = join(ROOT, 'android', process.platform === 'win32' ? 'gradlew.bat' : 'gradlew');
 run(`"${gradlew}" assembleRelease --console=plain -q`, { cwd: join(ROOT, 'android') });
 mkdirSync(join(ROOT, 'dist'), { recursive: true });

@@ -34,7 +34,7 @@ const defaults = () => ({
   pool: {},                   // pre-generated puzzles per difficulty
   meow: { level: 0, best: {}, current: null, cat: 0, totalTime: 0, hints: 0 },
   sort: { level: 0, current: null, boosters: { undo: 5, shuffle: 3, slot: 3 } },
-  treat: { level: 0, stars: {}, best: 0 },
+  treat: { level: 0, stars: {}, best: 0, boosters: { hammer: 2, swap: 2, shuffle: 2, moves: 1 }, seenHelp: false },
   cross: { level: 0, done: {}, current: null },
   ws: { level: 0, current: null, words: 0 },
   g2048: { best: 0, current: null, games: 0 },
@@ -62,7 +62,7 @@ const defaults = () => ({
   sticker: { placed: {}, done: {}, numbers: true, last: 0 },
   block: { best: 0, games: 0, current: null },
   sol: { draw: 1, current: null, next: {}, stats: { played: 0, won: 0, bestTime: 0, fewestMoves: 0, streak: 0, bestStreak: 0, bestScore: 0 } },
-  meta: { installed: Date.now(), lastUpdateCheck: 0, skipVersion: '', opened: {}, openedSeeded: false },
+  meta: { installed: Date.now(), lastUpdateCheck: 0, skipVersion: '', opened: {}, openedSeeded: false, seenVersion: '' },
 });
 
 function merge(base, saved) {

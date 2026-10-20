@@ -2,6 +2,12 @@
 // tools/release.mjs uses the same text for the GitHub release notes (it will not publish a version missing here).
 // Keep each line short and plain: what was added or changed, from the player's point of view.
 export const WHATS_NEW = [
+  { v: '1.16.0', items: [
+    'Web Swing has been rebuilt: smoother swinging, a glowing target, perfect releases for a speed boost, wall runs and rooftop running.',
+    'Tap in the air to flip, kick drones, fly through speed rings and build swing combos as the city turns from day to night.',
+    'Every Web Swing run has three challenges for bonus coins, and a ghost of your best run to race.',
+    'Snip Buddies: legs now stay on whichever way up you are, so you can crouch and stand tall on your side or upside down too.',
+  ] },
   { v: '1.15.1', items: [
     'Treat Twist: jelly is much easier to see. Jelly tiles are bright pink with a glowing edge, and double jelly is deeper pink with two rings.',
   ] },

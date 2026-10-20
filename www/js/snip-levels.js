@@ -1,7 +1,7 @@
 // Snip Buddies levels. The world is 10 units wide and 13 tall, y grows downwards, and the floor top is at y = 12.
 // A buddy is a U of paper 1.3 wide and 1.8 tall (see snip-body.js) standing on legs, so the bottom of the paper is
-// LEG_N above the ground (STAND on the main floor). A buddy turned on its side tucks its legs away and rests on the
-// ground. Every level has a floor and side walls unless it lists its own floor. Spawn points are given as the middle
+// LEG_N above the ground (STAND on the main floor). The legs always hang down from the lowest part of the paper, so a
+// buddy on its side stands on its legs along its long edge, and can crouch or stand tall there too. Every level has a floor and side walls unless it lists its own floor. Spawn points are given as the middle
 // of a 1.7 tall sheet on the ground (feet 0.85 below), and the engine lifts the paper onto its legs.
 //   type fill:  stand together so your shapes fill the outline. `parts` are two shapes that each fit inside one
 //               buddy (any quarter turn), so the outline can always be made. The target is their union. Upright
@@ -27,8 +27,8 @@ export const LEVELS = [
     parts: [uStand(3.7), uStand(5.0)],
     hint: 'Walk into the outline together' },
   { name: 'Lie down', type: 'fill', spawn: [[6.8, 11.15], [8.6, 11.15]],
-    parts: [uLying(2.4, 12, 'left'), uStand(4.3)],
-    hint: 'Use the turn buttons to lie flat. Your legs tuck away' },
+    parts: [uLying(2.4, 12 - LEG_N, 'left'), uStand(4.3)],
+    hint: 'Use the turn buttons to turn onto your side' },
   { name: 'Piggyback', type: 'fill', spawn: [[1.5, 11.15], [8.5, 11.15]],
     parts: [uStand(4.35), uStand(4.35, STAND - BH - LEG_N)],
     hint: 'Jump up and stand on your buddy' },
@@ -76,10 +76,11 @@ export const LEVELS = [
     static: [R(6.5, 9.6, 3.5, 0.4)],
     balloons: [[2, 9.3, 0.4], [8.2, 6.9, 0.4], [4.5, 7.4, 0.4]],
     hint: 'The middle one needs a tower' },
-  { name: 'Mind the gap', type: 'goal', want: ['flat', 'full'], spawn: [[0.8, 11.15], [2.8, 11.15]],
-    floor: [R(-1, 12, 5.2, 2), R(5.8, 12, 2.7, 2), R(9.5, 12, 1.5, 2), R(8.5, 13, 1, 1)],
-    ball: [1.8, 11.6, 0.38], goal: [8.5, 12.1, 1.0, 0.9],
-    hint: 'Lie across the gap to make a bridge' },
+  // The pit is just wide enough for a buddy on its side, and deep enough that a crouching one is level with the floor.
+  { name: 'Mind the gap', type: 'goal', want: ['flat', 'full'], spawn: [[0.8, 10.15], [2.8, 10.15]],
+    floor: [R(-1, 11, 5.2, 3), R(4.2, 11 + BW + LEG_C, 1.92, 2), R(6.12, 11, 2.38, 3), R(9.5, 11, 1.5, 3), R(8.5, 12, 1, 2)],
+    ball: [1.8, 10.6, 0.38], goal: [8.5, 11.1, 1.0, 0.9],
+    hint: 'Turn onto your side, drop into the pit and crouch to make a bridge' },
   { name: 'Poke', type: 'press', want: ['spike', 'full'], spawn: [[0.9, 11.15], [4.5, 11.15]],
     static: [R(7, 8, 3, 2.7), R(7, 11.3, 3, 0.7)],
     buttons: [[2.0, 11.85, 1.2, 0.15], [8.6, 10.75, 0.3, 0.5]],
@@ -156,16 +157,16 @@ export const LEVELS = [
     buttons: [[0.1, 11.85, 1.2, 0.15], [4.3, 11.85, 1.2, 0.15], [8.2, 9.85, 1.2, 0.15]],
     hint: 'Crouch under the roof, hop on the step, and park the ball' },
   { name: 'Hat trick', type: 'fill', spawn: [[1.5, 11.15], [8.5, 11.15]],
-    parts: [uStand(4.35), uLying(4.1, STAND - BH, 'right')],
-    hint: 'Climb up, then lie down flat on top' },
+    parts: [uStand(4.35), uLying(4.1, STAND - BH - LEG_N, 'right')],
+    hint: 'Climb up, then turn onto your side on top' },
   { name: 'Leap of faith', type: 'pop', want: ['point', 'point'], spawn: [[1.0, 11.15], [8.6, 11.15]],
     floor: [R(-1, 12, 4, 2), R(6.2, 12, 5, 2)],
     balloons: [[3.2, 8.0, 0.4], [6.4, 7.6, 0.4]],
     hint: 'Both balloons hang over the pit. Stack up at the edge' },
   { name: 'Limbo', type: 'goal', want: ['flat', 'full'], spawn: [[0.8, 11.15], [2.4, 11.15]],
-    static: [R(4.0, 9.6, 3.0, 1.0)],
+    static: [R(4.0, 9.45, 3.0, 1.0)],
     ball: [3.4, 11.6, 0.38], goal: [8.4, 10.9, 1.2, 1.1],
-    hint: 'Too low even to crouch. Lie down and slide under' },
+    hint: 'Too low to crouch upright. Turn onto your side, crouch and slide under' },
   { name: 'Reach and duck', type: 'press', want: ['full', 'full'], spawn: [[3.0, 11.15], [5.6, 11.15]],
     static: [R(8.6, 9.0, 1.4, 0.9)],
     buttons: [[-0.05, 9.0, 0.3, 0.5], [9.75, 10.3, 0.3, 0.6]],

@@ -20,7 +20,8 @@ export function uShape(x = 0, y = 0, n = 16) {
 }
 // A standing buddy outline for a level: left edge at x, bottom of the paper at `bottom`.
 export const uStand = (x, bottom = STAND) => uShape(x, bottom - BH);
-// A buddy lying on its side (legs tucked away), resting on `floor`. The round end points `end` ('left' or 'right').
+// A buddy on its side with the bottom of its paper at `floor` (pass the ground minus the leg length, since the
+// legs hang down from its long edge). The round end points `end` ('left' or 'right').
 export function uLying(x, floor = 12, end = 'left') {
   const u = uShape(0, 0);
   // turn a quarter: the round bottom ends up on the left (or right), then sit it on the floor

@@ -162,10 +162,62 @@ check(Math.abs(w.buddies[1].area - E.BODY_AREA) < 1e-6, 'reset should give a ful
   check(y0 - yt > 0.45, `standing tall should lift the paper (moved ${(y0 - yt).toFixed(2)})`);
   check(JSON.stringify(b.shape) === shape0, 'the paper changed shape while crouching or standing tall');
   check(b.grounded, 'a buddy standing tall should still be on the ground');
-  for (let f = 0; f < 60; f++) E.step(w, [K.RR, 0]);
-  for (let f = 0; f < 90; f++) E.step(w, [0, 0]);
-  check(b.leg < 0.03 && b.grounded, 'a buddy on its side should tuck its legs away and rest on the ground');
+}
+// ---------- 7. legs at any angle: they hang from the lowest part of the paper, and crouch and stand tall still work ----------
+const QUARTER = Math.round((Math.PI / 2) / (2.4 / 60)); // frames of turning for a quarter turn
+for (const q of [0, 1, 2, 3]) {
+  const w = E.createWorld(0), b = w.buddies[0], shape0 = JSON.stringify(b.shape);
+  for (let f = 0; f < 60; f++) E.step(w, [0, 0]);
+  for (let f = 0; f < q * QUARTER; f++) E.step(w, [K.RR, 0]);
+  for (let f = 0; f < 120; f++) E.step(w, [0, 0]);
+  const deg = q * 90, wr = E.worldRing(b, b.col), lowest = Math.max(...wr.map((p) => p[1]));
+  check(E.legRing(b, wr) && Math.abs(b.leg - LEG_N) < 1e-6, `${deg} degrees: the legs should be there at their normal length`);
+  check(Math.abs(E.hipY(b, wr) - lowest) < 0.03, `${deg} degrees: the legs should join the lowest point of the paper`);
+  check(Math.abs(E.hipY(b, wr) + b.leg - 12) < 0.05 && b.grounded, `${deg} degrees: the feet should be on the floor`);
+  const y0 = b.y;
+  for (let f = 0; f < 90; f++) E.step(w, [K.C, 0]);
+  const yc = b.y;
+  for (let f = 0; f < 120; f++) E.step(w, [K.T, 0]);
+  const yt = b.y;
+  check(yc - y0 > 0.25, `${deg} degrees: crouching should lower the paper (moved ${(yc - y0).toFixed(2)})`);
+  check(y0 - yt > 0.45, `${deg} degrees: standing tall should lift the paper (moved ${(y0 - yt).toFixed(2)})`);
+  check(JSON.stringify(b.shape) === shape0, `${deg} degrees: the paper changed shape`);
+}
+// turning on the floor: the feet stay on the floor and do not skate about
+{
+  const w = E.createWorld(0), b = w.buddies[0];
+  for (let f = 0; f < 60; f++) E.step(w, [0, 0]);
+  let x0 = Infinity, x1 = -Infinity, low = Infinity, high = -Infinity;
+  for (let f = 0; f < 4 * QUARTER; f++) { E.step(w, [K.RR, 0]); const hx = E.hipX(b), foot = E.hipY(b) + b.leg; x0 = Math.min(x0, hx); x1 = Math.max(x1, hx); low = Math.min(low, foot); high = Math.max(high, foot); }
+  check(x1 - x0 < 0.8, `turning right round should keep the feet roughly in place (they moved ${(x1 - x0).toFixed(2)})`);
+  check(low > 11.9 && high < 12.05, `turning should keep the feet on the floor (feet between ${low.toFixed(2)} and ${high.toFixed(2)})`);
+}
+// the side-on levels: lying on your side now means standing on your legs along the long edge
+{
+  const Q = QUARTER, cen = (r) => E.centroid(r);
+  // Limbo: turn onto your side, crouch and push the ball under the bar
+  const limbo = (ctl) => solve(lvl('Limbo'), (w, f) => ctl(w.buddies[1], w.props[0], f), 1500);
+  w = limbo((b, ball, f) => [0, f < Q ? K.RR : K.C | (ball.x < 8.95 ? K.R : 0)]);
+  check(w.won, `scripted solve of Limbo failed (ball at ${w.props[0].x.toFixed(2)})`);
+  w = limbo((b, ball) => [0, K.C | (ball.x < 8.95 ? K.R : 0)]);
+  check(!w.won && w.buddies[1].x < 4, 'Limbo should not be passable crouching upright');
+  w = limbo((b, ball, f) => [0, f < Q ? K.RR : ball.x < 8.95 ? K.R : 0]);
+  check(!w.won && w.buddies[1].x < 4, 'Limbo should not be passable on your side without crouching');
+  // Lie down: one on its side, one standing
+  let i = lvl('Lie down'), c0 = cen(LEVELS[i].parts[0]), c1 = cen(LEVELS[i].parts[1]);
+  w = solve(i, (w, f) => [f < Q ? K.RR : steer(w.buddies[0], c0[0], 0.03), steer(w.buddies[1], c1[0], 0.03)]);
+  check(w.won, `scripted solve of Lie down failed (score ${w.score.toFixed(2)})`);
+  // Hat trick: climb onto your buddy, then turn onto your side on top
+  i = lvl('Hat trick'); c0 = cen(LEVELS[i].parts[0]); c1 = cen(LEVELS[i].parts[1]);
+  w = solve(i, (w) => { const [a, b] = w.buddies, onTop = a.y < b.y - 1.2;
+    const ka = !onTop ? steer(a, b.x - 0.1, 0.05) | (Math.abs(a.x - b.x) < 1.5 && a.grounded ? K.J : 0) : (a.a > -Math.PI / 2 + 0.03 ? K.RL : 0) | steer(a, c1[0], 0.03);
+    return [ka, steer(b, c0[0], 0.03)]; }, 2400);
+  check(w.won, `scripted solve of Hat trick failed (score ${w.score.toFixed(2)})`);
+  // Mind the gap: drop into the pit on your side and crouch, so the ball rolls over you
+  w = solve(lvl('Mind the gap'), (w, f) => { const [a, b] = w.buddies, ball = w.props[0];
+    return [f > Q + 120 && ball.x < 8.95 ? K.R : 0, f < Q ? K.RR : steer(b, 5.16, 0.03) | K.C]; }, 2400);
+  check(w.won, `scripted solve of Mind the gap failed (ball at ${w.props[0].x.toFixed(2)}, ${w.props[0].y.toFixed(2)})`);
 }
 
-console.log(fail ? `\n${fail} check(s) failed` : `Snip Buddies: ${LEVELS.length} levels load, settle, are deterministic and solvable in principle; snipping maths, 10 scripted solves (5 of them leg puzzles) and the legs-needed checks pass.`);
+console.log(fail ? `\n${fail} check(s) failed` : `Snip Buddies: ${LEVELS.length} levels load, settle, are deterministic and solvable in principle; snipping maths, 14 scripted solves (9 of them leg puzzles), the legs-needed checks and legs at every angle pass.`);
 process.exit(fail ? 1 : 0);

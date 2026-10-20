@@ -219,7 +219,7 @@ export function heroGameScreen(app, { id, level = 0 }) {
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
   cv.addEventListener('contextmenu', (e) => e.preventDefault());
 
-  function results(rawScore, line, { coins = 0, stars = null, passed = null } = {}) {
+  function results(rawScore, line, { coins = 0, stars = null, passed = null, stats = null, challenges = null } = {}) {
     if (!alive) return;
     const score = Math.max(0, game.unit === 'm' ? Math.round(rawScore * 10) / 10 : Math.round(rawScore));
     const prev = h.best[id] || 0, isBest = !game.levels && score > prev;
@@ -238,6 +238,8 @@ export function heroGameScreen(app, { id, level = 0 }) {
       <div class="big">${game.levels && passed === false ? 'Try again' : esc(game.levels ? (game.resultTitle ? game.resultTitle(level) : 'Level complete') : scoreText(game, score))}</div>
       ${line ? `<p>${esc(line)}</p>` : ''}
       ${!game.levels ? `<p class="sub">${isBest || !prev ? (prev ? `Previous best ${esc(scoreText(game, prev))}` : 'First score on the board') : `Best ${esc(scoreText(game, prev))}`}</p>` : ''}
+      ${stats ? `<div class="hero-stats">${stats.map(([k, v]) => `<div><b>${esc(v)}</b><span>${esc(k)}</span></div>`).join('')}</div>` : ''}
+      ${challenges ? `<ul class="hero-chal">${challenges.map((c) => `<li class="${c.done ? 'done' : ''}"><i></i>${esc(c.text)}<em>${c.done ? `+${c.reward}` : ''}</em></li>`).join('')}</ul>` : ''}
       ${coins ? `<div class="earned">+${coinHTML(coins)} coins</div>` : ''}
       <div class="stack">
         ${nextLevel ? '<button class="btn hero-btn" data-r="next">Next level</button>' : ''}

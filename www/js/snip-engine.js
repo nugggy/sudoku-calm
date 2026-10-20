@@ -13,8 +13,10 @@ export const FILL_WIN = 0.82;               // fill score needed to finish a fil
 export const DT = 1 / 60;
 const SUB = 2, G = 30, SPEED = 4.2, JUMP = 12, ROT = 2.4;
 const LEG_RATE = 3.2;      // how fast legs bend or stretch, units a second
-const LEG_HW = 0.42;       // half the width of the leg support (both legs and boots)
-const UPRIGHT = 0.7;       // tilt (radians) past which the legs tuck away and the paper rests on the ground
+const LEG_HW = 0.42;       // half the width of the leg support (both legs and boots) under a flat or round bottom
+const HW_MIN = 0.16;       // and under a sharp corner, where the feet stand close together
+const HIP_BAND = 0.16;     // outline points this close to the lowest point count as the bottom of the paper
+const HIP_RATE = 3.0;      // how fast the hips slide along the outline as the buddy turns, units a second
 // input bits (T: stand tall)
 export const K = { L: 1, R: 2, J: 4, C: 8, RL: 16, RR: 32, T: 64 };
 
@@ -107,7 +109,7 @@ export const freshShape = () => FRESH.ring.map((p) => p.slice());
 // Spawn points in the levels give the middle of the old 1.7 tall sheet on the ground, so the feet are 0.85 below.
 function makeBuddy(i, x, y) {
   const foot = y + 0.85, by = foot - LEG_N - FRESH.bottom;
-  const b = { kind: 'buddy', i, x, y: by, a: 0, vx: 0, vy: 0, leg: LEG_N, im: 1, grounded: false, gvx: 0, jumpT: 0, face: FACE0.slice(), spawn: [x, by] };
+  const b = { kind: 'buddy', i, x, y: by, a: 0, vx: 0, vy: 0, leg: LEG_N, hdx: 0, hw: LEG_HW, im: 1, grounded: false, gvx: 0, jumpT: 0, face: FACE0.slice(), spawn: [x, by] };
   setShape(b, freshShape());
   return b;
 }
@@ -123,22 +125,57 @@ export function worldRing(b, ring = b.shape) {
 }
 
 // ---------- legs ----------
-const wrapA = (a) => Math.atan2(Math.sin(a), Math.cos(a));
-export const isUpright = (b) => Math.abs(wrapA(b.a)) < UPRIGHT;
-// Where the legs join the paper: the lowest point of the paper close under the middle (world y).
+// The legs always hang straight down from the lowest part of the paper, whichever way up the buddy is, so a
+// buddy on its side or upside down can still crouch and stand tall. b.hdx is where the hips are (world x, as an
+// offset from the middle of the paper) and b.hw is half the spread of the feet; both slide smoothly as it turns.
+// Where the hips want to be: the middle of the lowest part of the outline, and how wide that part is.
+export function hipTarget(b, wr = worldRing(b, b.col)) {
+  let maxY = -Infinity;
+  for (const p of wr) if (p[1] > maxY) maxY = p[1];
+  // the span of the outline below the band line, measured where its edges cross that line
+  const yb = maxY - HIP_BAND;
+  let x0 = Infinity, x1 = -Infinity;
+  for (let i = 0, n = wr.length; i < n; i++) {
+    const p = wr[i], q = wr[(i + 1) % n];
+    if (p[1] >= yb) { if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; }
+    if ((p[1] >= yb) !== (q[1] >= yb)) { const x = p[0] + ((q[0] - p[0]) * (yb - p[1])) / (q[1] - p[1]); if (x < x0) x0 = x; if (x > x1) x1 = x; }
+  }
+  return { dx: (x0 + x1) / 2 - b.x, hw: Math.max(HW_MIN, Math.min(LEG_HW, (x1 - x0) / 2)) };
+}
+export const hipX = (b) => b.x + (b.hdx || 0);
+// Where the legs join the paper (world y): the lowest point of the paper close above the hips.
 export function hipY(b, wr = worldRing(b, b.col)) {
+  const hx = hipX(b), hw = (b.hw || LEG_HW) + 0.03;
   let y = -Infinity, any = -Infinity;
-  for (const p of wr) { if (p[1] > any) any = p[1]; if (Math.abs(p[0] - b.x) <= LEG_HW + 0.03 && p[1] > y) y = p[1]; }
+  for (const p of wr) { if (p[1] > any) any = p[1]; if (Math.abs(p[0] - hx) <= hw && p[1] > y) y = p[1]; }
   return y > -Infinity ? y : any;
 }
-// The legs as something solid: an upright box under the paper, from just inside the paper down to the feet.
+// The legs as something solid: an upright box under the hips, from just inside the paper down to the feet.
 export function legRing(b, wr) {
   if (b.kind !== 'buddy' || b.leg < 0.03) return null;
-  const hy = hipY(b, wr);
-  return resample(rectRing([b.x - LEG_HW, hy - 0.12, LEG_HW * 2, b.leg + 0.12]), 0.14);
+  const hy = hipY(b, wr), hx = hipX(b), hw = b.hw || LEG_HW;
+  return resample(rectRing([hx - hw, hy - 0.12, hw * 2, b.leg + 0.12]), 0.14);
 }
-// Leg length the controls ask for.
-const legWant = (b, k) => (!isUpright(b) ? 0 : k & K.C ? LEG_C : k & K.T ? LEG_T : LEG_N);
+// Leg length the controls ask for (at any angle).
+const legWant = (b, k) => (k & K.C ? LEG_C : k & K.T ? LEG_T : LEG_N);
+const clampTo = (v, m) => Math.max(-m, Math.min(m, v));
+// Turning: on the ground the buddy turns about its hips, so the feet stay planted.
+function turn(b, da) {
+  if (!da) return;
+  if (b.grounded) {
+    const px = hipX(b), py = hipY(b), c = Math.cos(da), s = Math.sin(da), dx = b.x - px, dy = b.y - py;
+    b.x = px + dx * c - dy * s; b.y = py + dx * s + dy * c;
+    b.hdx = px - b.x;
+  }
+  b.a += da;
+}
+// The hips slide along the outline towards its lowest part. On the ground the paper moves over the feet,
+// rather than the feet skating along the floor.
+function slideHips(b, h) {
+  const tg = hipTarget(b), d = clampTo(tg.dx - b.hdx, HIP_RATE * h);
+  b.hdx += d; if (b.grounded) b.x -= d;
+  b.hw += clampTo(tg.hw - b.hw, HIP_RATE * h);
+}
 
 // ---------- world ----------
 export function createWorld(idx) {
@@ -233,8 +270,9 @@ export function step(w, inputs) {
       if (dir || b.grounded) b.vx += Math.max(-acc * h, Math.min(acc * h, target - b.vx));
       b.jumpT = Math.max(0, b.jumpT - h);
       if (k & K.J && b.grounded && b.jumpT === 0) { b.vy = -JUMP; b.jumpT = 0.3; b.grounded = false; }
-      b.a += ((k & K.RR ? 1 : 0) - (k & K.RL ? 1 : 0)) * ROT * h;
-      b.leg += Math.max(-LEG_RATE * h, Math.min(LEG_RATE * h, legWant(b, k) - b.leg));
+      turn(b, ((k & K.RR ? 1 : 0) - (k & K.RL ? 1 : 0)) * ROT * h);
+      slideHips(b, h);
+      b.leg += clampTo(legWant(b, k) - b.leg, LEG_RATE * h);
     }
     const dyn = [...w.buddies, ...w.props];
     for (const b of dyn) {
@@ -251,7 +289,7 @@ export function step(w, inputs) {
         if (b.sharp.some((i) => Math.hypot(wr[i][0] - bl.x, wr[i][1] - bl.y) < bl.r + 0.04)) { bl.popped = true; w.events.push({ k: 'pop', x: bl.x, y: bl.y }); break; }
       }
     }
-    // each body is its paper plus, for an upright buddy, its legs
+    // each body is its paper plus, for a buddy, its legs
     const groups = dyn.map((b) => { const r = worldRing(b, b.col), l = legRing(b, r); return l ? [r, l] : [r]; });
     for (let it = 0; it < 5; it++) {
       let any = false;
@@ -333,6 +371,7 @@ export function snip(w, p) {
   local = local.map(([x, y]) => [x - cx, y - cy]);
   const ca = Math.cos(other.a), sa = Math.sin(other.a);
   other.x += cx * ca - cy * sa; other.y += cx * sa + cy * ca;
+  other.hdx -= cx * ca - cy * sa;
   other.face = [other.face[0] - cx, other.face[1] - cy];
   setShape(other, local);
   w.events.push({ k: 'snip', by: p });
@@ -343,6 +382,7 @@ export function resetShape(w, p) {
   const ca = Math.cos(b.a), sa = Math.sin(b.a), dx = b.face[0] - FACE0[0], dy = b.face[1] - FACE0[1];
   // put the original sheet back where the face is, so the buddy does not jump around
   b.x += dx * ca - dy * sa; b.y += dx * sa + dy * ca;
+  b.hdx -= dx * ca - dy * sa;
   b.face = FACE0.slice();
   setShape(b, freshShape());
   b.y -= 0.05;
@@ -351,4 +391,4 @@ export function resetShape(w, p) {
 export const shapeOf = (b) => ({ s: b.shape.map((p) => [+p[0].toFixed(4), +p[1].toFixed(4)]), f: b.face.map((v) => +v.toFixed(4)) });
 export function applyShape(b, d) { b.face = d.f; setShape(b, d.s); }
 // A short fingerprint of the moving parts, used by the tests to check determinism.
-export const stateHash = (w) => [...w.buddies, ...w.props].map((b) => [b.x, b.y, b.a, b.vx, b.vy, b.leg || 0].map((v) => v.toFixed(6)).join(',')).join('|') + `|${w.score}|${w.won}`;
+export const stateHash = (w) => [...w.buddies, ...w.props].map((b) => [b.x, b.y, b.a, b.vx, b.vy, b.leg || 0, b.hdx || 0].map((v) => v.toFixed(6)).join(',')).join('|') + `|${w.score}|${w.won}`;

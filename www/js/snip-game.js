@@ -7,7 +7,7 @@ import { el, $, $$, dialog, toast, confetti, sheet, esc, closeTopOverlay } from 
 import { sfx, buzz } from './sound.js';
 import { helpSheet, levelHome } from './kit.js';
 import { lan } from './lan.js';
-import { LEVELS, W, H, K, DT, FILL_WIN, createWorld, step, snip, resetShape, worldRing, shapeOf, applyShape, hipY } from './snip-engine.js';
+import { LEVELS, W, H, K, DT, FILL_WIN, createWorld, step, snip, resetShape, worldRing, shapeOf, applyShape, hipY, hipX } from './snip-engine.js';
 import { BW, BH, uWithTop } from './snip-body.js';
 
 const SB = () => store.snip || (store.snip = { level: 0, done: {}, name: '' });
@@ -18,7 +18,7 @@ const FACES = ['face_a', 'face_f'];
 export const SNIP_LEVEL_COUNT = LEVELS.length;
 export const snipHelp = () => helpSheet('How to play Snip Buddies', [
   'You and a friend each control a paper buddy. Work together to solve each little puzzle: fill an outline, pop balloons, roll a ball into place or hold down buttons.',
-  'Move, jump and turn with your buttons. Your legs bend to <b>crouch</b> and stretch to <b>stand tall</b>, so you can go lower or reach higher. Turn right over and your legs tuck away.',
+  'Move, jump and turn with your buttons. Your legs bend to <b>crouch</b> and stretch to <b>stand tall</b>, so you can go lower or reach higher. Your legs always hang down from the bottom of your paper, so you can crouch and stand tall on your side or upside down too.',
   'Stand so you overlap your buddy, then press <b>Snip</b> to cut away the part of them that is behind you. Your buddy can snip you too.',
   'Balloons only pop on a sharp point, so snip a corner to make one. The reset button gives you a fresh sheet of paper.',
   '<b>Stuck?</b> Tap the bulb to see the shape each of you needs to become. It starts to glow after a while, and opens by itself if you have been stuck for a long time or keep starting over.',
@@ -168,7 +168,7 @@ const WANT = {
   point: { d: uWithTop([[0, 0.75], [BW / 2, 0], [BW, 0.75]]), say: 'Snip a sharp point' },
   spike: { d: uWithTop([[0, 0.95], [0.52, 0.95], [0.52, 0], [0.78, 0], [0.78, 0.95], [BW, 0.95]]), say: 'Snip a long thin spike' },
   scoop: { d: uWithTop([[0, 0], [0.27, 0], [0.27, 0.85], [1.03, 0.85], [1.03, 0], [BW, 0]]), say: 'Snip a scoop out of the top' },
-  flat: { d: uWithTop([[0, 0], [BW, 0]]).map(([x, y]) => [BH - y, x]), say: 'Turn over and lie flat (your legs tuck away)' },
+  flat: { d: uWithTop([[0, 0], [BW, 0]]).map(([x, y]) => [BH - y, x]), say: 'Turn onto your side (crouch to get lower)' },
 };
 const HINT_PULSE = 40, HINT_AUTO = 75, HINT_RESETS = 3, HINT_SNIPS = 8; // seconds, or tries, before we offer help
 // A small picture of a shape, drawn to the same scale for every shape so sizes can be compared.
@@ -334,12 +334,12 @@ export function snipGameScreen(app, { idx, mode = 'local' }) {
   // compact snapshot: buddy and prop poses, balloon and button states, score
   const r3 = (v) => Math.round(v * 1000) / 1000;
   function snapshot() {
-    return { t: 's', f: w.frame, b: w.buddies.map((b) => [r3(b.x), r3(b.y), r3(b.a), r3(b.leg), b.grounded ? 1 : 0]), o: w.props.map((b) => [r3(b.x), r3(b.y), r3(b.a)]),
+    return { t: 's', f: w.frame, b: w.buddies.map((b) => [r3(b.x), r3(b.y), r3(b.a), r3(b.leg), b.grounded ? 1 : 0, r3(b.hdx), r3(b.hw)]), o: w.props.map((b) => [r3(b.x), r3(b.y), r3(b.a)]),
       p: w.balloons.reduce((s, b, i) => s | (b.popped ? 1 << i : 0), 0), n: w.buttons.reduce((s, b, i) => s | (b.on ? 1 << i : 0), 0), sc: r3(w.score) };
   }
   function applySnap(m, m2, t) {
     const L = (a, b) => (m2 ? a + (b - a) * t : a);
-    m.b.forEach((v, i) => { const b = w.buddies[i], v2 = m2 ? m2.b[i] : v; b.x = L(v[0], v2[0]); b.y = L(v[1], v2[1]); b.a = L(v[2], v2[2]); b.leg = L(v[3], v2[3]); b.grounded = !!(m2 || m).b[i][4]; });
+    m.b.forEach((v, i) => { const b = w.buddies[i], v2 = m2 ? m2.b[i] : v; b.x = L(v[0], v2[0]); b.y = L(v[1], v2[1]); b.a = L(v[2], v2[2]); b.leg = L(v[3], v2[3]); b.grounded = !!(m2 || m).b[i][4]; b.hdx = L(v[5], v2[5]); b.hw = L(v[6], v2[6]); });
     m.o.forEach((v, i) => { const b = w.props[i], v2 = m2 ? m2.o[i] : v; b.x = L(v[0], v2[0]); b.y = L(v[1], v2[1]); b.a = L(v[2], v2[2]); });
     const s = m2 || m;
     w.balloons.forEach((b, i) => { b.popped = !!(s.p & (1 << i)); });
@@ -471,10 +471,10 @@ export function snipGameScreen(app, { idx, mode = 'local' }) {
     }
     A.px = b.x; A.py = b.y; A.wasG = b.grounded; A.land = Math.max(0, A.land - dt * 4);
     if (b.leg < 0.03) return;
-    const wr = worldRing(b, b.col), hy = hipY(b, wr), foot = hy + b.leg;
+    const wr = worldRing(b, b.col), hy = hipY(b, wr), foot = hy + b.leg, hx = hipX(b), spread = b.hw * 0.714; // 0.3 apart from the middle under a full sheet
     const S = 0.27; // each leg bone, so normal legs are nearly straight and crouching bends the knees
     for (const side of [-1, 1]) {
-      const lx = b.x + side * 0.3, top = Math.min(foot - 0.02, (paperBottomAt(wr, lx) ?? hy) - 0.06);
+      const lx = hx + side * spread, top = Math.min(foot - 0.02, (paperBottomAt(wr, lx) ?? hy) - 0.06);
       const ph = A.ph + (side > 0 ? Math.PI : 0);
       const swing = b.grounded ? Math.sin(ph) * 0.17 * A.walk : Math.sin(t * 7 + side) * 0.05;
       const fx = lx + swing, fy = foot - (b.grounded ? Math.max(0, Math.cos(ph)) * 0.1 * A.walk : 0);

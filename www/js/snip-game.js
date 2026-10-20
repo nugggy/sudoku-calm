@@ -7,6 +7,7 @@ import { el, $, $$, dialog, toast, confetti, sheet, esc, closeTopOverlay } from 
 import { sfx, buzz } from './sound.js';
 import { helpSheet, levelHome } from './kit.js';
 import { lan } from './lan.js';
+import { webJoinPanel } from './webjoin.js';
 import { LEVELS, W, H, K, DT, FILL_WIN, createWorld, step, snip, resetShape, worldRing, shapeOf, applyShape, hipY, hipX } from './snip-engine.js';
 import { BW, BH, uWithTop } from './snip-body.js';
 
@@ -58,6 +59,9 @@ export function snipHomeScreen(app) {
 export function snipLobbyScreen(app) {
   const sb = SB();
   let state = 'idle', found = new Map(), hostInfo = null, alive = true;
+  // web: this page is a friend's browser opened from the host phone; webAsked/webInfo: the host is also serving a browser friend
+  const web = lan.mode === 'web';
+  let webAsked = false, webInfo = null;
   const root = el(`<section class="screen snip-theme snip-lobby">
     <header class="topbar"><button class="icon-btn" data-act="back" aria-label="Back">${icon.back}</button><div class="title">Play on two phones</div>
       <button class="icon-btn" data-act="help" aria-label="How to play">${icon.help}</button></header>
@@ -67,7 +71,13 @@ export function snipLobbyScreen(app) {
 
   function render() {
     if (!lan.available) { body.innerHTML = '<p class="snip-note">Playing on two phones is not available here.</p>'; return; }
-    if (state === 'idle') {
+    if (state === 'idle' && web) {
+      body.innerHTML = `<div class="snip-hero-wrap">${snipCardArt('snip-hero')}</div>
+        <p class="snip-note">Join the game on <b>${esc(lan.ip())}</b></p>
+        <label class="snip-field"><span>Your name</span><input data-el="name" maxlength="14" value="${esc(sb.name || '')}" placeholder="Player" autocomplete="off"></label>
+        <button class="btn snip-btn" data-act="join">Join the game<small>Your friend picks the level</small></button>
+        <p class="snip-note">Keep this page open while you play. If your phone locks, unlock it and the game carries on.</p>`;
+    } else if (state === 'idle') {
       body.innerHTML = `<div class="snip-hero-wrap">${snipCardArt('snip-hero')}</div>
         <label class="snip-field"><span>Your name</span><input data-el="name" maxlength="14" value="${esc(sb.name || '')}" placeholder="Player" autocomplete="off"></label>
         <button class="btn snip-btn" data-act="host">Host a game<small>Your friend joins you</small></button>
@@ -76,12 +86,13 @@ export function snipLobbyScreen(app) {
     } else if (state === 'hosting') {
       body.innerHTML = `<div class="snip-wait"><div class="spinner"></div><h2>Waiting for your friend</h2>
         <p>Ask them to open Snip Buddies, tap <b>Play on two phones</b>, then <b>Join a game</b> and pick <b>${esc(myName())}</b>.</p>
-        ${hostInfo && hostInfo.ip && lan.mode === 'wifi' ? `<div class="snip-ip"><small>If your game does not show up, they can type this address</small><b>${esc(hostInfo.ip)}</b></div>` : ''}
+        ${hostInfo && hostInfo.ip && lan.mode === 'app' ? `<div class="snip-ip"><small>If your game does not show up, they can type this address</small><b>${esc(hostInfo.ip)}</b></div>` : ''}
+        ${lan.webHostAvailable ? (webAsked ? webJoinPanel(webInfo, 'snip') : '<button class="btn secondary snip-webbtn" data-act="web">Friend on a browser<small>iPhone or computer, no app needed</small></button>') : ''}
         <button class="btn ghost" data-act="cancel">Cancel</button></div>`;
     } else if (state === 'joining') {
       body.innerHTML = `<div class="section-title">Games nearby</div>
         <div class="snip-found">${found.size ? [...found].map(([id, n]) => `<button class="sheet-item" data-join="${esc(id)}">${esc(n)}<small>Tap to join</small></button>`).join('') : '<div class="snip-searching"><div class="spinner"></div>Looking for games on this network</div>'}</div>
-        ${lan.mode === 'wifi' ? `<div class="section-title">Or join by address</div>
+        ${lan.mode === 'app' ? `<div class="section-title">Or join by address</div>
         <div class="snip-ipjoin"><input data-el="ip" inputmode="decimal" placeholder="192.168.0.10" autocomplete="off"><button class="btn snip-btn" data-act="joinip">Join</button></div>` : ''}
         <button class="btn ghost" data-act="cancel">Cancel</button>`;
     } else if (state === 'connecting') {
@@ -105,13 +116,14 @@ export function snipLobbyScreen(app) {
   const off = lan.on((e) => {
     if (!alive) return;
     if (e.type === 'hosting') { hostInfo = e; if (state === 'hosting') render(); }
+    else if (e.type === 'webhost') { webInfo = e; if (state === 'hosting') render(); }
     else if (e.type === 'found') { found.set(e.id, e.name); if (state === 'joining') render(); }
     else if (e.type === 'lost') { found.delete(e.id); if (state === 'joining') render(); }
     else if (e.type === 'connected') {
       net.role = e.role; state = 'connected'; lan.stopDiscover();
       lan.send({ t: 'hi', name: myName(), v: 1 });
       sfx.unit(); buzz(30); render();
-    } else if (e.type === 'error') { toast(e.msg, 3000); if (state === 'connecting') { state = 'joining'; render(); } }
+    } else if (e.type === 'error') { toast(e.msg, 3000); if (state === 'connecting') { state = web ? 'idle' : 'joining'; render(); } }
     else if (e.type === 'closed') { if (net.inGame) return; reset('Your friend has left'); }
     else if (e.type === 'msg') {
       const m = e.data;
@@ -123,7 +135,9 @@ export function snipLobbyScreen(app) {
     const a = e.target.closest('[data-act]')?.dataset.act;
     if (a === 'back') return app.back();
     if (a === 'help') return snipHelp();
-    if (a === 'host') { sb.name = $('[data-el="name"]', root).value.trim().slice(0, 14); save(); state = 'hosting'; hostInfo = null; lan.host(myName()); render(); }
+    if (a === 'host') { sb.name = $('[data-el="name"]', root).value.trim().slice(0, 14); save(); state = 'hosting'; hostInfo = null; webAsked = false; webInfo = null; lan.host(myName()); render(); }
+    else if (a === 'join' && web) { sb.name = $('[data-el="name"]', root).value.trim().slice(0, 14); save(); state = 'connecting'; render(); lan.join('web'); }
+    else if (a === 'web') { webAsked = true; webInfo = null; render(); lan.webStart(); }
     else if (a === 'join') { sb.name = $('[data-el="name"]', root).value.trim().slice(0, 14); save(); state = 'joining'; found = new Map(); lan.discover(); render(); }
     else if (a === 'joinip') { const ip = $('[data-el="ip"]', root).value.trim(); if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) { toast('Type the address shown on the host phone'); return; } state = 'connecting'; render(); lan.joinIp(ip, 0); }
     else if (a === 'cancel') reset();

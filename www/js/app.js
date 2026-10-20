@@ -5,6 +5,7 @@ import { icon, logoSvg, brandSvg } from './icons.js';
 import { el, $, $$, sheet, dialog, toast, closeTopOverlay, esc } from './ui.js';
 import { sfx } from './sound.js';
 import { native, checkForUpdate, REPO } from './native.js';
+import { lan } from './lan.js';
 import { WHATS_NEW, cmpVersion } from './whatsnew.js';
 import { sudokuScreen, startGame, continueLabel, prefetch } from './sudoku-game.js';
 import { sortHomeScreen, sortGameScreen, sortLevelsScreen, sortHelp, cutie } from './sort-game.js';
@@ -401,6 +402,7 @@ function landingScreen() {
     body.innerHTML = `
       <div class="brand-row">${brandSvg}<span>GameHub</span></div>
       <div class="landing-head"><h1>${greeting()}</h1><p>What would you like to play?</p></div>
+      ${lan.webGuest ? `<button class="web-join-card" data-act="webjoin"><b>Join your friend's game</b><small>${lan.webGuest === 'snip' ? 'Snip Buddies' : 'Play Together'} on ${esc(lan.ip())}</small></button>` : ''}
       ${CATEGORIES.map((cat) => `<div class="cat-title">${cat}</div><div class="game-grid">${GAMES.filter((g) => g.cat === cat).map((g) => `
         <button class="game-card ${g.theme}" data-game="${g.id}">
           ${isNew(g) ? '<span class="new-badge">New</span>' : ''}<div class="game-art">${g.art()}</div>
@@ -412,6 +414,7 @@ function landingScreen() {
   }
   root.addEventListener('click', (e) => {
     if (e.target.closest('[data-act="settings"]')) return app.go('settings');
+    if (e.target.closest('[data-act="webjoin"]')) return openWebJoin();
     const c = e.target.closest('[data-game]');
     if (!c) return;
     sfx.tap();
@@ -668,6 +671,7 @@ function aboutScreen() {
         <p><b>Chess.</b> The chess pieces are the Cburnett set by Colin M.L. Burnett, from Wikimedia Commons, used under the BSD licence (see img/chess/LICENSE.txt).</p><br>
         <p><b>Sweet Drop.</b> The sweet, stars, bubbles and spikes are from Kenney's Platformer Art Candy and Jumper Pack, and the frog is from Kenney's Animal Pack (kenney.nl, CC0).</p><br>
         <p><b>Play Together.</b> Discs, stones, chips, beads, box tiles, card backs, X and O marks, paddles, motorbikes and explosions are from Kenney's Puzzle Pack 2, Boardgame Pack, UI Pack, Racing Pack and Pirate Pack (kenney.nl, CC0). The warships are the Sea Warfare set by Lowder2, the balloons are by emacsabino and the football is by gothicfan95, all CC0 from opengameart.org. The chess pieces are the Cburnett set (see Chess above). Memory Duel's animal pictures are from Kenney's Animal Pack (kenney.nl, CC0). Word Duel checks words against the SCOWL lists used across the app. The pullers, cowboys and goalkeepers in Tug of War, Quick Draw and Penalty Shootout are from Kenney's Toon Characters, and the Sumo Bumpers are from Kenney's Shape Characters, and the tanks, shells and explosions in Tank Duel are from Kenney's Tanks pack (kenney.nl, CC0). Air Hockey, Paddle Ball and the boards are drawn by the app.</p><br>
+        <p><b>Playing in a browser.</b> The QR code that lets a friend join from their browser is made with QR Code Generator by Kazuhiko Arase (MIT licence). "QR Code" is a registered trademark of DENSO WAVE INCORPORATED.</p><br>
         <p><b>Snip Buddies.</b> Faces, tiles, balloons and clouds are from Kenney's Shape Characters and Background Elements (kenney.nl, CC0). Snipping uses polygon-clipping by Mike Fogel (MIT licence), with splaytree (MIT) and robust-predicates (Unlicense).</p><br>
         <p><b>Turtle Bay.</b> The turtles, tortoises, crab, jellyfish, gull, kelp, coral and lily pad are by Poly by Google, the green turtle by jeremy, the long-necked turtle by Crispy_Prawn and the seagrass by Laney XR Labs, all under CC-BY 3.0 (creativecommons.org/licenses/by/3.0). The fish, lettuce, log and rock are by Quaternius and the bag by Kenney (CC0). All were found on poly.pizza and rendered into pictures for this app. River Hop's cars and trees come from Moto Mania.</p><br>
         <p><b>Marvel Heroes.</b> An unofficial fan project, not made or endorsed by Marvel or Disney. Marvel characters, names and related marks belong to Marvel. All hero artwork is drawn by the app on Kenney's Toon Characters; robots and gems are from Kenney's Robot Pack and Puzzle Pack 2 (kenney.nl, CC0). Thor's hammer is "mjolner" by OZZYBOI and the arc reactor is "Arc Reactor" by Heiko Jakob, both from poly.pizza under CC-BY 3.0 (creativecommons.org/licenses/by/3.0).</p><br>
@@ -742,6 +746,12 @@ applyTheme();
 checkWhatsNew(); // before seedOpened, which tells it whether this is an existing player
 seedOpened();
 app.reset('games');
+// Opened in a friend's browser from the host phone's address: go straight to joining their game.
+function openWebJoin() {
+  app.reset('games');
+  if (lan.webGuest === 'snip') { app.go('snip'); app.go('sniplobby'); } else { app.go('duo'); app.go('duolobby', {}); }
+}
+if (lan.webGuest) openWebJoin();
 loadLevels();
 prefetch('easy');
 // Check for a new version every time the app opens, and again when it comes back after a while

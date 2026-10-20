@@ -11,6 +11,17 @@ function ac() {
   return ctx;
 }
 
+// iPhones only let sound start inside a real tap, so wake the audio on the first touch or click and play silence.
+export function unlockAudio() {
+  const c = ac(); if (!c) return false;
+  try { const b = c.createBuffer(1, 1, 22050), src = c.createBufferSource(); src.buffer = b; src.connect(c.destination); src.start(0); } catch { /* ignore */ }
+  return c.state === 'running';
+}
+if (typeof document !== 'undefined') {
+  const wake = () => { if (unlockAudio()) ['touchend', 'click', 'keydown'].forEach((t) => document.removeEventListener(t, wake, true)); };
+  ['touchend', 'click', 'keydown'].forEach((t) => document.addEventListener(t, wake, true));
+}
+
 function tone(freq, dur, { type = 'sine', vol = 0.12, delay = 0, slideTo = null } = {}) {
   const c = ac(); if (!c) return;
   const t = c.currentTime + delay;

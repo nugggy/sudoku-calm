@@ -45,6 +45,8 @@ public class NativeBridge {
     @JavascriptInterface public void lanSend(String json) { lan().send(json); }
     @JavascriptInterface public void lanClose() { lan().close(); }
     @JavascriptInterface public String lanIp() { return LanLink.localIp(); }
+    /** While hosting on wifi, also serve the game so a friend can join from a browser (see WebHost). */
+    @JavascriptInterface public void lanWebStart() { lan().webStart(); }
 
     // ---------- The same over Bluetooth (see BtLink). Events also arrive through window.__lan, tagged via: "bt". ----------
     @JavascriptInterface public boolean btAvailable() { return activity.getPackageManager().hasSystemFeature(android.content.pm.PackageManager.FEATURE_BLUETOOTH); }

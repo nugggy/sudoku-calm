@@ -46,6 +46,10 @@ class LanLink {
     private WifiManager.MulticastLock lock;
     private final Map<String, NsdServiceInfo> found = new HashMap<>();
     private int gen = 0; // bumps on every close, so stale threads stay quiet
+    private boolean hosting;      // waiting for a friend (app or browser)
+    private WebHost web;          // serves the game to a friend's browser while hosting (see WebHost)
+    private WebLink webLink;      // that browser friend's session
+    private boolean webGuest;     // the friend is in a browser rather than the app
 
     LanLink(MainActivity activity) {
         this.activity = activity;
@@ -85,6 +89,7 @@ class LanLink {
     // ---------- host ----------
     synchronized void host(String name) {
         close();
+        hosting = true;
         final int g = gen;
         try {
             server = new ServerSocket();
@@ -111,13 +116,46 @@ class LanLink {
             try {
                 Socket s = ss.accept();
                 synchronized (LanLink.this) {
-                    if (g != gen) { s.close(); return; }
+                    if (g != gen || webGuest) { s.close(); return; }
                     try { ss.close(); } catch (Exception ignored) { }
                     server = null;
                     attach(s, "host", g);
                 }
-            } catch (Exception e) { if (g == gen) emit("error", "msg", "Hosting stopped"); }
+            } catch (Exception e) { synchronized (LanLink.this) { if (g == gen && !webGuest) emit("error", "msg", "Hosting stopped"); } }
         }).start();
+    }
+
+    // ---------- a friend in a browser (iPhone or computer) ----------
+    /** While hosting on wifi, also serve the game at http://ip:port/ so a friend can play in their browser. */
+    synchronized void webStart() {
+        if (!hosting) { emit("error", "msg", "Start hosting first"); return; }
+        if (web != null) { emit("webhost", "ip", localIp(), "port", web.port()); return; }
+        final int g = gen;
+        webLink = new WebLink(new WebLink.Events() {
+            public boolean canAccept() { synchronized (LanLink.this) { return g == gen && hosting && sock == null && !webGuest; } }
+            public void connected(String peer) {
+                synchronized (LanLink.this) {
+                    if (g != gen) return;
+                    webGuest = true; hosting = false;
+                    // stop advertising to app users: this game is taken
+                    if (reg != null) { try { nsd.unregisterService(reg); } catch (Exception ignored) { } reg = null; }
+                    if (server != null) { try { server.close(); } catch (Exception ignored) { } server = null; }
+                }
+                emit("connected", "role", "host", "peer", peer, "web", true);
+            }
+            public void message(String json) { if (g == gen) emit("msg", "data", json); }
+            public void reconnecting() { if (g == gen) emit("reconnecting"); }
+            public void resumed() { if (g == gen) emit("resumed"); }
+            public void closed() { if (g == gen) { emit("closed"); synchronized (LanLink.this) { if (g == gen) close(); } } }
+        });
+        web = new WebHost(path -> activity.getAssets().open(path), webLink);
+        try {
+            int port = web.start(WebHost.PREFERRED_PORT);
+            emit("webhost", "ip", localIp(), "port", port);
+        } catch (Exception e) {
+            web = null; webLink.shutdown(); webLink = null;
+            emit("error", "msg", "Could not start the browser game");
+        }
     }
 
     // ---------- discovery ----------
@@ -193,6 +231,7 @@ class LanLink {
             s.setTcpNoDelay(true);
             s.setKeepAlive(true);
             sock = s;
+            hosting = false;
             out = new BufferedWriter(new OutputStreamWriter(s.getOutputStream(), StandardCharsets.UTF_8));
             writer = Executors.newSingleThreadExecutor();
             final BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream(), StandardCharsets.UTF_8));
@@ -208,6 +247,7 @@ class LanLink {
     }
 
     synchronized void send(String line) {
+        if (webLink != null && webLink.active()) { if (line != null) webLink.send(line); return; }
         final BufferedWriter w = out;
         final ExecutorService ex = writer;
         if (w == null || ex == null || line == null) return;
@@ -219,6 +259,9 @@ class LanLink {
 
     synchronized void close() {
         gen++;
+        hosting = false; webGuest = false;
+        if (webLink != null) { webLink.shutdown(); webLink = null; }
+        if (web != null) { web.stop(); web = null; }
         stopDiscover();
         if (reg != null) { try { nsd.unregisterService(reg); } catch (Exception ignored) { } reg = null; }
         if (server != null) { try { server.close(); } catch (Exception ignored) { } server = null; }

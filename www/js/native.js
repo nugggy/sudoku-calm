@@ -28,6 +28,8 @@ export const lanBridge = N && N.lanHost ? {
   host: (name) => N.lanHost(name), discover: () => N.lanDiscover(), stopDiscover: () => N.lanStopDiscover(),
   join: (id) => N.lanJoin(id), joinIp: (ip, port) => N.lanJoinIp(ip, port), send: (s) => N.lanSend(s),
   close: () => N.lanClose(), ip: () => N.lanIp(),
+  // Serve the game to a friend's browser while hosting (WebHost.java). Missing on older app shells.
+  webStart: N.lanWebStart ? () => N.lanWebStart() : null,
   // Bluetooth (BtLink), on app versions that have it. Same events, tagged via: 'bt'.
   bt: N.btHost ? {
     available: () => { try { return !!N.btAvailable(); } catch { return false; } },

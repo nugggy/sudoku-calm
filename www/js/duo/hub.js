@@ -15,6 +15,7 @@ import { el, $, $$, sheet, toast, confetti } from '../ui.js';
 import { sfx, buzz } from '../sound.js';
 import { lan } from '../lan.js';
 import { makeCtx, esc } from './core.js';
+import { webJoinPanel } from '../webjoin.js';
 
 export { makePair, makeCtx } from './core.js';
 
@@ -167,6 +168,10 @@ function gameHelp(g) {
 export function duoLobbyScreen(app, { id = null } = {}) {
   appRef = app;
   let state = session.connected ? 'connected' : 'start', via = DB().via || 'wifi', found = new Map(), hostInfo = null, err = '';
+  // web: this page is a friend's browser opened from the host phone; webAsked/webInfo: the host is also serving a browser friend
+  const web = lan.mode === 'web';
+  let webAsked = false, webInfo = null;
+  if (web) via = 'wifi';
   const root = el(`<section class="screen duo-theme duo-lobby">
     <header class="topbar"><button class="icon-btn" data-act="back" aria-label="Back">${icon.back}</button><div class="title">Two phones</div>
       <button class="icon-btn" data-act="help" aria-label="How to play">${icon.help}</button></header>
@@ -177,7 +182,15 @@ export function duoLobbyScreen(app, { id = null } = {}) {
   async function render() {
     await loadGames();
     const want = id && gameById(id);
-    if (state === 'start') {
+    if (state === 'start' && web) {
+      body.innerHTML = `<div class="duo-hero">${duoCardArt()}</div>
+        <p class="duo-for">Join the game on <b>${esc(lan.ip())}</b></p>
+        <label class="duo-label">Your name</label>
+        <input class="duo-input" data-el="name" maxlength="14" placeholder="Player" value="${esc(DB().name || '')}">
+        <button class="btn duo-btn" data-act="join">Join the game<small>Your friend picks what to play</small></button>
+        <p class="duo-note">Keep this page open while you play. If your phone locks, unlock it and the game carries on.</p>
+        ${err ? `<p class="duo-warn">${esc(err)}</p>` : ''}`;
+    } else if (state === 'start') {
       body.innerHTML = `<div class="duo-hero">${duoCardArt()}</div>
         ${want ? `<p class="duo-for">Connecting to play <b>${esc(want.name)}</b></p>` : ''}
         <label class="duo-label">Your name</label>
@@ -193,6 +206,7 @@ export function duoLobbyScreen(app, { id = null } = {}) {
         <p>Ask your friend to open Play Together on their phone, choose ${via === 'bt' ? 'Bluetooth' : 'Wifi or hotspot'}, and tap Join.</p>
         <p class="duo-me">You appear as <b>${esc(via === 'bt' && hostInfo?.device ? hostInfo.device : myName())}</b></p>
         ${via === 'wifi' && hostInfo?.ip ? `<p class="duo-ip">Or join by address: <b>${esc(hostInfo.ip)}</b></p>` : ''}
+        ${via === 'wifi' && lan.webHostAvailable ? (webAsked ? webJoinPanel(webInfo, 'duo') : '<button class="btn secondary duo-webbtn" data-act="web">Friend on a browser<small>iPhone or computer, no app needed</small></button>') : ''}
         <button class="btn ghost" data-act="cancel">Cancel</button></div>`;
     } else if (state === 'joining') {
       body.innerHTML = `<div class="duo-join"><h2>${via === 'bt' ? 'Nearby phones' : 'Games nearby'}</h2>
@@ -215,6 +229,7 @@ export function duoLobbyScreen(app, { id = null } = {}) {
 
   const off = lan.on((e) => {
     if (e.type === 'hosting' && state === 'hosting') { hostInfo = e; render(); }
+    else if (e.type === 'webhost' && state === 'hosting') { webInfo = e; render(); }
     else if (e.type === 'found' && state === 'joining') { found.set(e.id, e); render(); }
     else if (e.type === 'lost' && state === 'joining') { found.delete(e.id); render(); }
     else if (e.type === 'error') { err = e.msg || 'Something went wrong'; if (state !== 'connected') { state = 'start'; lan.close(); } render(); toast(err, 3500); }
@@ -244,8 +259,10 @@ export function duoLobbyScreen(app, { id = null } = {}) {
     const a = e.target.closest('[data-act]')?.dataset.act;
     if (a === 'back') app.back();
     else if (a === 'help') duoHelp();
-    else if (a === 'host') { err = ''; state = 'hosting'; hostInfo = null; render(); lan.host({ via, name: myName() }); }
+    else if (a === 'host') { err = ''; state = 'hosting'; hostInfo = null; webAsked = false; webInfo = null; render(); lan.host({ via, name: myName() }); }
+    else if (a === 'join' && web) { err = ''; state = 'connecting'; render(); lan.join('web'); }
     else if (a === 'join') { err = ''; state = 'joining'; found = new Map(); render(); lan.discover({ via }); }
+    else if (a === 'web') { webAsked = true; webInfo = null; render(); lan.webStart(); }
     else if (a === 'joinip') { const ip = $('[data-el="ip"]', root).value.trim(); if (!ip) return; state = 'connecting'; render(); lan.joinIp(ip, 0); }
     else if (a === 'cancel') { lan.close(); state = 'start'; render(); }
     else if (a === 'leave') { disconnect(); state = 'start'; render(); }

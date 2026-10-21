@@ -2,6 +2,14 @@
 // tools/release.mjs uses the same text for the GitHub release notes (it will not publish a version missing here).
 // Keep each line short and plain: what was added or changed, from the player's point of view.
 export const WHATS_NEW = [
+  { v: '1.19.0', items: [
+    'New: Land Grab. Loop out from your land and back again to claim it, against nine computer animals, on six maps.',
+    'Arrow Away: from level 15, every fourth level is a 3D shape. Drag to turn it, and watch arrows follow the surface round corners.',
+    'New colourblind mode in Settings. It adds symbols, outlines and labels wherever a game uses colour to mean something.',
+    'Gridlock has a new set of 320 car parks that get harder sooner, with easier breathers between. Your stars reset for the new set, but your unlocked levels stay.',
+    'Snip Buddies and Play Together: much less lag when playing on two phones.',
+    'Guesswork: in dark theme, keyboard letters show their colours again.',
+  ] },
   { v: '1.18.0', items: [
     'Play Together and Snip Buddies: a friend without the app can join from their browser, on an iPhone or a computer. Tap Host, then Friend on a browser, and they scan the QR code.',
     'If their phone locks or the wifi drops for a moment, the game reconnects and carries on.',

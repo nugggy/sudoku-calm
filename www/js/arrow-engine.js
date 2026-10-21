@@ -10,6 +10,7 @@
 // arrows away in reverse order therefore always works. Removing an arrow only ever frees space,
 // so tapping any arrow that can leave never spoils the puzzle.
 import { mulberry32 } from './sudoku-engine.js';
+import { make3DLevel, shape3d, SHAPE_NAMES } from './arrow3d-engine.js';
 
 export const DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]]; // up, right, down, left
 export const COLOURS = 10;
@@ -35,7 +36,17 @@ export function levelShape(i) {
   return { w, h, shape };
 }
 
+// From level 15, every fourth level is a 3D shape (see arrow3d-engine.js); k counts them, so they grow too.
+export const is3D = (i) => i >= 14 && (i - 14) % 4 === 0;
+const k3d = (i) => (i - 14) / 4;
+export function levelLabel(i) {
+  if (is3D(i)) { const s = shape3d(k3d(i)); return `3D ${SHAPE_NAMES[s.shape].toLowerCase()}`; }
+  const s = levelShape(i);
+  return `${s.w} × ${s.h} grid`;
+}
+
 export function makeLevel(i) {
+  if (is3D(i)) return make3DLevel(k3d(i), (i + 1) * 7919 + 13);
   const { w, h, shape } = levelShape(i);
   const rng = mulberry32((i + 1) * 7919 + 13);
   const n = w * h;

@@ -59,3 +59,10 @@
 .ar-round b { position: absolute; top: -5px; right: -5px; min-width: 24px; height: 24px; padding: 0 6px; border-radius: 12px; background: #4fbf3f; color: #fff; font-size: 13px; font-weight: 800; display: grid; place-items: center; border: 2px solid #fff; }
 .ar-round b.none { background: #9aa0a6; }
 .ar-tool:active .ar-round { transform: translateY(2px); box-shadow: 0 2px 0 #1f3f94; }
+
+/* 3D levels */
+.ar-3d { position: relative; touch-action: none; }
+.ar-3d canvas { position: absolute; inset: 0; display: block; cursor: grab; }
+.ar-3d canvas:active { cursor: grabbing; }
+.ar-turn { position: absolute; left: 50%; top: 6px; transform: translateX(-50%); padding: 8px 16px; border-radius: 18px; background: rgba(36, 48, 77, .78); color: #fff; font-weight: 700; font-size: 14px; pointer-events: none; transition: opacity .4s; }
+.ar-turn.gone { opacity: 0; }

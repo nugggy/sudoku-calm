@@ -4,16 +4,18 @@ import { icon } from './icons.js';
 import { el, $, dialog, toast, confetti } from './ui.js';
 import { sfx, buzz } from './sound.js';
 import { helpSheet, levelHome } from './kit.js';
-import { makeLevel, levelShape, canExit, occupancy, isSolved, hint, DIRS } from './arrow-engine.js';
+import { makeLevel, levelLabel, canExit, occupancy, isSolved, hint, DIRS } from './arrow-engine.js';
+import { arrow3dGameScreen } from './arrow3d-game.js';
 
 const AB = () => store.arrow;
 const HEARTS = 3, HINTS = 3, SPEED = 18; // cells per second
-export const arrowHelp = () => helpSheet('How to play Arrow Away', [
+export const arrowHelp = (onClose) => helpSheet('How to play Arrow Away', [
   'Tap an arrow to send it off the board. It slides out in the direction its head points, and its tail follows the same path.',
   'An arrow can only leave if nothing is in front of it. If another arrow is in the way, it bumps into it and comes back, and you lose a heart.',
   'You have 3 hearts for each level. Clear every arrow to finish the level.',
   'Stuck? The hint button shows an arrow that can leave right now. You get 3 hints per level.',
-], 'arrow-btn');
+  'Every few levels the board is a 3D shape. Drag to turn it. Arrows follow the surface round corners and leave at an open edge, so look where each one will end up.',
+], 'arrow-btn', onClose);
 
 const levelCache = new Map();
 function level(i) {
@@ -61,7 +63,7 @@ export function arrowHomeScreen(app) {
   return levelHome({
     app, cls: 'arrow-theme', title: 'Arrow Away', help: arrowHelp,
     hero: `<div class="ar-hero">${miniArt('ar-mini')}</div>`,
-    play: () => { const s = levelShape(AB().level); return { label: `Play level ${AB().level + 1}`, sub: `${s.w} × ${s.h} grid` }; },
+    play: () => ({ label: `Play level ${AB().level + 1}`, sub: levelLabel(AB().level) }),
     onPlay: () => app.go('arrowgame', { idx: AB().level }),
     levels: () => ({ count: Math.max(30, Math.ceil((AB().level + 15) / 5) * 5), current: AB().level, done: (i) => i < AB().level }),
     onLevel: (i) => app.go('arrowgame', { idx: i }),
@@ -69,10 +71,11 @@ export function arrowHomeScreen(app) {
 }
 
 // ---------- Game ----------
-const heartSVG = (on) => `<svg class="ar-heart ${on ? '' : 'lost'}" viewBox="0 0 24 24"><path d="M12 21C5 15.5 2 12.3 2 8.4 2 5.4 4.4 3 7.3 3c1.9 0 3.6 1 4.7 2.6C13.1 4 14.8 3 16.7 3 19.6 3 22 5.4 22 8.4c0 3.9-3 7.1-10 12.6z"/></svg>`;
+export const heartSVG = (on) => `<svg class="ar-heart ${on ? '' : 'lost'}" viewBox="0 0 24 24"><path d="M12 21C5 15.5 2 12.3 2 8.4 2 5.4 4.4 3 7.3 3c1.9 0 3.6 1 4.7 2.6C13.1 4 14.8 3 16.7 3 19.6 3 22 5.4 22 8.4c0 3.9-3 7.1-10 12.6z"/></svg>`;
 
 export function arrowGameScreen(app, { idx }) {
   const ab = AB();
+  if (level(idx).kind === '3d') return arrow3dGameScreen(app, { idx, L: level(idx) });
   const L = level(idx), { w, h, mask, arrows } = L;
   let removed = arrows.map(() => false), hearts = HEARTS, hints = HINTS, done = false, alive = true;
   const moving = new Set(); // arrows currently sliding

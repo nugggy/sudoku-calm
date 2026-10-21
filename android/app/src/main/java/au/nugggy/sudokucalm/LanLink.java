@@ -4,6 +4,7 @@ import android.content.Context;
 import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 
 import org.json.JSONObject;
 
@@ -44,6 +45,7 @@ class LanLink {
     private NsdManager.RegistrationListener reg;
     private NsdManager.DiscoveryListener disc;
     private WifiManager.MulticastLock lock;
+    private WifiManager.WifiLock fast; // keeps wifi out of power saving while a game is connected
     private final Map<String, NsdServiceInfo> found = new HashMap<>();
     private int gen = 0; // bumps on every close, so stale threads stay quiet
     private boolean hosting;      // waiting for a friend (app or browser)
@@ -84,6 +86,21 @@ class LanLink {
         } catch (Exception ignored) { }
         good.addAll(other);
         return good.isEmpty() ? "" : good.get(0);
+    }
+
+    // Phones put wifi into power saving between packets, which bunches game messages together and adds a lag of
+    // a few hundred milliseconds. Hold a low latency lock while someone is connected.
+    @SuppressWarnings("deprecation")
+    private void keepWifiAwake() {
+        if (fast != null) return;
+        try {
+            WifiManager wm = (WifiManager) activity.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+            if (wm == null) return;
+            int mode = Build.VERSION.SDK_INT >= 29 ? WifiManager.WIFI_MODE_FULL_LOW_LATENCY : WifiManager.WIFI_MODE_FULL_HIGH_PERF;
+            fast = wm.createWifiLock(mode, "gamehub-play");
+            fast.setReferenceCounted(false);
+            fast.acquire();
+        } catch (Exception ignored) { fast = null; }
     }
 
     // ---------- host ----------
@@ -137,6 +154,7 @@ class LanLink {
                 synchronized (LanLink.this) {
                     if (g != gen) return;
                     webGuest = true; hosting = false;
+                    keepWifiAwake();
                     // stop advertising to app users: this game is taken
                     if (reg != null) { try { nsd.unregisterService(reg); } catch (Exception ignored) { } reg = null; }
                     if (server != null) { try { server.close(); } catch (Exception ignored) { } server = null; }
@@ -232,6 +250,7 @@ class LanLink {
             s.setKeepAlive(true);
             sock = s;
             hosting = false;
+            keepWifiAwake();
             out = new BufferedWriter(new OutputStreamWriter(s.getOutputStream(), StandardCharsets.UTF_8));
             writer = Executors.newSingleThreadExecutor();
             final BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream(), StandardCharsets.UTF_8));
@@ -268,5 +287,6 @@ class LanLink {
         if (sock != null) { try { sock.close(); } catch (Exception ignored) { } sock = null; }
         if (writer != null) { writer.shutdownNow(); writer = null; }
         out = null;
+        if (fast != null) { try { fast.release(); } catch (Exception ignored) { } fast = null; }
     }
 }

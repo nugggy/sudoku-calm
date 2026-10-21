@@ -207,7 +207,8 @@ export function snipGameScreen(app, { idx, mode = 'local' }) {
   let remoteBits = 0, sentBits = -1, sentAt = 0;  // host: the guest's buttons; guest: last sent
   const faceT = [{ n: '', t: 0 }, { n: '', t: 0 }];
   const parts = [];
-  let snaps = [];                                 // guest: recent snapshots for smooth movement
+  let snaps = [], playF = null;                   // guest: recent snapshots, and the host frame being shown
+  const FRAME_MS = DT * 1000;
   const root = el(`<section class="screen snip-theme snip-game ${mode === 'local' ? 'local' : 'netmode'}">
     <header class="topbar"><button class="icon-btn" data-act="back" aria-label="Back">${icon.back}</button>
       <div class="title">${idx + 1}. ${esc(lv.name)}</div>
@@ -336,7 +337,11 @@ export function snipGameScreen(app, { idx, mode = 'local' }) {
       else if (m.t === 'reset') doReset(1);
       else if (m.t === 'menu') { toast(`${net.peer || 'Your friend'} went back to the levels`); moving = true; app.back(); }
     } else if (mode === 'guest') {
-      if (m.t === 's') { snaps.push({ at: performance.now(), m }); if (snaps.length > 8) snaps.shift(); const lag = $('[data-el="lag"]', root); if (lag) lag.remove(); }
+      if (m.t === 's') {
+        if (snaps.length && m.f <= snaps[snaps.length - 1].m.f) { snaps = []; playF = null; } // the host restarted the level
+        snaps.push({ m }); if (snaps.length > 12) snaps.shift();
+        const lag = $('[data-el="lag"]', root); if (lag) lag.remove();
+      }
       else if (m.t === 'shape') applyShape(w.buddies[m.p], m.d);
       else if (m.t === 'ev') m.e.forEach(react);
       else if (m.t === 'fx') toast(m.k === 'small' ? 'That would leave too little paper' : 'Overlap your buddy to snip them');
@@ -405,12 +410,19 @@ export function snipGameScreen(app, { idx, mode = 'local' }) {
     if (mode === 'guest') {
       const k = bits[me];
       if (k !== sentBits || now - sentAt > 150) { lan.send({ t: 'in', k }); sentBits = k; sentAt = now; }
-      // show the host's world a little in the past so movement stays smooth between snapshots
-      const t = now - 70;
-      let a = null, b = null;
-      for (let i = snaps.length - 1; i >= 0; i--) if (snaps[i].at <= t) { a = snaps[i]; b = snaps[i + 1] || null; break; }
-      if (!a && snaps.length) a = snaps[0];
-      if (a) applySnap(a.m, b && b.m, b ? Math.min(1, (t - a.at) / Math.max(1, b.at - a.at)) : 0);
+      // Play the host's world a few frames behind the newest snapshot, so movement stays smooth between snapshots.
+      // Playback runs a little faster or slower to hold that gap, so snapshots that arrive bunched together
+      // (or a host phone running behind) still play out evenly instead of stuttering or jumping back.
+      if (snaps.length) {
+        const goal = snaps[snaps.length - 1].m.f - 6;
+        if (playF === null || Math.abs(goal - playF) > 60) playF = goal;
+        else playF += (dt * 1000 / FRAME_MS) * Math.max(0.5, Math.min(1.5, 1 + (goal - playF) * 0.05));
+        const f = playF;
+        let a = null, b = null;
+        for (let i = snaps.length - 1; i >= 0; i--) if (snaps[i].m.f <= f) { a = snaps[i]; b = snaps[i + 1] || null; break; }
+        if (!a && snaps.length) a = snaps[0];
+        if (a) applySnap(a.m, b && b.m, b ? Math.max(0, Math.min(1, (f - a.m.f) / Math.max(1, b.m.f - a.m.f))) : 0);
+      }
     } else if (!done || mode === 'local' || mode === 'host') {
       acc += dt;
       let n = 0;

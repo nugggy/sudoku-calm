@@ -4,6 +4,7 @@ import { store, save, fmtTime } from './store.js';
 import { icon } from './icons.js';
 import { el, $, $$, sheet, confetti, toast } from './ui.js';
 import { sfx, buzz } from './sound.js';
+import { cbOn, symbolFor, symbolSvg } from './cb.js';
 
 export const CATS = [
   { img: 'cat01.svg', name: 'Mango' }, { img: 'cat02.svg', name: 'Biscuit' }, { img: 'cat03.svg', name: 'Pepper' },
@@ -46,7 +47,8 @@ function getLevel(idx) {
 export function meowHelp() {
   const cat = catSrc();
   sheet(`<h2>How to play</h2><div class="help-body">
-    <p>Place one cat in every <b>row</b>, every <b>column</b> and every <b>colour region</b>.</p>
+    <p>Place one cat in every <b>row</b>, every <b>column</b> and every <b>colour region</b>.</p>${cbOn() ? `
+    <p>Each region has a thick outline and its own small symbol in the corner of every cell.</p>` : ''}
     <p>Cats need personal space. Two cats can never touch, not even corner to corner.</p>
     <div class="demo">
       <div><span></span>Empty</div>
@@ -143,9 +145,19 @@ export function meowGameScreen(app, { idx }) {
     <div class="meow-timer" data-el="timer"></div>
   </section>`);
   const boardEl = $('.mboard', root);
+  // colourblind mode: thick walls where regions meet, and a small symbol per region in each cell's corner
+  const cb = cbOn(), wall = n > 10 ? 1.5 : 2;
+  const sym = (i) => cb ? `<i class="msym">${symbolSvg(symbolFor(regions[i]), { size: 12, fill: 'rgba(60, 40, 30, .45)', stroke: 'none', cls: '' })}</i>` : '';
+  function walls(i) {
+    const r = (i / n) | 0, c = i % n, R = regions[i];
+    const side = (rr, cc) => (rr < 0 || cc < 0 || rr >= n || cc >= n ? wall * 2 : regions[rr * n + cc] !== R ? wall : 0);
+    const [t, rt, b, l] = [side(r - 1, c), side(r, c + 1), side(r + 1, c), side(r, c - 1)];
+    return [t && `inset 0 ${t}px 0 var(--mwall)`, rt && `inset -${rt}px 0 0 var(--mwall)`, b && `inset 0 -${b}px 0 var(--mwall)`, l && `inset ${l}px 0 0 var(--mwall)`, 'inset 0 0 0 .5px rgba(60, 40, 30, .16)'].filter(Boolean).join(',');
+  }
+  if (cb) boardEl.classList.add('cb');
   for (let i = 0; i < n * n; i++) {
     // every region has its own colour (there are more colours than regions)
-    boardEl.appendChild(el(`<div class="mcell" data-i="${i}" style="background:${COLOURS[regions[i] % COLOURS.length]}"></div>`));
+    boardEl.appendChild(el(`<div class="mcell" data-i="${i}" style="background:${COLOURS[regions[i] % COLOURS.length]}${cb ? `;--rb:${walls(i)}` : ''}">${sym(i)}</div>`));
   }
   const cells = $$('.mcell', boardEl);
   const q = (k) => $(`[data-el="${k}"]`, root);
@@ -170,8 +182,8 @@ export function meowGameScreen(app, { idx }) {
       const want = s === CAT ? 'cat' : s === CROSS ? 'x' : blocked && blocked.has(i) ? 'dot' : '';
       if (c.dataset.show !== want) {
         c.dataset.show = want;
-        c.innerHTML = want === 'cat' ? `<img src="${src}" alt="cat">` : want === 'x' ? `<span class="x" style="color:#5a4a42">${icon.x}</span>` : want === 'dot' ? '<span class="dot"></span>' : '';
-        if (want === 'x') c.firstElementChild.firstElementChild.style.cssText = 'width:100%;height:100%';
+        c.innerHTML = sym(i) + (want === 'cat' ? `<img src="${src}" alt="cat">` : want === 'x' ? `<span class="x" style="color:#5a4a42">${icon.x}</span>` : want === 'dot' ? '<span class="dot"></span>' : '');
+        if (want === 'x') c.querySelector('.x svg').style.cssText = 'width:100%;height:100%';
       }
       c.classList.toggle('bad', bad.has(i));
       c.classList.toggle('hint', !!hint && hint.cells.includes(i));

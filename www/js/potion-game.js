@@ -1,5 +1,6 @@
 // Potion Pour: pour coloured potions between flasks until every flask holds a single colour.
 import { store, save } from './store.js';
+import { cbOn } from './cb.js';
 import { icon } from './icons.js';
 import { el, $, $$, dialog, toast, confetti } from './ui.js';
 import { sfx, buzz } from './sound.js';
@@ -177,6 +178,8 @@ function tween(ms, fn) {
 
 export function potionGameScreen(app, { idx }) {
   const pb = PB();
+  // symbols show with this game's own toggle, or always while colourblind mode is on
+  const symOn = () => cbOn() || !!pb.symbols;
   let s = null, start = null, hist = [], undos = UNDOS, extra = false, moves = 0, sel = -1, busy = false, done = false, alive = true;
   const root = el(`<section class="screen potion-theme potion-game">
     <header class="topbar"><button class="icon-btn" data-act="back" aria-label="Back">${icon.back}</button>
@@ -211,7 +214,7 @@ export function potionGameScreen(app, { idx }) {
   function flaskHTML(i, pop) {
     const f = s[i];
     return `<button class="pf ${i === sel ? 'sel' : ''}" data-f="${i}" style="width:${fw}px" aria-label="Flask ${i + 1}">
-      <div class="pf-b">${flaskSVG(segsOf(f), { cork: isFull(f), symbols: pb.symbols, pop: i === pop })}</div></button>`;
+      <div class="pf-b">${flaskSVG(segsOf(f), { cork: isFull(f), symbols: symOn(), pop: i === pop })}</div></button>`;
   }
   function render(pop = -1) {
     if (!s) return;
@@ -227,7 +230,7 @@ export function potionGameScreen(app, { idx }) {
     $('[data-act="flask"]', root).classList.toggle('off', extra);
     q('moves').textContent = `Moves ${moves}`;
     q('cols').textContent = `${recipe(idx).k} colours`;
-    root.classList.toggle('symbols', !!pb.symbols);
+    root.classList.toggle('symbols', symOn());
     if (pop >= 0) sparkle(pop);
   }
 
@@ -277,7 +280,7 @@ export function potionGameScreen(app, { idx }) {
       const left = n * (1 - t), th = dir * angleFor(fEnd + left);
       set(Tfor(th), th); srcLiq(left, th);
       const got = n * Math.max(0, Math.min(1, (t - 0.08) / 0.92));
-      liqB.innerHTML = liquidSVG([...tgtBase, { c: colour, n: got }], 0, pb.symbols && got > 0.99 * n);
+      liqB.innerHTML = liquidSVG([...tgtBase, { c: colour, n: got }], 0, symOn() && got > 0.99 * n);
       stream.style.height = `${Math.max(0, tgtTop(before.tgt.length + got) - D[1]) * Math.min(1, t * 6)}px`;
     });
     // 3. stream breaks off and the flask goes home
@@ -349,7 +352,10 @@ export function potionGameScreen(app, { idx }) {
     const a = e.target.closest('[data-act]')?.dataset.act;
     if (a === 'back') app.back();
     else if (a === 'help') potionHelp();
-    else if (a === 'symbols') { pb.symbols = !pb.symbols; save(); render(); toast(pb.symbols ? 'Colour symbols on' : 'Colour symbols off'); }
+    else if (a === 'symbols') {
+      if (cbOn()) { toast('Symbols stay on while colourblind mode is on in Settings'); return; }
+      pb.symbols = !pb.symbols; save(); render(); toast(pb.symbols ? 'Colour symbols on' : 'Colour symbols off');
+    }
     else if (!s || busy || done) return;
     else if (a === 'undo') {
       if (!undos) { toast('No undos left for this level'); return; }

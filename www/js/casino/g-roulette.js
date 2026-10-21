@@ -4,6 +4,7 @@ import { el, $ } from '../ui.js';
 import { WHEEL, colourOf, rouletteNums, rouletteReturn, roulettePays, rouletteLabel, makeRng } from './rb-engine.js';
 import { rbSound } from './rb-sound.js';
 import { store, save } from '../store.js';
+import { cbOn } from '../cb.js';
 
 const rng = makeRng();
 const at = (r, c) => r * 3 + c + 1;
@@ -79,7 +80,7 @@ export default {
           <div class="rl-grid" data-el="grid">${[...Array(12)].map((_, r) => [0, 1, 2].map((c) => { const n = at(r, c); return `<div class="rl-cell"><span class="rl-num ${colourOf(n)}">${n}</span></div>`; }).join('')).join('')}</div>
           <div class="rl-cols">${[1, 2, 3].map((c) => `<button class="rl-out" data-bet="col:${c}">2 to 1</button>`).join('')}</div>
           <div class="rl-chips" data-el="chips"></div></div>
-        <div class="rl-outside">${OUTSIDE.map(([k, t]) => `<button class="rl-out ${k}" data-bet="${k}">${k === 'red' || k === 'black' ? '<i></i>' : t}</button>`).join('')}</div>
+        <div class="rl-outside">${OUTSIDE.map(([k, t]) => `<button class="rl-out ${k}" data-bet="${k}">${k === 'red' || k === 'black' ? `<i></i><span class="rl-cbw">${k === 'red' ? 'Red' : 'Black'}</span>` : t}</button>`).join('')}</div>
       </div></div>
       <div class="rb-bar"><div data-el="picker"></div>
         <div class="rb-actions"><button class="cs-btn" data-act="undo">Undo</button><button class="cs-btn" data-act="clear">Clear</button><button class="cs-btn" data-act="rebet">Rebet</button><button class="cs-btn gold" data-act="spin">Spin</button></div>
@@ -206,13 +207,16 @@ function drawWheel(g, size, rot, ballA, ballR, t) {
   // pockets
   g.save(); g.translate(c, c); g.rotate(rot);
   const r0 = R * 0.5, r1 = R * 0.74, rn = R * 0.66;
+  const cb = cbOn(); // colourblind mode: a small white dot marks each red pocket
   WHEEL.forEach((n, i) => {
     const a0 = i * SEG - Math.PI / 2 - SEG / 2, a1 = a0 + SEG;
     g.fillStyle = n === 0 ? '#1d8f4e' : colourOf(n) === 'red' ? '#c8102e' : '#1b1b1f';
     g.beginPath(); g.arc(0, 0, r1, a0, a1); g.arc(0, 0, r0, a1, a0, true); g.closePath(); g.fill();
     g.strokeStyle = '#e8c56a'; g.lineWidth = Math.max(1, size * 0.004); g.beginPath(); g.moveTo(Math.cos(a0) * r0, Math.sin(a0) * r0); g.lineTo(Math.cos(a0) * r1, Math.sin(a0) * r1); g.stroke();
     g.save(); g.rotate(i * SEG); g.fillStyle = '#fff'; g.font = `700 ${Math.round(size * 0.034)}px system-ui, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText(String(n), 0, -rn); g.restore();
+    g.fillText(String(n), 0, -rn);
+    if (cb && colourOf(n) === 'red') { g.beginPath(); g.arc(0, -R * 0.55, size * 0.008, 0, TAU); g.fill(); }
+    g.restore();
   });
   g.strokeStyle = '#e8c56a'; g.lineWidth = size * 0.008; g.beginPath(); g.arc(0, 0, r1, 0, TAU); g.stroke(); g.beginPath(); g.arc(0, 0, r0, 0, TAU); g.stroke();
   // cone and turret

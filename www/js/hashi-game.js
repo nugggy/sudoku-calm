@@ -5,6 +5,7 @@ import { el, $, $$, dialog, toast, confetti } from './ui.js';
 import { sfx, buzz } from './sound.js';
 import { helpSheet, levelHome } from './kit.js';
 import { boardOf, buildBoard, edgeToward, isSolved, logicSolve } from './hashi-engine.js';
+import { cbOn } from './cb.js';
 
 const HS = () => store.hashi;
 const TIERS = ['', 'Easy', 'Medium', 'Hard', 'Expert'];
@@ -15,7 +16,8 @@ export const hashiHelp = () => helpSheet('How to play Island Hop', [
   'Join all the islands into one group by building bridges between them.',
   'The number on each island is how many bridges it needs. Bridges run straight across or down, cannot cross each other, and two islands can share one or two bridges.',
   'Drag from an island toward a neighbour to build a bridge. Do it again for a double bridge, and once more to take it away. You can also tap the water between two islands.',
-  'An island turns green when it has just the right number of bridges, and red when it has too many.',
+  cbOn() ? 'An island turns blue and gets a tick when it has just the right number of bridges. It turns orange with a dashed edge and a cross when it has too many.'
+    : 'An island turns green when it has just the right number of bridges, and red when it has too many.',
 ], 'hashi-btn');
 
 // ---------- Drawing (shared by the board, the home hero and the card art) ----------
@@ -39,12 +41,15 @@ function bridgeSvg(x1, y1, x2, y2, count, c, cls = '') {
 }
 
 // Round sandy island with its number; the top grows grass once the island is complete.
+// In colourblind mode a tick badge marks a complete island and a cross badge an over-full one (hidden otherwise by the css).
 function islandSvg(x, y, n, c, i = -1) {
-  const R = c * 0.4;
+  const R = c * 0.4, bx = R * 0.8, by = -R * 0.8, br = c * 0.15, k = br * 0.42;
   return `<g class="hs-isl" ${i >= 0 ? `data-i="${i}"` : ''} transform="translate(${x} ${y})"><g class="body">
     <circle class="shoal" r="${R * 1.2}"/><circle class="beach" r="${R}" cy="${c * 0.025}"/>
     <circle class="top" r="${R * 0.76}" cy="${-c * 0.02}"/><circle class="shine" r="${R * 0.3}" cx="${-R * 0.32}" cy="${-R * 0.4}"/>
-    <text class="num" y="${c * 0.005}" font-size="${c * 0.44}">${n}</text></g></g>`;
+    <text class="num" y="${c * 0.005}" font-size="${c * 0.44}">${n}</text>
+    <g class="mk mk-ok" transform="translate(${bx} ${by})"><circle r="${br}"/><path d="M${-k} 0L${-k * 0.25} ${k * 0.8}L${k} ${-k * 0.75}" stroke-width="${Math.max(1.5, c * 0.045)}"/></g>
+    <g class="mk mk-over" transform="translate(${bx} ${by})"><circle r="${br}"/><path d="M${-k * 0.8} ${-k * 0.8}L${k * 0.8} ${k * 0.8}M${k * 0.8} ${-k * 0.8}L${-k * 0.8} ${k * 0.8}" stroke-width="${Math.max(1.5, c * 0.045)}"/></g></g></g>`;
 }
 
 // A little fixed scene used by the home hero and the picker card.

@@ -37,6 +37,13 @@
 .pr-face.yellow { background: radial-gradient(circle at 38% 30%, #ffe27a, #f2bd2a 62%, #c99512); color: #3a2a05; }
 .pr-face.red { background: radial-gradient(circle at 38% 30%, #ff8e8e, #e5484d 62%, #b5282e); }
 .pr-face.blue { background: radial-gradient(circle at 38% 30%, #8fbaff, #3c7be0 62%, #2556a8); }
+/* colourblind mode: a pill naming the face colour, in the groove just above the face so it never covers the rule text */
+:root[data-cb="1"] .pr-face[data-col]::before {
+  content: attr(data-col); position: absolute; left: 50%; bottom: calc(100% + 3px); transform: translateX(-50%);
+  padding: 1px 8px 2px; border-radius: 99px; background: #e4f6ee; color: #0b2622;
+  font-size: 10.5px; font-weight: 900; letter-spacing: 1.2px; line-height: 1.25; white-space: nowrap; pointer-events: none;
+}
+:root[data-cb="1"] .pr-btn.won .pr-face::before, :root[data-cb="1"] .pr-btn.lost .pr-face::before { display: none; }
 .pr-tick { width: 1.9em; height: 1.9em; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
 
 /* picker card and home hero */

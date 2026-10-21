@@ -3,6 +3,7 @@
 // three new branches sprout higher up. Climb the 50 levels of the tree. Score is the height reached in metres,
 // plus a time bonus for reaching the top.
 import { Camera, FX, sprite, bone, ridge, rng, snd, buzz, clamp, fmt, roundRect } from './kit.js';
+import { cbOn } from '../cb.js';
 
 const GRAV = 9.8;
 const LEVELS = 50;
@@ -175,7 +176,7 @@ export default {
         // nudge new players when there is nothing above to reach
         hintT += dt;
         const above = slots.slice(Y.branch.level + 1, Y.branch.level + 3).some(Boolean);
-        if (!above && hintT > 2.5 && !ended) { ctx.prompt(Y.branch.wear === 2 ? 'Jump off this red branch to snap it' : 'No branch above. Wear branches out to grow more'); hintT = -6; }
+        if (!above && hintT > 2.5 && !ended) { ctx.prompt(Y.branch.wear === 2 ? `Jump off this ${cbOn() ? 'cracked' : 'red'} branch to snap it` : 'No branch above. Wear branches out to grow more'); hintT = -6; }
       } else if (Y.mode === 'fly') {
         Y.vy -= GRAV * dt; Y.x += Y.vx * dt; Y.y += Y.vy * dt;
         // in the air he straightens up and reaches for the next branch with his raised hand
@@ -259,6 +260,14 @@ export default {
       g.fillStyle = c1; g.strokeStyle = c2; g.lineWidth = 2;
       g.beginPath(); g.moveTo(-0.2 * z, -th); g.lineTo(L * z, -th * 0.4); g.lineTo(L * z + 4, 0); g.lineTo(L * z, th * 0.4); g.lineTo(-0.2 * z, th); g.closePath(); g.fill(); g.stroke();
       g.strokeStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.moveTo(0.2 * z, -th * 0.2); g.lineTo(L * z * 0.85, -th * 0.05); g.stroke();
+      // colourblind mode: wear shows as cracks too (one for gold, two deep ones for red)
+      if (b.wear && cbOn()) {
+        g.strokeStyle = 'rgba(30,14,4,.9)'; g.lineWidth = Math.max(2, z * 0.05); g.lineJoin = 'round'; g.lineCap = 'round';
+        for (const f of b.wear === 1 ? [0.5] : [0.32, 0.64]) {
+          const cx = f * L * z, h = th * (1 - f * 0.6), d = b.wear === 1 ? 0.6 : 1; // a gold crack runs part way, a red one right through
+          g.beginPath(); g.moveTo(cx - z * 0.04, -h); g.lineTo(cx + z * 0.06, -h * 0.3); g.lineTo(cx - z * 0.05, h * (2 * d - 1) * 0.4); g.lineTo(cx + z * 0.04, h * (2 * d - 1)); g.stroke();
+        }
+      }
       leafy(g, L * z * 0.92, -th * 1.3, z * 0.42 * b.grow, '#7ccf52', '#4b9a35');
       g.restore();
     }

@@ -8,6 +8,9 @@
 .rtd-side { display: flex; align-items: center; gap: 8px; min-width: 0; font-weight: 800; font-size: 14px; }
 .rtd-side span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 30vw; }
 .rtd-side i { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 0 2px rgba(255, 255, 255, .6); }
+/* colourblind mode (Light Cycles): the rider's symbol sits on the colour dot */
+.rtd-side i.cb-dot { width: 18px; height: 18px; display: grid; place-items: center; }
+.rtd-side i.cb-dot .cb-sym { display: block; }
 .rtd-side b { min-width: 38px; height: 38px; padding: 0 8px; border-radius: 12px; display: grid; place-items: center; font-size: 21px; font-weight: 900; font-variant-numeric: tabular-nums; background: var(--duo-panel, rgba(127, 127, 127, .15)); }
 .rtd-mid { font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; text-align: center; }
 

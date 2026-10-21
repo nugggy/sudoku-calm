@@ -66,6 +66,21 @@
 :root[data-theme="dark"] .hs-isl.done .top { fill: #46a84b; }
 :root[data-theme="dark"] .hs-isl.over .top { fill: #e0505a; }
 :root[data-theme="dark"] .hs-isl.sel .shoal, :root[data-theme="dark"] .hs-isl.cand .shoal { fill: rgba(140, 220, 255, .4); }
+/* colourblind mode: blue with a tick when complete, vermilion with a dashed edge and a cross when over-full */
+.hs-isl .mk { display: none; }
+.hs-isl .mk circle { stroke: #fff; stroke-width: 1.5; }
+.hs-isl .mk path { fill: none; stroke: #fff; stroke-linecap: round; stroke-linejoin: round; }
+.hs-isl .mk-ok circle { fill: #0072b2; }
+.hs-isl .mk-over circle { fill: #d55e00; }
+:root[data-cb="1"] .hs-isl.done .mk-ok, :root[data-cb="1"] .hs-isl.over .mk-over { display: inline; }
+:root[data-cb="1"] .hs-isl.done .top { fill: #56b4e9; }
+:root[data-cb="1"] .hs-isl.done .num { stroke: #0072b2; }
+:root[data-cb="1"] .hs-isl.over .top { fill: #e8873f; }
+:root[data-cb="1"] .hs-isl.over .num { stroke: #a34400; }
+:root[data-cb="1"] .hs-isl.over .beach { stroke: #d55e00; stroke-width: 2.5; stroke-dasharray: 4 3; }
+:root[data-theme="dark"][data-cb="1"] .hs-isl.done .top { fill: #3a9bd6; }
+:root[data-theme="dark"][data-cb="1"] .hs-isl.over .top { fill: #d86a24; }
+:root[data-theme="dark"] .hs-isl .mk circle { stroke: #0f1f29; }
 .hs-isl.press .body { animation: hs-press .18s ease-out; }
 .hs-isl.pop .body { animation: hs-pop .34s ease-out; }
 .hs-isl.shake .body { animation: hs-shake .3s; }

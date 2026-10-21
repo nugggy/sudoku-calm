@@ -22,6 +22,7 @@ const defaults = () => ({
     showTimer: true,
     unlimitedHints: false,
     fontScale: 1,
+    colourblind: false,       // add symbols and patterns, and avoid red against green (see cb.js)
     meowAutoX: false,
     meowTimer: true,
     autoUpdate: true,
@@ -53,6 +54,7 @@ const defaults = () => ({
   casino: { chips: 1000, best: 1000, topups: 0, lastTopup: 0, stats: {}, seenHelp: false, seenGames: {} },
   arrow: { level: 0, current: null, seenHelp: false },
   press: { reached: 0, seenHelp: false },
+  landgrab: { skin: 'pig', map: 'classic', best: 0, bests: {}, kills: 0, played: 0, seenHelp: false },
   yeti: { best: {}, played: {}, seen: {}, tourBest: 0 },
   moto: { coins: 0, owned: ['scooter'], bike: 'scooter', paint: {}, paints: ['factory'], rider: 'r1', best: {}, played: {}, seen: {}, level: {}, stars: {} },
   mahjong: { level: 0, best: {} },

@@ -107,6 +107,9 @@
 .c4-disc { position: relative; width: 84%; height: 84%; border-radius: 50%; display: block; z-index: 1; }
 .c4-disc.p0 { background: url(../img/duo/disc_red.webp) center / contain no-repeat; }
 .c4-disc.p1 { background: url(../img/duo/disc_yellow.webp) center / contain no-repeat; }
+/* colourblind mode: a symbol over each disc, and the last-move dot becomes a ring round the disc so it never hides the symbol */
+.c4-sym { position: absolute; left: 50%; top: 50%; width: 56%; height: 56%; transform: translate(-50%, -50%); pointer-events: none; }
+:root[data-cb="1"] .c4-cell.last .c4-disc::after { inset: -5%; background: none; box-shadow: 0 0 0 3px rgba(255, 255, 255, .85); }
 .dg-sw .c4-disc { width: 22px; height: 22px; }
 .c4-disc.drop { animation: c4-drop .35s cubic-bezier(.5, 0, .9, .5); }
 @keyframes c4-drop { from { transform: translateY(var(--fall)); } 85% { transform: translateY(4%); } to { transform: none; } }
@@ -146,6 +149,9 @@
 .db-img { pointer-events: none; animation: pop .3s; }
 .db-sw { display: block; border-radius: 5px; }
 .db-sw.p0 { background: url(../img/duo/box_red.webp) center / contain no-repeat; } .db-sw.p1 { background: url(../img/duo/box_blue.webp) center / contain no-repeat; }
+/* colourblind mode: the owner's symbol on claimed boxes and in the player bar */
+.db-sw > .cb-sym { display: block; margin: 4px; }
+.db-mk { pointer-events: none; }
 .art-dots { width: 96px; height: 64px; }
 .art-dots path { fill: none; stroke: #2a2f45; stroke-width: 3.5; stroke-linecap: round; }
 .art-dots circle { fill: #2a2f45; }

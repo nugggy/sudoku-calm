@@ -3,6 +3,7 @@
 // them to the glowing houses while they are still hot. A three-minute shift; tips are the score.
 import { Camera, FX, sprite, snd, buzz, clamp, fmt, roundRect, rng, sizeOf } from '../yeti/kit.js';
 import { drawBike, stat } from './kit.js';
+import { cbOn, symbolFor, drawSymbol } from '../cb.js';
 
 const N = 7;              // blocks across and down
 const P = 44;             // distance between road centrelines (m)
@@ -98,7 +99,8 @@ export default {
       const house = far[(R() * far.length) | 0] || houses[0];
       const dist = Math.abs(house.door.x - s.door.x) + Math.abs(house.door.y - s.door.y);
       const limit = 14 + dist / (7 + 3 * sp);
-      bag.push({ food: s.order.food, house, limit, time: limit, col: ORDER_COL[colourNext++ % 3] });
+      const ci = colourNext++ % 3;
+      bag.push({ food: s.order.food, house, limit, time: limit, col: ORDER_COL[ci], sym: symbolFor(ci) }); // sym: the colourblind mode cue
       s.order = null; s.cool = 4 + R() * 5;
       snd.pop(); snd.ding(1); buzz(15);
       fx.text(s.door.x, s.door.y + 3, 'Order collected', { color: '#fff', size: 18 });
@@ -267,6 +269,7 @@ export default {
         }
       }
       // drop-off glows and pickup bubbles
+      const cb = cbOn();
       for (const o of bag) {
         const [hx, hy] = cam.toScreen(o.house.door.x, o.house.door.y), pulse = 1 + Math.sin(t * 6) * 0.12;
         g.strokeStyle = o.col; g.lineWidth = 4; g.globalAlpha = 0.85; g.beginPath(); g.arc(hx, hy, 4.2 * z * pulse, 0, 6.283); g.stroke();
@@ -274,6 +277,7 @@ export default {
         const [cx, cy] = cam.toScreen(o.house.x, o.house.y);
         g.strokeStyle = o.col; g.lineWidth = 5; g.globalAlpha = 0.5 + Math.sin(t * 6) * 0.2; const hs = sizeOf(o.house.sprite);
         roundRect(g, cx - hs.w * z / 2, cy - hs.h * z / 2, hs.w * z, hs.h * z, 6); g.stroke(); g.globalAlpha = 1;
+        if (cb) symBadge(g, o, hx, hy, Math.max(11, z * 1.5));
       }
       for (const s of shops) {
         if (!s.order) continue;
@@ -301,9 +305,15 @@ export default {
       fx.draw(g, cam);
       drawPointers(g); drawBag(g); drawMap(g);
     }
+    // colourblind mode: the order's symbol in a dark disc ringed in its colour
+    function symBadge(g, o, x, y, r) {
+      g.fillStyle = 'rgba(40,22,10,.82)'; g.strokeStyle = o.col; g.lineWidth = Math.max(2, r * 0.22);
+      g.beginPath(); g.arc(x, y, r, 0, 6.283); g.fill(); g.stroke();
+      drawSymbol(g, o.sym, x, y, r * 0.62, '#fff', null);
+    }
     // arrows at the screen edge for targets that are off screen
     function drawPointers(g) {
-      const targets = [...bag.map((o) => ({ x: o.house.door.x, y: o.house.door.y, col: o.col, food: o.food })), ...(bag.length < 3 ? shops.filter((s) => s.order).map((s) => ({ x: s.door.x, y: s.door.y, col: '#ffd447', food: s.order.food })) : [])];
+      const targets = [...bag.map((o) => ({ x: o.house.door.x, y: o.house.door.y, col: o.col, food: o.food, o })), ...(bag.length < 3 ? shops.filter((s) => s.order).map((s) => ({ x: s.door.x, y: s.door.y, col: '#ffd447', food: s.order.food })) : [])];
       const m = 30, top = 52;
       for (const p of targets) {
         const [sx, sy] = cam.toScreen(p.x, p.y);
@@ -317,6 +327,7 @@ export default {
         g.save(); g.rotate(a); g.beginPath(); g.moveTo(27, 0); g.lineTo(17, -7); g.lineTo(17, 7); g.closePath(); g.fill(); g.stroke(); g.restore();
         g.fillStyle = '#fff'; g.beginPath(); g.arc(0, 0, 13, 0, 6.283); g.fill();
         sprite(g, `food_${p.food}`, 0, 0, 0, 20, { anchor: 'center' });
+        if (p.o && cbOn()) symBadge(g, p.o, -12, -12, 8);
         g.restore();
       }
     }
@@ -326,7 +337,8 @@ export default {
       bag.forEach((o, i) => {
         const x = 12 + i * 70, heat = clamp(o.time / o.limit, 0, 1);
         g.fillStyle = 'rgba(40,22,10,.6)'; roundRect(g, x, y, 62, 42, 12); g.fill();
-        g.fillStyle = o.col; g.beginPath(); g.arc(x + 14, y + 14, 6, 0, 6.283); g.fill();
+        if (cbOn()) drawSymbol(g, o.sym, x + 13, y + 14, 7, o.col, '#fff');
+        else { g.fillStyle = o.col; g.beginPath(); g.arc(x + 14, y + 14, 6, 0, 6.283); g.fill(); }
         sprite(g, `food_${o.food}`, 0, x + 36, y + 18, 26, { anchor: 'center' });
         g.fillStyle = 'rgba(255,255,255,.25)'; roundRect(g, x + 7, y + 32, 48, 5, 2.5); g.fill();
         g.fillStyle = heat > 0.6 ? '#ff7a2a' : heat > 0.25 ? '#ffd447' : '#8fc7ff'; roundRect(g, x + 7, y + 32, Math.max(5, 48 * heat), 5, 2.5); g.fill();
@@ -340,7 +352,8 @@ export default {
       const mx = (x) => x0 + (x + RW / 2) * k, my = (y) => y0 + S - (y + RW / 2) * k;
       for (let i = 0; i <= N; i++) { g.fillRect(mx(i * P) - 1.5, y0, 3, S); g.fillRect(x0, my(i * P) - 1.5, S, 3); }
       for (const s of shops) if (s.order) { g.fillStyle = '#ffd447'; g.beginPath(); g.arc(mx(s.door.x), my(s.door.y), 3.2, 0, 6.283); g.fill(); }
-      for (const o of bag) { g.fillStyle = o.col; g.beginPath(); g.arc(mx(o.house.door.x), my(o.house.door.y), 3.6, 0, 6.283); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 1.2; g.stroke(); }
+      if (cbOn()) for (const o of bag) drawSymbol(g, o.sym, mx(o.house.door.x), my(o.house.door.y), 5, o.col, '#fff');
+      else for (const o of bag) { g.fillStyle = o.col; g.beginPath(); g.arc(mx(o.house.door.x), my(o.house.door.y), 3.6, 0, 6.283); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 1.2; g.stroke(); }
       g.save(); g.translate(mx(B.x), my(B.y)); g.rotate(-B.a); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(5, 0); g.lineTo(-3.5, -3.5); g.lineTo(-3.5, 3.5); g.closePath(); g.fill(); g.restore();
     }
     return {

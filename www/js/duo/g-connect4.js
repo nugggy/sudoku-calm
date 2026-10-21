@@ -2,8 +2,11 @@
 import { c4New, c4Drop, c4CanDrop, c4Win, c4Full } from './rules.js';
 import { mine } from './core.js';
 import { playerBar, fitBoard } from './ui.js';
+import { cbOn, symbolSvg } from '../cb.js';
 
-const disc = (p) => `<i class="c4-disc p${p}"></i>`;
+// Colourblind mode adds a symbol on top of each disc image: a ring for red, a cross for yellow.
+const C4SYM = ['ring', 'cross'];
+const disc = (p) => `<i class="c4-disc p${p}">${cbOn() ? symbolSvg(C4SYM[p], { fill: 'rgba(25,20,35,.72)', stroke: 'rgba(255,255,255,.55)', cls: 'cb-sym c4-sym' }) : ''}</i>`;
 
 export default {
   id: 'connect4', name: 'Connect Four', tag: 'Drop discs, line up four', cat: 'board', realtime: false,

@@ -93,6 +93,15 @@
 @keyframes gl-hint { to { filter: drop-shadow(0 0 4px #fff) drop-shadow(0 0 12px #ffd23f); } }
 .gl-car.driving { z-index: 4; }
 
+/* colourblind mode: the target car gets a white frame and an arrow badge pointing to the exit */
+:root[data-cb="1"] .gl-car.red::before { content: ""; position: absolute; inset: 2px; border: 2.5px solid #fff; border-radius: 9px; pointer-events: none; }
+:root[data-cb="1"] .gl-car.red::after, :root[data-cb="1"] .glm-red::after {
+  content: ""; position: absolute; left: 50%; top: 50%; width: calc(var(--gc) * .48); height: calc(var(--gc) * .48); transform: translate(-50%, -50%);
+  border-radius: 50%; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12h12.5M12 6l6 6-6 6' fill='none' stroke='%231d2329' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 72% no-repeat;
+  box-shadow: 0 0 0 2px #1d2329; pointer-events: none;
+}
+:root[data-cb="1"] .glm-red::after { width: calc(var(--c) * .56); height: calc(var(--c) * .56); box-shadow: 0 0 0 1.5px #1d2329; }
+
 .gl-bar { display: flex; justify-content: center; gap: 22px; padding: 8px 0 calc(16px + var(--safe-bottom)); }
 .gl-tool { display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 600; color: var(--muted); min-width: 70px; }
 .gl-tool .ic { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: #fff; color: #4a5560; box-shadow: 0 4px 0 rgba(0, 0, 0, .1); transition: transform .1s; }

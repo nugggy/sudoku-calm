@@ -2,6 +2,7 @@
 // Space: slide the vault tiles back into place. Mind: repeat the pattern. Reality: turn the pipes so the energy flows.
 // Power: switch off every orb. Time: push the relics onto the glyphs. Soul: find every matching pair of heroes.
 import { FX, snd, buzz, clamp, roundRect } from '../yeti/kit.js';
+import { cbOn } from '../cb.js';
 import { H, drawHero, chosen, STONES, drawStone, POWER_GEMS, drawGem, HEROES, starPath } from './kit.js';
 import { slideStart, slideMove, slideSolved, slideBest, lightsStart, lightsPress, lightsSolved, pipesStart, pipesFlow, pipesSolved, rotate,
   sokoParse, sokoStep, sokoSolved, sokoBest, memoryDeal, patternSeq } from './stones-engine.js';
@@ -125,6 +126,8 @@ export default {
           },
           draw(g) {
             const cs = L.size / n, lit = pipesFlow(tiles, n), mid = Math.floor(n / 2);
+            // colourblind mode: powered pipes also carry a bright dashed core that flows, so they stand out without the red
+            const cb = cbOn(), flow = (performance.now() / 1000) * cs * 0.6;
             for (let k = 0; k < n * n; k++) {
               const r = Math.floor(k / n), c = k % n, cx = L.x + (c + 0.5) * cs, cy = L.y + (r + 0.5) * cs;
               g.fillStyle = 'rgba(0,0,0,.3)'; roundRect(g, cx - cs / 2 + 2, cy - cs / 2 + 2, cs - 4, cs - 4, 8); g.fill();
@@ -134,8 +137,13 @@ export default {
                 g.strokeStyle = on ? '#ff4d4d' : '#6d5a5a'; g.lineWidth = cs * 0.22; g.lineCap = 'round';
                 if (on) { g.shadowColor = '#ff2b2b'; g.shadowBlur = 10; }
                 g.beginPath(); g.moveTo(0, 0); g.lineTo(dx * cs / 2, dy * cs / 2); g.stroke(); g.shadowBlur = 0;
+                if (on && cb) {
+                  g.strokeStyle = '#fff7d6'; g.lineWidth = cs * 0.08; g.setLineDash([cs * 0.07, cs * 0.11]); g.lineDashOffset = -flow;
+                  g.stroke(); g.setLineDash([]); g.lineDashOffset = 0;
+                }
               }
               g.fillStyle = on ? '#ff8080' : '#8a7777'; g.beginPath(); g.arc(0, 0, cs * 0.14, 0, 6.283); g.fill();
+              if (on && cb) { g.fillStyle = '#fff7d6'; g.beginPath(); g.arc(0, 0, cs * 0.07, 0, 6.283); g.fill(); }
               g.restore();
             }
             g.fillStyle = '#ff4d4d'; g.beginPath(); g.arc(L.x - 6, L.y + (mid + 0.5) * cs, 8, 0, 6.283); g.fill();

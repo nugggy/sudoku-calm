@@ -1,6 +1,10 @@
 // Light Cycles: two riders leave walls of light behind them. Swipe to turn; whoever crashes into a
 // wall or a trail loses the round. First to 5.
 import { stage, session, touches, keys, COL, play, vib, winText, img } from './rtd-kit.js';
+import { cbOn, drawSymbol, symbolSvg } from '../cb.js';
+
+// Colourblind mode: a symbol for each rider (on the bike and in the score bar), and player 1's wall is hollow.
+const CSYM = ['ring', 'cross'];
 
 // Riders are the Kenney Racing Pack motorbikes (CC0), drawn nose first in the direction of travel.
 let BIKE = null; // loaded when a game starts, so the rules can still run in Node tests
@@ -96,6 +100,10 @@ function create(ctx) {
   BIKE = BIKE || [img('img/duo/cycle_red.webp'), img('img/duo/cycle_blue.webp')];
   const st = stage(ctx, 'rtd-cycles');
   const flip = () => !ctx.local && ctx.me === 1;
+  if (cbOn()) {
+    const me = ctx.local ? 0 : ctx.me;
+    [['.rtd-top i', 1 - me], ['.rtd-bot i', me]].forEach(([sel, p]) => { const d = st.wrap.querySelector(sel); if (d) { d.classList.add('cb-dot'); d.innerHTML = symbolSvg(CSYM[p], { size: 12 }); } });
+  }
   let crashFx = null, dead = false;
   const ses = session(ctx, cyclesSpec, {
     event(e) {
@@ -142,6 +150,13 @@ function create(ctx) {
       for (let k = 0; k < s.grid.length; k++) if (s.grid[k] === i + 1) g.fillRect(ox + (k % GW) * c + 1, oy + Math.floor(k / GW) * c + 1, c - 2, c - 2);
     }
     g.shadowBlur = 0;
+    const cb = cbOn();
+    if (cb) {
+      // player 1's wall gets a dark hole in every block, so the two walls differ by pattern as well as colour
+      const h = Math.max(2, c * 0.4), o = (c - h) / 2;
+      g.fillStyle = '#0b1124';
+      for (let k = 0; k < s.grid.length; k++) if (s.grid[k] === 2) g.fillRect(ox + (k % GW) * c + o, oy + Math.floor(k / GW) * c + o, h, h);
+    }
     s.p.forEach((p, i) => {
       const cx = ox + (p.x + 0.5) * c, cy = oy + (p.y + 0.5) * c;
       const bk = BIKE[i];
@@ -149,11 +164,13 @@ function create(ctx) {
         const bh2 = c * 2.6, bw2 = bh2 * bk.naturalWidth / bk.naturalHeight;
         g.save(); g.translate(cx, cy); g.rotate(p.d * Math.PI / 2); if (!p.a) g.globalAlpha = 0.45;
         g.drawImage(bk, -bw2 / 2, -bh2 / 2, bw2, bh2); g.restore();
-        return;
+      } else {
+        g.fillStyle = p.a ? '#fff' : '#555'; g.beginPath(); g.arc(cx, cy, c * 0.62, 0, Math.PI * 2); g.fill();
+        g.strokeStyle = COL[i]; g.lineWidth = 2.5; g.stroke();
+        if (p.a) { g.fillStyle = COL[i]; g.beginPath(); g.arc(cx + DX[p.d] * c * 0.3, cy + DY[p.d] * c * 0.3, c * 0.2, 0, Math.PI * 2); g.fill(); }
       }
-      g.fillStyle = p.a ? '#fff' : '#555'; g.beginPath(); g.arc(cx, cy, c * 0.62, 0, Math.PI * 2); g.fill();
-      g.strokeStyle = COL[i]; g.lineWidth = 2.5; g.stroke();
-      if (p.a) { g.fillStyle = COL[i]; g.beginPath(); g.arc(cx + DX[p.d] * c * 0.3, cy + DY[p.d] * c * 0.3, c * 0.2, 0, Math.PI * 2); g.fill(); }
+      // both symbols look the same upside down, so they read correctly on the flipped board too
+      if (cb) { g.save(); if (!p.a) g.globalAlpha = 0.6; drawSymbol(g, CSYM[i], cx, cy, Math.max(5, c * 0.75), '#fff', 'rgba(0,0,0,.7)'); g.restore(); }
     });
     if (crashFx && s.ph === 'over') {
       const t = (performance.now() - crashFx.t) / 600;

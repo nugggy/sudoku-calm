@@ -102,16 +102,29 @@ if (!isMainThread) {
     if (cache) writeFileSync(cache, JSON.stringify(found));
   }
   // dedupe, keeping the layout's optimal count
+  // and leave out boards that Villain Lockdown already uses
+  const { LOCKDOWN } = await import('../www/js/hero/lockdown-levels.js');
+  const lockdown = new Set(LOCKDOWN.map((l) => normalise(l.board)));
   const pool = new Map();
-  for (const [b, m] of found) { const k = normalise(b); if (!pool.has(k)) pool.set(k, m); }
+  for (const [b, m] of found) { const k = normalise(b); if (!pool.has(k) && !lockdown.has(k)) pool.set(k, m); }
   const byMoves = new Map();
   for (const [b, m] of pool) { if (!byMoves.has(m)) byMoves.set(m, []); byMoves.get(m).push(b); }
   const hist = [...byMoves.keys()].sort((a, b) => a - b).map((m) => `${m}:${byMoves.get(m).length}`).join(' ');
   console.log('found', pool.size, 'distinct puzzles by moves', hist);
 
-  // Difficulty curve: a gentle start, then a steady climb up to the hardest found.
+  // Difficulty curve. A run of puzzles with the same move count all play alike (shift a blocker, drive out),
+  // so the first dozen climb quickly by hand, then a steady rise to the hardest found. Within each block of ten
+  // the target goes up and down a little: an easier breather after a hard one, and a tougher one to end on.
   const top = Math.max(...byMoves.keys());
   const TOTAL = 320;
+  const START = [3, 4, 5, 4, 6, 7, 5, 8, 9, 7, 10, 11];
+  const WAVE = [-1, -1, 0, 1, 0, 1, 2, -1, 1, 3];
+  const wantAt = (i) => {
+    if (i < START.length) return START[i];
+    const u = (i - START.length) / (TOTAL - 1 - START.length);
+    const base = 9 + (top - 9) * Math.pow(u, 1.2);
+    return Math.max(5, Math.min(top, Math.round(base + WAVE[i % WAVE.length] * (1 + base / 20))));
+  };
   const rng = mulberry32(4242);
   const levels = [];
   // Hill climbing leaves near twins: the same board with one car added, taken away or moved.
@@ -120,9 +133,10 @@ if (!isMainThread) {
   const diff = (a, b) => { const c = b.slice(); let n = 0; for (const x of a) { const i = c.indexOf(x); if (i < 0) n++; else c.splice(i, 1); } return n + c.length; };
   const chosen = [];
   const tooClose = (b) => { const l = lanes(b); return chosen.some((c) => diff(l, c) <= 2); };
-  for (let i = TOTAL - 1; i >= 0; i--) { // hardest first, so the rare top boards win any twin clash
+  const order = [...Array(TOTAL).keys()].sort((a, b) => wantAt(b) - wantAt(a) || b - a);
+  for (const i of order) { // hardest first, so the rare top boards win any twin clash
     const t = i / (TOTAL - 1);
-    const want = Math.round(3 + (top - 3) * Math.pow(t, 1.25));
+    const want = wantAt(i);
     // find the nearest move count with an unused board, preferring a little easier
     let done = false;
     for (let off = 0; off < 60 && !done; off++) {
@@ -135,17 +149,18 @@ if (!isMainThread) {
         const k = list.findIndex((b) => !tooClose(b));
         if (k < 0) continue;
         const b = list.splice(k, 1)[0];
-        levels.push([b, m]); chosen.push(lanes(b)); done = true; break;
+        levels[i] = [b, m]; chosen.push(lanes(b)); done = true; break;
       }
     }
+    if (!done) throw new Error(`no board left for level ${i + 1} (want ${want} moves)`);
   }
-  levels.sort((a, b) => a[1] - b[1]);
   // verify every level with the solver before writing
   for (const [b, m] of levels) {
     const { vs, pos } = parse(b);
     const s = solve(vs, pos);
     if (!s || s.length !== m) throw new Error(`bad level ${b} ${m} ${s && s.length}`);
   }
-  writeFileSync(new URL('../www/levels/gridlock.json', import.meta.url), JSON.stringify({ levels: levels.map(([b, m]) => b + m) }));
-  console.log('wrote', levels.length, 'levels, moves', levels[0][1], 'to', levels[levels.length - 1][1]);
+  // set: bumped whenever the levels change, so saved stars are not shown against different puzzles
+  writeFileSync(new URL('../www/levels/gridlock.json', import.meta.url), JSON.stringify({ set: 2, levels: levels.map(([b, m]) => b + m) }));
+  console.log('wrote', levels.length, 'levels, moves:', levels.map(([, m]) => m).join(' '));
 }

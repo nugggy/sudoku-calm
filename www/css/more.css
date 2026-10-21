@@ -120,7 +120,18 @@
 .gw-keys .krow button.g { background: #4caf6a; color: #fff; }
 .gw-keys .krow button.y { background: #e8b931; color: #fff; }
 .gw-keys .krow button.x { background: #787c7e; color: #fff; }
-:root[data-theme="dark"] .gw-keys .krow button { background: #3a3d44; color: #fff; }
+:root[data-theme="dark"] .gw-keys .krow button:not(.g):not(.y):not(.x) { background: #3a3d44; color: #fff; }
+/* colourblind mode: high contrast orange (right spot) and blue (elsewhere), plus a mark: a bar for right spot, a dot for elsewhere */
+:root[data-cb="1"] .gw-hero .g, :root[data-cb="1"] .gw-demo.g, :root[data-cb="1"] .gw-tile.g, :root[data-cb="1"] .gw-keys .krow button.g { background: #e69f00; border-color: #e69f00; color: #fff; }
+:root[data-cb="1"] .gw-hero .y, :root[data-cb="1"] .gw-demo.y, :root[data-cb="1"] .gw-tile.y, :root[data-cb="1"] .gw-keys .krow button.y { background: #3a92d4; border-color: #3a92d4; color: #fff; }
+:root[data-cb="1"] .gw-keys .krow button.x { background: #787c7e; color: #fff; }
+:root[data-cb="1"] .gw-tile.g, :root[data-cb="1"] .gw-tile.y, :root[data-cb="1"] .gw-keys .krow button.g, :root[data-cb="1"] .gw-keys .krow button.y,
+:root[data-cb="1"] .gw-hero .g, :root[data-cb="1"] .gw-hero .y, :root[data-cb="1"] .gw-demo.g, :root[data-cb="1"] .gw-demo.y { position: relative; text-shadow: 0 1px 1px rgba(0, 0, 0, .3); }
+:root[data-cb="1"] .gw-tile.g::after, :root[data-cb="1"] .gw-keys .krow button.g::after, :root[data-cb="1"] .gw-hero .g::after, :root[data-cb="1"] .gw-demo.g::after,
+:root[data-cb="1"] .gw-tile.y::after, :root[data-cb="1"] .gw-keys .krow button.y::after, :root[data-cb="1"] .gw-hero .y::after, :root[data-cb="1"] .gw-demo.y::after {
+  content: ""; position: absolute; left: 50%; bottom: 9%; transform: translateX(-50%); background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .15); pointer-events: none; }
+:root[data-cb="1"] .gw-tile.g::after, :root[data-cb="1"] .gw-keys .krow button.g::after, :root[data-cb="1"] .gw-hero .g::after, :root[data-cb="1"] .gw-demo.g::after { width: 46%; height: max(3px, 7%); border-radius: 2px; }
+:root[data-cb="1"] .gw-tile.y::after, :root[data-cb="1"] .gw-keys .krow button.y::after, :root[data-cb="1"] .gw-hero .y::after, :root[data-cb="1"] .gw-demo.y::after { width: max(5px, 12%); aspect-ratio: 1; border-radius: 50%; }
 
 /* ---------- Mahjong Garden ---------- */
 .mj-theme { background: radial-gradient(ellipse at 50% 20%, #3f8f5f 0%, #215c3c 70%); color: #fff; --kit-accent: #e2a23b; }

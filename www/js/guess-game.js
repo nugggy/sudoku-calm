@@ -6,11 +6,14 @@ import { el, $, $$, dialog, toast, confetti } from './ui.js';
 import { sfx, buzz } from './sound.js';
 import { helpSheet } from './kit.js';
 import { loadWords } from './words.js';
+import { cbOn } from './cb.js';
 
 const G = () => store.guess;
 export const guessHelp = () => helpSheet('How to play Guesswork', [
   'Guess the hidden five-letter word in six tries. Each guess must be a real word.',
-  '<span class="gw-demo g">G</span> means the letter is in the word and in the right spot. <span class="gw-demo y">Y</span> means it is in the word but somewhere else. <span class="gw-demo x">X</span> means it is not in the word.',
+  cbOn()
+    ? 'Orange with a bar <span class="gw-demo g">G</span> means the letter is in the word and in the right spot. Blue with a dot <span class="gw-demo y">Y</span> means it is in the word but somewhere else. Grey <span class="gw-demo x">X</span> means it is not in the word.'
+    : '<span class="gw-demo g">G</span> means the letter is in the word and in the right spot. <span class="gw-demo y">Y</span> means it is in the word but somewhere else. <span class="gw-demo x">X</span> means it is not in the word.',
   'There is a new daily word each day, and as many practice words as you like.',
 ], 'guess-btn');
 

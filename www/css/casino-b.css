@@ -50,6 +50,13 @@
 .rl-out.red i, .rl-out.black i { display: block; width: 22px; height: 30px; margin: auto; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); background: #c8102e; }
 .rl-out.black i { background: #1b1b1f; outline: 1px solid #fff; }
 .rl-out .rl-chip.in { right: 50%; transform: translate(50%, -50%); }
+/* colourblind mode: the red and black bets get their names, and red numbers get a short white underline */
+.rl-cbw { display: none; }
+:root[data-cb="1"] .rl-out.red, :root[data-cb="1"] .rl-out.black { display: flex; align-items: center; justify-content: center; gap: 4px; overflow: hidden; }
+:root[data-cb="1"] .rl-out.red i, :root[data-cb="1"] .rl-out.black i { flex: 0 1 16px; width: 12px; height: auto; min-height: 0; margin: 0; }
+:root[data-cb="1"] .rl-cbw { display: block; flex: none; font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase; }
+:root[data-cb="1"] .rl-num.red, :root[data-cb="1"] .rl-ball.red { background-image: linear-gradient(#fff, #fff); background-repeat: no-repeat; background-size: 38% 2px; background-position: 50% 88%; }
+:root[data-cb="1"] .rl-ball.big.red { background-size: 34% 4px; background-position: 50% 82%; }
 .rl-wheelbox { position: absolute; inset: -6px; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: rgba(6, 22, 14, .82); backdrop-filter: blur(2px); border-radius: 12px; animation: rb-fade .25s; }
 .rl-wheelbox[hidden] { display: none; }
 .rl-wheelbox canvas { border-radius: 50%; box-shadow: 0 12px 40px rgba(0, 0, 0, .6); }

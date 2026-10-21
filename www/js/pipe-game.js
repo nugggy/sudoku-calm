@@ -5,9 +5,12 @@ import { icon } from './icons.js';
 import { el, $, $$, dialog, toast, confetti } from './ui.js';
 import { sfx, buzz } from './sound.js';
 import { helpSheet, levelHome } from './kit.js';
+import { cbOn, SYMBOLS, symbolFor } from './cb.js';
 
 export const PIPE_COLOURS = ['#ff3b5c', '#2f8cff', '#ffd21f', '#2ecc71', '#ff8c1a', '#a45cf0', '#18d6d6', '#ff6fd8', '#8b5a2b', '#9aa5b1'];
 const PL = () => store.pipe;
+// colourblind mode: colour c's symbol centred on x,y, r = half its size
+const symAt = (c, x, y, r) => `<path d="${SYMBOLS[symbolFor(c)]}" transform="translate(${x} ${y}) scale(${r / 6})" fill="#fff" stroke="rgba(0,0,0,.55)" stroke-width="${Math.min(1.6, 9 / Math.max(r, 1)).toFixed(2)}" stroke-linejoin="round" paint-order="stroke" pointer-events="none"/>`;
 export const pipeHelp = () => helpSheet('How to play Pipeline', [
   'Drag from a dot to draw a pipe to the other dot of the same colour.',
   'Pipes cannot cross. Drawing over another pipe cuts it, and dragging back along your own pipe shortens it.',
@@ -58,7 +61,7 @@ export function makeLevel(level) {
 export function pipeHomeScreen(app) {
   return levelHome({
     app, cls: 'pipe-theme', title: 'Pipeline', help: pipeHelp,
-    hero: `<svg class="pipe-hero" viewBox="0 0 120 80"><path d="M15 15 H60 V45 H105" stroke="#ff3b5c" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 65 H45 V45" stroke="#2f8cff" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="15" cy="15" r="11" fill="#ff3b5c"/><circle cx="105" cy="45" r="11" fill="#ff3b5c"/><circle cx="15" cy="65" r="11" fill="#2f8cff"/><circle cx="45" cy="45" r="11" fill="#2f8cff"/></svg>`,
+    hero: `<svg class="pipe-hero" viewBox="0 0 120 80"><path d="M15 15 H60 V45 H105" stroke="#ff3b5c" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 65 H45 V45" stroke="#2f8cff" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="15" cy="15" r="11" fill="#ff3b5c"/><circle cx="105" cy="45" r="11" fill="#ff3b5c"/><circle cx="15" cy="65" r="11" fill="#2f8cff"/><circle cx="45" cy="45" r="11" fill="#2f8cff"/>${cbOn() ? [[0, 15, 15], [0, 105, 45], [1, 15, 65], [1, 45, 45]].map(([c, x, y]) => symAt(c, x, y, 6.5)).join('') : ''}</svg>`,
     play: () => { const r = recipe(PL().level); return { label: `Play level ${PL().level + 1}`, sub: `${r.size}×${r.size} · ${r.k} pipes` }; },
     onPlay: () => app.go('pipegame', { level: PL().level }),
     levels: () => ({ count: Math.max(30, Math.ceil((PL().level + 15) / 5) * 5), current: PL().level, done: (i) => i < PL().level }),
@@ -85,6 +88,7 @@ export function pipeGameScreen(app, { level }) {
   const q = (k) => $(`[data-el="${k}"]`, root);
   const board = q('board');
   let cell = 50;
+  const cb = cbOn();
 
   function layout() {
     cell = Math.floor(Math.min(innerWidth - 24, 520, innerHeight - 260) / size);
@@ -104,6 +108,11 @@ export function pipeGameScreen(app, { level }) {
     for (let k = 1; k < size; k++) svg += `<line x1="${k * cell}" y1="0" x2="${k * cell}" y2="${size * cell}" class="pg"/><line x1="0" y1="${k * cell}" x2="${size * cell}" y2="${k * cell}" class="pg"/>`;
     pipes.forEach((p, c) => { if (p.length > 1) svg += `<polyline class="${connected(c) ? 'conn' : ''}" points="${p.map((i) => ctr(i).join(',')).join(' ')}" stroke="${PIPE_COLOURS[c]}" stroke-width="${cell * 0.36}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`; });
     for (const [i, c] of dots) { const [x, y] = ctr(i); svg += `<circle cx="${x}" cy="${y}" r="${cell * 0.34}" fill="${PIPE_COLOURS[c]}" class="${connected(c) ? 'conn-dot' : ''}"/>`; }
+    if (cb) {
+      for (const [i, c] of dots) { const [x, y] = ctr(i); svg += symAt(c, x, y, cell * 0.2); }
+      // a small symbol on the loose end of each unfinished pipe
+      pipes.forEach((p, c) => { const e = p[p.length - 1]; if (p.length > 1 && !dots.has(e)) { const [x, y] = ctr(e); svg += symAt(c, x, y, cell * 0.11); } });
+    }
     q('svg').innerHTML = svg;
     const filled = new Set(pipes.flat()); for (const i of dots.keys()) filled.add(i);
     q('flows').textContent = `${solution.filter((_, c) => connected(c)).length}/${solution.length}`;

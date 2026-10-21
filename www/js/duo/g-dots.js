@@ -2,10 +2,11 @@
 import { dbNew, dbPlay, dbOver, dbEdges } from './rules.js';
 import { mine, esc } from './core.js';
 import { playerBar } from './ui.js';
+import { pMark, pBadge } from './tbc-ui.js';
 
 const SIZES = [3, 4, 5, 6];
 const BOX = ['img/duo/box_red.webp', 'img/duo/box_blue.webp']; // claimed boxes (Kenney Puzzle Pack 2)
-const sw = (p) => `<i class="db-sw p${p}"></i>`;
+const sw = (p) => `<i class="db-sw p${p}">${pBadge(p, 14)}</i>`;
 
 export default {
   id: 'dots', name: 'Dots and Boxes', tag: 'Close a box, take another turn', cat: 'board', realtime: false,
@@ -39,7 +40,7 @@ export default {
         const [r, c] = e.slice(1).split('_').map(Number), [x1, y1] = dot(r, c), [x2, y2] = e[0] === 'h' ? dot(r, c + 1) : dot(r + 1, c);
         return `<g class="db-e" data-e="${e}"><line class="hit" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/><line class="ln" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/></g>`;
       }).join('');
-      const boxes = [...Array(n * n)].map((_, i) => { const [x, y] = dot(Math.floor(i / n), i % n); return `<rect class="db-box" data-b="${i}" x="${x + 4}" y="${y + 4}" width="${G - 8}" height="${G - 8}" rx="6"/><image class="db-img" data-bi="${i}" x="${x + 5}" y="${y + 5}" width="${G - 10}" height="${G - 10}" preserveAspectRatio="none"/>`; }).join('');
+      const boxes = [...Array(n * n)].map((_, i) => { const [x, y] = dot(Math.floor(i / n), i % n); return `<rect class="db-box" data-b="${i}" x="${x + 4}" y="${y + 4}" width="${G - 8}" height="${G - 8}" rx="6"/><image class="db-img" data-bi="${i}" x="${x + 5}" y="${y + 5}" width="${G - 10}" height="${G - 10}" preserveAspectRatio="none"/><g class="db-mk" data-bm="${i}" transform="translate(${x + G / 2} ${y + G / 2})"></g>`; }).join('');
       const dots = [...Array((n + 1) * (n + 1))].map((_, i) => { const [x, y] = dot(Math.floor(i / (n + 1)), i % (n + 1)); return `<circle class="db-dot" cx="${x}" cy="${y}" r="5.5"/>`; }).join('');
       area.innerHTML = `<svg class="db-board" viewBox="0 0 ${W} ${W}">${boxes}${edgeSvg}${dots}</svg>`;
       draw();
@@ -53,6 +54,8 @@ export default {
       });
       area.querySelectorAll('.db-box').forEach((r) => { const v = s.boxes[+r.dataset.b]; r.setAttribute('class', `db-box${v >= 0 ? ' p' + v : ''}`); });
       area.querySelectorAll('.db-img').forEach((m) => { const v = s.boxes[+m.dataset.bi]; if (v >= 0) m.setAttribute('href', BOX[v]); else m.removeAttribute('href'); });
+      // colourblind mode: the owner's symbol on each claimed box (boxes never change hands)
+      area.querySelectorAll('.db-mk').forEach((k) => { const v = s.boxes[+k.dataset.bm]; if (v >= 0 && !k.firstChild) k.innerHTML = pMark(v, 0, 0, 24); });
       bar.set({ turn: over ? -1 : turn, score: s.score });
     }
 

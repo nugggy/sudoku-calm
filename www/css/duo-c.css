@@ -9,6 +9,10 @@
 .tbc-nm { flex: 1; min-width: 0; font-size: 14px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tbc-sc { font-size: 18px; font-weight: 900; font-variant-numeric: tabular-nums; }
 .tbc-pl.on { border-color: var(--pc); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pc) 25%, transparent); transform: translateY(-1px); }
+/* colourblind mode: each player's symbol (see PSYM in tbc-ui.js) sits on their colour dot */
+.tbc-pl i, .mr-hand i { display: grid; place-items: center; }
+:root[data-cb="1"] .tbc-pl i { width: 16px; height: 16px; }
+.tbc-pl i .cb-sym, .mr-hand i .cb-sym { display: block; }
 .tbc-status { min-height: 22px; padding: 6px 14px 2px; text-align: center; font-size: 14px; font-weight: 700; color: var(--tbc-muted); flex-shrink: 0; }
 .tbc-body { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 6px 12px calc(12px + var(--safe-bottom, 0px)); }
 .tbc-cover { position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; padding: 24px; background: color-mix(in srgb, var(--bg, #f5efe6) 96%, transparent); backdrop-filter: blur(10px); }

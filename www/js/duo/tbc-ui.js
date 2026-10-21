@@ -1,6 +1,18 @@
 // Shared screen pieces for fork C's turn-based Play Together games: the player bar, whose turn it is,
 // a move queue that plays local and remote moves one at a time, and the end of the game.
+import { cbOn, SYMBOLS, symbolSvg } from '../cb.js';
+
 export const PCOL = ['#e8604c', '#3b7ddd'];
+
+// Colourblind mode: each player also has a symbol, shown on their pieces and next to their name.
+// Shared by Dots and Boxes, Nine Men's Morris and Five in a Row so the three always match.
+export const PSYM = ['ring', 'cross'];
+// The symbol as a path inside a board SVG, centred on x,y and s board units across. Empty when the mode is off.
+export const pMark = (p, x, y, s) => (cbOn()
+  ? `<path class="cb-mk" d="${SYMBOLS[PSYM[p]]}" transform="translate(${x} ${y}) scale(${+(s / 12).toFixed(4)})" fill="#fff" stroke="rgba(0,0,0,.5)" stroke-width="1.4" stroke-linejoin="round" paint-order="stroke"/>`
+  : '');
+// The symbol as a small inline SVG for HTML (player bars, swatches). Empty when the mode is off.
+export const pBadge = (p, size = 10) => (cbOn() ? symbolSvg(PSYM[p], { size }) : '');
 
 export const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -8,7 +20,7 @@ export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // Builds the frame: a bar with both players (name, score, turn glow), a status line and a body.
 export function frame(ctx, cls) {
   ctx.root.innerHTML = `<div class="tbc ${cls}">
-    <div class="tbc-bar">${[0, 1].map((p) => `<div class="tbc-pl" data-p="${p}" style="--pc:${PCOL[p]}"><i></i><span class="tbc-nm">${esc(label(ctx, p))}</span><b class="tbc-sc"></b></div>`).join('')}</div>
+    <div class="tbc-bar">${[0, 1].map((p) => `<div class="tbc-pl" data-p="${p}" style="--pc:${PCOL[p]}"><i>${pBadge(p)}</i><span class="tbc-nm">${esc(label(ctx, p))}</span><b class="tbc-sc"></b></div>`).join('')}</div>
     <div class="tbc-status" aria-live="polite"></div>
     <div class="tbc-body"></div></div>`;
   const el = ctx.root.firstElementChild;

@@ -5,19 +5,26 @@ import { el, $, $$, dialog, toast, confetti } from './ui.js';
 import { sfx, buzz } from './sound.js';
 import { helpSheet, levelHome } from './kit.js';
 import { parse, range, grid, solve, isGoal, N } from './gridlock-engine.js';
+import { cbOn } from './cb.js';
 
 const GL = () => store.gridlock;
 const CARS = 'img/kenney/cars/';
 let levels = null;
 async function loadLevels() {
   if (!levels) {
-    try { levels = (await (await fetch('levels/gridlock.json')).json()).levels.map((s) => ({ board: s.slice(0, 36), opt: +s.slice(36) })); } catch { levels = []; }
+    try {
+      const data = await (await fetch('levels/gridlock.json')).json();
+      levels = data.levels.map((s) => ({ board: s.slice(0, 36), opt: +s.slice(36) }));
+      // a new set of puzzles: stars and a game in progress belonged to the old ones, but keep how far the player got
+      const gl = GL(), set = data.set || 1;
+      if ((gl.set || 1) !== set) { gl.set = set; gl.best = {}; gl.current = null; save(); }
+    } catch { levels = []; }
   }
   return levels;
 }
 
 export const gridlockHelp = () => helpSheet('How to play Gridlock', [
-  'The red car is boxed in. Clear a path so it can drive out of the exit on the right.',
+  `The red car${cbOn() ? ' (the one with the white arrow badge)' : ''} is boxed in. Clear a path so it can drive out of the exit on the right.`,
   'Drag any car or truck to slide it. Vehicles only move forwards and backwards, never sideways, and they cannot pass through each other.',
   'Each slide counts as one move, however far it goes. Finish in the target number of moves for three stars.',
   'Stuck? Hint shows the best next move from where you are.',

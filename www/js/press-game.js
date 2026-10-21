@@ -59,7 +59,8 @@ export function pressGameScreen(app, { idx: startIdx = 0 }) {
     txt.style.fontSize = len <= 8 ? '34px' : len <= 16 ? '27px' : len <= 34 ? '21px' : len <= 52 ? '18px' : '16px';
   }
   function setText(t) { txt.innerHTML = t; sizeText(t); }
-  function setFace(c) { face.className = 'pr-face' + (c ? ' ' + c : ''); }
+  // data-col feeds the colour name pill shown in colourblind mode (press.css)
+  function setFace(c) { face.className = 'pr-face' + (c ? ' ' + c : ''); if (c) face.dataset.col = c.toUpperCase(); else delete face.dataset.col; }
   function setLit(n) {
     if (n === lit) return;
     lit = n;

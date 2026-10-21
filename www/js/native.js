@@ -1,5 +1,7 @@
 // Bridge to the Android shell (window.SCNative). Falls back to browser behaviour when run on the web.
 export const REPO = 'nugggy/sudoku-calm';
+// Where a friend can get the app: the newest release, with the APK to download.
+export const APP_LINK = `https://github.com/${REPO}/releases/latest`;
 
 const N = window.SCNative;
 
@@ -20,6 +22,12 @@ export const native = {
     else window.open(url, '_blank', 'noopener');
   },
   exit() { if (N) N.exitApp(); },
+  // Android's share sheet in the app; the browser's own share sheet, or the clipboard, elsewhere. Resolves to how it went.
+  async share(text, url) {
+    if (N && N.shareText) { N.shareText(`${text} ${url}`); return 'shared'; }
+    try { if (navigator.share) { await navigator.share({ title: 'GameHub', text, url }); return 'shared'; } } catch { return 'cancelled'; }
+    try { await navigator.clipboard.writeText(`${text} ${url}`); return 'copied'; } catch { return 'failed'; }
+  },
 };
 
 // ---------- Local two-phone games (see LanLink.java) ----------
@@ -57,7 +65,7 @@ export async function checkForUpdate(channel = 'stable') {
     const apk = (r.assets || []).find((a) => a.name.endsWith('.apk'));
     if (!apk) continue;
     if (!newer(r.tag_name, current)) return null;
-    return { version: r.tag_name.replace(/^v/i, ''), notes: (r.body || '').trim(), url: apk.browser_download_url, size: apk.size, prerelease: r.prerelease };
+    return { version: r.tag_name.replace(/^v/i, ''), notes: (r.body || '').trim(), url: apk.browser_download_url, page: r.html_url, size: apk.size, prerelease: r.prerelease };
   }
   return null;
 }

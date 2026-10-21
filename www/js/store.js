@@ -23,6 +23,8 @@ const defaults = () => ({
     unlimitedHints: false,
     fontScale: 1,
     colourblind: false,       // add symbols and patterns, and avoid red against green (see cb.js)
+    cbHard: [],               // colours the player finds hard to see: red, green, blue, yellow (see cb.js)
+    cbStrength: 'strong',     // colour correction: gentle or strong
     meowAutoX: false,
     meowTimer: true,
     autoUpdate: true,

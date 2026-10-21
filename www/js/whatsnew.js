@@ -2,6 +2,11 @@
 // tools/release.mjs uses the same text for the GitHub release notes (it will not publish a version missing here).
 // Keep each line short and plain: what was added or changed, from the player's point of view.
 export const WHATS_NEW = [
+  { v: '1.19.1', items: [
+    'New: Colour vision settings. Tap the colours you find hard to see and the whole app shifts its colours to make them clearer, with a gentle or strong setting.',
+    'Share GameHub with a friend: tap the share button on the games screen for a QR code, or send the link.',
+    'Updating now shows its progress on screen, explains anything Android needs from you, and offers the browser as a backup if the download gets stuck.',
+  ] },
   { v: '1.19.0', items: [
     'New: Land Grab. Loop out from your land and back again to claim it, against nine computer animals, on six maps.',
     'Arrow Away: from level 15, every fourth level is a 3D shape. Drag to turn it, and watch arrows follow the surface round corners.',

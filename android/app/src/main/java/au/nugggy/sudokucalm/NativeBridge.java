@@ -26,6 +26,7 @@ import java.net.URL;
 public class NativeBridge {
     private final MainActivity activity;
     private volatile boolean downloading = false;
+    private volatile int lastPct = -1; // how far the current update download has got
     private File pendingApk = null;
 
     private LanLink lan;
@@ -101,12 +102,30 @@ public class NativeBridge {
     @JavascriptInterface
     public void exitApp() { activity.runOnUiThread(activity::finish); }
 
-    /** Downloads a release APK from GitHub (with retries) and hands it to the Android installer. */
+    /** Opens Android's share sheet with some text (a message and a link). */
+    @JavascriptInterface
+    public void shareText(String text) {
+        activity.runOnUiThread(() -> {
+            try {
+                Intent send = new Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text);
+                activity.startActivity(Intent.createChooser(send, "Share GameHub"));
+            } catch (Exception ignored) { }
+        });
+    }
+
+    /**
+     * Downloads a release APK from GitHub (with retries) and hands it to the Android installer.
+     * Every outcome is reported back to the page, so the update screen never just sits there:
+     * __scUpdateProgress(pct) as it goes, __scUpdateNeedsPermission() if Android has to be told to allow
+     * installs from this app first, and __scUpdateFailed(reason) if the download or the installer fails.
+     */
     @JavascriptInterface
     public void downloadAndInstall(String url, String version) {
-        if (!url.startsWith("https://github.com/")) return;
-        if (downloading) return;
+        if (url == null || !url.startsWith("https://github.com/")) { failed("link"); return; }
+        if (downloading) { progress(Math.max(0, lastPct)); return; } // already on its way: say how far
         downloading = true;
+        lastPct = 0;
+        progress(0);
         new Thread(() -> {
             File dir = activity.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
             if (dir == null) dir = activity.getFilesDir();
@@ -124,11 +143,14 @@ public class NativeBridge {
             downloading = false;
             final boolean done = ok;
             activity.runOnUiThread(() -> {
-                if (done) { js("window.__scUpdateProgress && window.__scUpdateProgress(100)"); install(apk); }
-                else js("window.__scUpdateFailed && window.__scUpdateFailed()");
+                if (done) { progress(100); install(apk); }
+                else failed("download");
             });
         }).start();
     }
+
+    private void progress(int pct) { activity.runOnUiThread(() -> js("window.__scUpdateProgress && window.__scUpdateProgress(" + pct + ")")); }
+    private void failed(String why) { activity.runOnUiThread(() -> js("window.__scUpdateFailed && window.__scUpdateFailed('" + why + "')")); }
 
     private boolean fetch(String url, File out) throws Exception {
         HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
@@ -139,7 +161,6 @@ public class NativeBridge {
         try {
             if (c.getResponseCode() != 200) return false;
             long total = c.getContentLengthLong(), got = 0;
-            int lastPct = -1;
             try (InputStream in = c.getInputStream(); FileOutputStream fo = new FileOutputStream(out)) {
                 byte[] buf = new byte[32768];
                 int n;
@@ -147,11 +168,7 @@ public class NativeBridge {
                     fo.write(buf, 0, n);
                     got += n;
                     int pct = total > 0 ? (int) (got * 100 / total) : -1;
-                    if (pct >= 0 && pct != lastPct && pct % 5 == 0) {
-                        lastPct = pct;
-                        final int p = pct;
-                        activity.runOnUiThread(() -> js("window.__scUpdateProgress && window.__scUpdateProgress(" + p + ")"));
-                    }
+                    if (pct >= 0 && pct != lastPct && pct < 100) { lastPct = pct; progress(pct); }
                 }
             }
             return total <= 0 || got == total;
@@ -168,15 +185,20 @@ public class NativeBridge {
         if (!activity.getPackageManager().canRequestPackageInstalls()) {
             // Android needs a one-off permission to install updates from this app.
             pendingApk = apk;
+            js("window.__scUpdateNeedsPermission && window.__scUpdateNeedsPermission()");
             Toast.makeText(activity, "Allow GameHub to install updates, then come back.", Toast.LENGTH_LONG).show();
-            activity.startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + activity.getPackageName())));
+            try {
+                activity.startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + activity.getPackageName())));
+            } catch (Exception e) { failed("permission"); }
             return;
         }
-        Uri uri = FileProvider.getUriForFile(activity, activity.getPackageName() + ".files", apk);
-        Intent i = new Intent(Intent.ACTION_VIEW)
-                .setDataAndType(uri, "application/vnd.android.package-archive")
-                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
-        activity.startActivity(i);
+        try {
+            Uri uri = FileProvider.getUriForFile(activity, activity.getPackageName() + ".files", apk);
+            Intent i = new Intent(Intent.ACTION_VIEW)
+                    .setDataAndType(uri, "application/vnd.android.package-archive")
+                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+            activity.startActivity(i);
+        } catch (Exception e) { failed("install"); }
     }
 
     /** Called from onResume: finish an install that was waiting on the permission screen. */

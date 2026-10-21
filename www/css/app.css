@@ -759,3 +759,26 @@ h1, h2, h3, p { margin: 0; }
 .wn-ver { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin: 10px 0 4px; }
 .wn-body ul { margin: 0; padding-left: 20px; }
 .wn-body li { margin: 6px 0; line-height: 1.4; }
+
+/* ---------- Update progress and sharing the app ---------- */
+.upd-msg { margin: 8px 0 12px; color: var(--muted); min-height: 2.6em; }
+.upd-bar { height: 10px; border-radius: 5px; background: var(--surface-2); overflow: hidden; margin-bottom: 16px; }
+.upd-bar i { display: block; height: 100%; width: 3%; border-radius: 5px; background: var(--primary); transition: width .3s; }
+.sheet .upd-bar + .btn, .sheet .share-qr + .btn { margin-top: 4px; }
+.sheet .btn + .btn { margin-top: 8px; }
+.share-note { margin: 6px 0 12px; color: var(--muted); text-align: center; }
+.share-note.small { font-size: 13px; margin: 12px 0 0; }
+.share-qr { display: grid; place-items: center; margin: 4px 0 16px; }
+.share-qr svg { width: min(220px, 60vw); height: auto; border-radius: 12px; box-shadow: 0 2px 10px rgba(20, 30, 60, .12); }
+
+/* ---------- Colour correction (cb.js applyColourFix) ---------- */
+/* each fixed layer gets the filter itself; filtering their shared parent would break their full-screen positioning */
+:root[data-cbfix] #app, :root[data-cbfix] .backdrop, :root[data-cbfix] #toast, :root[data-cbfix] #confetti { filter: url(#cb-fix); }
+.cb-hard-row { flex-wrap: wrap; row-gap: 10px; }
+.cb-hard-row .txt { flex-basis: 100%; }
+.cb-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.cb-chip { display: inline-flex; align-items: center; gap: 7px; padding: 7px 13px 7px 9px; border-radius: 18px; background: var(--surface); border: 2px solid transparent; font-weight: 600; font-size: 14px; color: var(--text); }
+.cb-chip i { width: 16px; height: 16px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .15); }
+.cb-chip.on { border-color: var(--primary); background: var(--primary-soft); }
+.cb-preview { display: flex; gap: 5px; }
+.cb-preview i { width: 20px; height: 20px; border-radius: 6px; }

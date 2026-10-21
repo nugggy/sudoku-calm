@@ -4,7 +4,9 @@ import { store, save, resetAll, fmtTime, todayKey } from './store.js';
 import { icon, logoSvg, brandSvg } from './icons.js';
 import { el, $, $$, sheet, dialog, toast, closeTopOverlay, esc } from './ui.js';
 import { sfx } from './sound.js';
-import { native, checkForUpdate, REPO } from './native.js';
+import { native, checkForUpdate, REPO, APP_LINK } from './native.js';
+import { qrSvg } from './webjoin.js';
+import { applyColourFix, HARD_COLOURS } from './cb.js';
 import { lan } from './lan.js';
 import { WHATS_NEW, cmpVersion } from './whatsnew.js';
 import { sudokuScreen, startGame, continueLabel, prefetch } from './sudoku-game.js';
@@ -49,6 +51,7 @@ function applyTheme() {
   document.documentElement.dataset.theme = dark ? 'dark' : 'light';
   document.documentElement.dataset.accent = S.accent;
   if (S.colourblind) document.documentElement.dataset.cb = '1'; else delete document.documentElement.dataset.cb;
+  applyColourFix(S);
   updateBars();
 }
 function updateBars() {
@@ -397,7 +400,7 @@ const isNew = (g) => !store.meta.opened[g.id];
 
 function landingScreen() {
   const root = el(`<section class="screen landing with-tabbar">
-    <header class="topbar"><div class="spacer"></div><div class="title"></div>
+    <header class="topbar"><button class="icon-btn" data-act="share" aria-label="Share GameHub">${icon.share}</button><div class="title"></div>
       <button class="icon-btn" data-act="settings" aria-label="Settings">${icon.gear}</button></header>
     <div class="scroll"></div></section>`);
   const body = $('.scroll', root);
@@ -421,6 +424,7 @@ function landingScreen() {
   }
   root.addEventListener('click', (e) => {
     if (e.target.closest('[data-act="settings"]')) return app.go('settings');
+    if (e.target.closest('[data-act="share"]')) return shareApp();
     if (e.target.closest('[data-act="webjoin"]')) return openWebJoin();
     const c = e.target.closest('[data-game]');
     if (!c) return;
@@ -573,6 +577,7 @@ function settingsScreen() {
   const toggle = (k, label, sub = '') => `<button class="set-row" data-toggle="${k}"><div class="txt">${label}${sub ? `<small>${sub}</small>` : ''}</div><div class="switch ${S[k] ? 'on' : ''}"></div></button>`;
   const seg = (k, opts) => `<div class="seg" data-seg="${k}">${opts.map(([v, l]) => `<button data-v="${v}" class="${String(S[k]) === String(v) ? 'on' : ''}">${l}</button>`).join('')}</div>`;
   function render() {
+    const hard = S.cbHard || [];
     body.innerHTML = `
       <div class="section-title">Appearance</div>
       <div class="card set-group">
@@ -580,7 +585,15 @@ function settingsScreen() {
         <div class="set-row"><div class="txt">Colour</div><div class="swatches">
           ${[['blue', '#3c6bdc'], ['green', '#2f9e66'], ['purple', '#7a5bd6'], ['pink', '#d4507c'], ['orange', '#e07b28']].map(([k, c]) => `<button class="swatch ${S.accent === k ? 'on' : ''}" data-accent="${k}" style="background:${c};color:${c}" aria-label="${k}"></button>`).join('')}</div></div>
         <div class="set-row"><div class="txt">Number size</div>${seg('fontScale', [[0.9, 'Small'], [1, 'Normal'], [1.12, 'Large']])}</div>
-        ${toggle('colourblind', 'Colourblind mode', 'Adds symbols and patterns in games, and avoids red against green')}
+      </div>
+      <div class="section-title">Colour vision</div>
+      <div class="card set-group">
+        ${toggle('colourblind', 'Colourblind symbols', 'Adds symbols, outlines and labels in games wherever colour carries meaning')}
+        <div class="set-row cb-hard-row"><div class="txt">Colours I find hard to see<small>Tap any that are hard to tell apart. The whole app shifts its colours to make them clearer.</small></div>
+          <div class="cb-chips">${HARD_COLOURS.map(([k, label, c]) => `<button class="cb-chip ${hard.includes(k) ? 'on' : ''}" data-cbhard="${k}" aria-pressed="${hard.includes(k)}"><i style="background:${c}"></i>${label}</button>`).join('')}</div></div>
+        ${hard.length ? `<div class="set-row"><div class="txt">Colour correction</div>${seg('cbStrength', [['gentle', 'Gentle'], ['strong', 'Strong']])}</div>
+        <div class="set-row cb-preview-row"><div class="txt">Preview<small>Game colours as they now look</small></div>
+          <div class="cb-preview">${['#e5383b', '#ff8c1a', '#ffd23f', '#3bb54a', '#22d3c5', '#2f80ed', '#9b51e0', '#ff8cc6'].map((c) => `<i style="background:${c}"></i>`).join('')}</div></div>` : ''}
       </div>
       <div class="section-title">Sound and feel</div>
       <div class="card set-group">
@@ -610,6 +623,7 @@ function settingsScreen() {
         ${toggle('autoUpdate', 'Check for updates automatically')}
         <div class="set-row"><div class="txt">Update channel<small>Beta gets new features first, but they may be rough</small></div>${seg('updateChannel', [['stable', 'Stable'], ['beta', 'Beta']])}</div>
         <button class="set-row" data-act="check"><div class="txt">Check for updates now</div><div class="val">v${esc(native.versionName())}</div></button>
+        <button class="set-row" data-act="share"><div class="txt">Share GameHub<small>Send a friend the link, or let them scan a QR code</small></div></button>
       </div>
       <div class="section-title">More</div>
       <div class="card set-group">
@@ -636,11 +650,14 @@ function settingsScreen() {
       S[k] = k === 'fontScale' ? +sb.dataset.v : sb.dataset.v;
       save(); applyTheme(); render(); return;
     }
+    const ch = e.target.closest('[data-cbhard]');
+    if (ch) { const k = ch.dataset.cbhard, h = S.cbHard || []; S.cbHard = h.includes(k) ? h.filter((x) => x !== k) : [...h, k]; save(); sfx.tap(); applyTheme(); render(); return; }
     const sw = e.target.closest('.swatch[data-accent]');
     if (sw) { S.accent = sw.dataset.accent; save(); applyTheme(); render(); return; }
     const a = e.target.closest('[data-act]')?.dataset.act;
     if (a === 'back') app.back();
     else if (a === 'check') runUpdateCheck(true);
+    else if (a === 'share') shareApp();
     else if (a === 'rules') sudokuRules();
     else if (a === 'meowrules') meowHelp();
     else if (a === 'sortrules') sortHelp();
@@ -719,6 +736,66 @@ function checkWhatsNew() {
 }
 
 // ---------- Updates ----------
+// A panel that stays up while the update downloads, so there is always something to see. If the app reports
+// nothing back, or the download or installer fails, it offers the release page in the browser instead.
+function updateProgress(u) {
+  const page = u.page || APP_LINK;
+  sheet(`<h2>Updating to ${esc(u.version)}</h2>
+    <p class="upd-msg" data-el="msg">Starting the download</p>
+    <div class="upd-bar"><i data-el="bar"></i></div>
+    <button class="btn secondary" data-act="browser">Download in the browser instead</button>
+    <button class="btn ghost" data-act="hide">Hide</button>`, {
+    onMount(node, close) {
+      const msg = $('[data-el="msg"]', node), bar = $('[data-el="bar"]', node);
+      let heard = false;
+      const say = (t) => { if (node.isConnected) msg.textContent = t; else toast(t, 5000); };
+      window.__scUpdateProgress = (p) => {
+        heard = true;
+        bar.style.width = `${Math.max(3, p)}%`;
+        say(p >= 100 ? 'Downloaded. Opening the installer' : `Downloading ${p}%`);
+      };
+      window.__scUpdateNeedsPermission = () => { heard = true; say('Android needs your OK first. Turn on "Allow from this source" for GameHub, then come back here and the installer will open.'); };
+      window.__scUpdateFailed = (why) => {
+        heard = true; bar.style.width = '0';
+        say(why === 'install' || why === 'permission' ? 'The installer would not open. Tap "Download in the browser instead" to get the update another way.'
+          : 'The update could not be downloaded. Check your connection, or tap "Download in the browser instead".');
+      };
+      // nothing back from the app within 12 seconds: say so rather than leave the player waiting
+      setTimeout(() => { if (!heard) say('The download has not started. Tap "Download in the browser instead", then open the file to install it.'); }, 12000);
+      node.addEventListener('click', (e) => {
+        const a = e.target.closest('[data-act]')?.dataset.act;
+        if (a === 'browser') { native.openUrl(page); close(); }
+        else if (a === 'hide') close();
+      });
+      try { native.downloadAndInstall(u.url, u.version); } catch { window.__scUpdateFailed('download'); }
+    },
+  });
+}
+
+// Share the app: a QR code to scan in person, and the phone's share sheet for messages.
+const SHARE_TEXT = 'Try GameHub, a free games app for Android phones. Download it here:';
+function shareApp() {
+  sheet(`<h2>Share GameHub</h2>
+    <p class="share-note">Let a friend scan this with their phone camera, or send them the link.</p>
+    <div class="share-qr">${qrSvg(APP_LINK)}</div>
+    <button class="btn" data-act="send">Send the link</button>
+    <button class="btn secondary" data-act="copy">Copy the link</button>
+    <p class="share-note small">GameHub is for Android. Friends with an iPhone can still join your two-player games from their browser.</p>`, {
+    onMount(node, close) {
+      node.addEventListener('click', async (e) => {
+        const a = e.target.closest('[data-act]')?.dataset.act;
+        if (a === 'send') {
+          const r = await native.share(SHARE_TEXT, APP_LINK);
+          if (r === 'copied') toast('Link copied');
+          else if (r === 'failed') toast('Could not share. Use Copy the link instead.');
+        } else if (a === 'copy') {
+          try { await navigator.clipboard.writeText(APP_LINK); toast('Link copied'); } catch { toast(APP_LINK, 6000); }
+        }
+      });
+    },
+  });
+}
+
 let updateBusy = false; // one check (and one update dialog) at a time
 async function runUpdateCheck(manual = false) {
   const meta = store.meta;
@@ -738,12 +815,7 @@ async function runUpdateCheck(manual = false) {
       buttons: [{ label: 'Update now', value: 'go' }, { label: 'Later', value: 'later', cls: 'secondary' }, { label: 'Skip this version', value: 'skip', cls: 'ghost' }],
       backdrop: false, // a stray tap outside should not throw the update away (back still closes it)
     });
-    if (v === 'go') {
-      window.__scUpdateProgress = (p) => toast(p >= 100 ? 'Download complete. Opening the installer' : `Downloading update ${p}%`, p >= 100 ? 3000 : 6000);
-      window.__scUpdateFailed = () => toast('The update could not be downloaded. Check your connection and try again from Settings.', 5000);
-      native.downloadAndInstall(u.url, u.version);
-      toast('Downloading update', 4000);
-    }
+    if (v === 'go') updateProgress(u);
     else if (v === 'skip') { meta.skipVersion = u.version; save(); }
   } catch (err) {
     if (manual) toast('Could not reach GitHub. Check your connection.');

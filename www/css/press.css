@@ -88,3 +88,18 @@
 .pr-msg { min-height: 22px; font-size: 16px; font-weight: 800; color: #7af0a8; }
 .pr-tapdot { position: fixed; z-index: 20; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; border: 3px solid #7af0a8; pointer-events: none; animation: pr-dot .45s ease-out forwards; }
 @keyframes pr-dot { from { transform: scale(.3); opacity: 1; } to { transform: scale(1.3); opacity: 0; } }
+
+/* tap targets: pictures, numbers and words to tap instead of the button */
+.pr-tiles { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; animation: pr-pop .2s ease-out; }
+.pr-tile { display: grid; place-items: center; min-width: 64px; height: 64px; padding: 0 10px; border-radius: 16px; background: rgba(255, 255, 255, .14);
+  border: 2px solid rgba(255, 255, 255, .28); color: #fff; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform .1s, background .15s; }
+.pr-tile:active { transform: scale(.94); }
+.pr-tile.picked { background: rgba(122, 240, 168, .32); border-color: #7af0a8; }
+.pr-tile img { width: 46px; height: 46px; object-fit: contain; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .3)); pointer-events: none; }
+.pr-tile b { font-size: 32px; font-weight: 900; line-height: 1; pointer-events: none; }
+.pr-tile .pr-q { opacity: .6; }
+.pr-tw { font-size: 17px; font-weight: 800; letter-spacing: .02em; pointer-events: none; }
+.pr-clock.mini { width: 54px; height: 54px; pointer-events: none; }
+.pr-ink { font-size: 56px; letter-spacing: .04em; text-shadow: 0 3px 0 rgba(0, 0, 0, .35); }
+/* the button can slide sideways on some levels */
+.pr-btn { transition: translate .22s ease-out; }

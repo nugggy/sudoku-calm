@@ -5,15 +5,16 @@ import { icon } from './icons.js';
 import { el, $, dialog, toast } from './ui.js';
 import { sfx, buzz } from './sound.js';
 import { helpSheet, levelHome } from './kit.js';
-import { makeLevel, levelTime, plural } from './press-levels.js';
+import { createRun, levelTime, plural } from './press-levels.js';
+import { cbOn } from './cb.js';
 
 const PB = () => store.press;
 const SEGS = 40;      // segments in the timer ring
 export const pressHelp = (onClose) => helpSheet('How to play Pressure Point', [
   'Each level shows one instruction on the big button. Do exactly what it says before the ring runs out.',
-  'Sometimes you press once, sometimes several times, and sometimes not at all. Some levels ask you to hold the button, wait for something to appear, or remember a number for later.',
+  'Sometimes you press once, sometimes several times, and sometimes not at all. Some levels ask you to hold the button, wait for something to appear, tap a picture instead, keep to a beat, or remember something for a few levels later.',
   'Read carefully. Instructions can be tricky, and one wrong press ends the run.',
-  'Every 10 levels you reach a checkpoint, so you can start your next run from there.',
+  'Every 10 levels you reach a checkpoint, so you can start your next run from there. The tasks change every time you try a block again.',
 ], 'press-btn', onClose);
 
 // ---------- Button drawing ----------
@@ -53,6 +54,8 @@ export function pressGameScreen(app, { idx: startIdx = 0 }) {
   const btn = q('btn'), face = q('face'), txt = q('text'), art = q('art'), segs = [...btn.querySelectorAll('.pr-ring rect')];
   let idx = startIdx, spec = null, a = null, state = 'idle', raf = 0, timers = [], alive = true, lit = SEGS;
   const mem = {};   // numbers to remember and the like, for this run
+  // each block of 10 is planned afresh when it starts, keeping back kinds of task the player has had lately
+  const run = createRun({ recent: pb.recent || [], cb: cbOn() });
 
   function sizeText(t) {
     const len = t.replace(/<[^>]+>/g, '').length;
@@ -71,11 +74,15 @@ export function pressGameScreen(app, { idx: startIdx = 0 }) {
 
   function startLevel() {
     clearTimers();
-    spec = makeLevel(idx);
+    spec = run.level(idx);
+    pb.recent = [...(pb.recent || []).filter((k) => k !== spec.kind), spec.kind].slice(-60);
+    btn.style.translate = '';
     a = {
       n: 0, bgN: 0, t: 0, frac: 0, held: 0, holding: false, flag: {}, mem, level: idx + 1,
       go() { a.flag.go = true; },
       setText, setFace, setArt: (h) => { art.innerHTML = h; },
+      // slide the button sideways: -1 far left, 0 middle, 1 far right
+      moveBtn: (p) => { const room = Math.max(0, (q('stage').clientWidth - btn.offsetWidth) / 2 - 8); btn.style.translate = `${Math.round(p * room)}px 0`; },
       after: (ms, fn) => { timers.push(setTimeout(() => { if (state === 'play' && alive) fn(); }, ms)); },
       every: (ms, fn) => { const id = setInterval(() => { if (state !== 'play' || !alive || fn() === false) clearInterval(id); }, ms); timers.push(id); },
     };
@@ -141,7 +148,7 @@ export function pressGameScreen(app, { idx: startIdx = 0 }) {
       buttons: [{ label: `Try again from level ${cp + 1}`, value: 'retry' }, { label: 'Back', value: 'back', cls: 'ghost' }],
     });
     if (!alive) return;
-    if (v === 'retry') { idx = cp; startLevel(); } else app.back();
+    if (v === 'retry') { idx = cp; run.replan(cp / 10); startLevel(); } else app.back();
   }
 
   // Input: the button counts on touch-down so fast tapping feels right; releases matter for hold levels.
@@ -164,6 +171,16 @@ export function pressGameScreen(app, { idx: startIdx = 0 }) {
   btn.addEventListener('contextmenu', (e) => e.preventDefault());
   q('stage').addEventListener('pointerdown', (e) => {
     if (state !== 'play' || e.target.closest('.pr-btn') || performance.now() < a.t0) return;
+    // a picture or number to tap
+    const tile = e.target.closest('.pr-tile');
+    if (tile && spec.pick) {
+      e.preventDefault();
+      const r = spec.pick(a, tile.dataset.t, +tile.dataset.k);
+      if (r === undefined && a.flag.wait) return; // not ready yet: ignore the tap
+      tile.classList.add('picked'); sfx.tap(); buzz(8);
+      result(r);
+      return;
+    }
     if (!spec.bg) return; // taps away from the button only matter on levels that ask for them
     a.bgN++; sfx.note(); buzz(6);
     const dot = el(`<i class="pr-tapdot" style="left:${e.clientX}px;top:${e.clientY}px"></i>`);

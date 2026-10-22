@@ -39,7 +39,7 @@ const defaults = () => ({
   sort: { level: 0, current: null, boosters: { undo: 5, shuffle: 3, slot: 3 } },
   treat: { level: 0, stars: {}, best: 0, boosters: { hammer: 2, swap: 2, shuffle: 2, moves: 1 }, seenHelp: false },
   cross: { level: 0, done: {}, current: null },
-  ws: { level: 0, current: null, words: 0 },
+  ws: { level: 0, current: null, words: 0, bonusTotal: 0 },
   g2048: { best: 0, current: null, games: 0 },
   mines: { best: {}, played: {}, won: {} },
   guess: { stats: { played: 0, won: 0, streak: 0, best: 0, dist: [0, 0, 0, 0, 0, 0] }, daily: {}, dailyState: null, practice: null },

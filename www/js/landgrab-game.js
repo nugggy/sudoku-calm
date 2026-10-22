@@ -1,5 +1,5 @@
-// Land Grab: move around a big field, loop out from your land and back again to claim everything inside the loop.
-// Touch the edge or your own trail and you are out. Cross someone else's trail and they are out.
+// Land Grab: glide around a big field, loop out from your land and back again to claim everything inside the loop.
+// Cross your own trail and you are out. Cross someone else's trail and they are out, and their land becomes yours.
 // Nine computer players play by the same rules and come back after they are knocked out.
 import { store, save } from './store.js';
 import { icon } from './icons.js';
@@ -7,7 +7,7 @@ import { el, $, esc, dialog } from './ui.js';
 import { sfx, buzz } from './sound.js';
 import { helpSheet, levelHome } from './kit.js';
 import { cbOn, symbolFor, symbolSvg, drawSymbol } from './cb.js';
-import { N, TICK, DIRS, MAPS, mapById, maskOf, holesOf, createWorld, addPlayer, spawn, step, steer, think, makeBrain, pct } from './landgrab-engine.js';
+import { N, MAPS, mapById, maskOf, holesOf, createWorld, addPlayer, spawn, step, steer, think, makeBrain, pct, cellAt } from './landgrab-engine.js';
 
 const LG = () => store.landgrab;
 const ART = 'img/kenney/animals-square/';
@@ -20,19 +20,22 @@ const COLOURS = [
 ];
 // light and dark looks for the field, what lies outside it, and the water and rocks inside some maps
 const FIELD = [
-  { field: '#f3f5f9', outside: '#cfd6e1', water: '#8fd0f2', rock: '#9aa1ad', rockLip: '#6f7682' },
-  { field: '#1f232c', outside: '#14161c', water: '#1d4f6e', rock: '#4a505c', rockLip: '#30353f' },
+  { field: '#f3f5f9', outside: '#cfd6e1', water: '#8fd0f2', rock: '#9aa1ad', rockLip: '#6f7682', grid: 'rgba(40,60,100,.06)', edge: '#e9483f' },
+  { field: '#1f232c', outside: '#14161c', water: '#1d4f6e', rock: '#4a505c', rockLip: '#30353f', grid: 'rgba(255,255,255,.04)', edge: '#ff6b6b' },
 ];
 const BOTS = 9;
-const VIEW = 26; // about this many cells across the shorter side of the screen
+const VIEW = 34;       // about this many cells across the shorter side of the screen
+const SIM = 1 / 60;    // the game moves on in steps of this many seconds
+const STICK = 46;      // how far the joystick knob can travel, in pixels
 
 export const landgrabHelp = (onClose) => helpSheet('How to play Land Grab', [
-  'Swipe to steer. On a computer, use the arrow keys or W, A, S and D. You never stop moving, and you cannot turn straight back.',
+  'Touch anywhere and drag to steer, like a joystick. Let go and you carry straight on. On a computer, use the arrow keys or W, A, S and D.',
   'Leave your land and you draw a trail behind you. Get back to your land and the trail, and everything inside the loop, becomes yours.',
-  'You are out if you touch the edge of the field or cross your own trail.',
-  'Cross someone else\'s trail and they are out. They can do the same to you, so do not stay away from home for too long.',
-  'Your score is how much of the field you own. Take all of a player\'s land and they are out too.',
+  'Cross someone else\'s trail and they are out, and all their land becomes yours. They can do the same to you, so do not stay away from home for too long.',
+  'If you cross your own trail you are out. The edge of the field, water and rocks are walls: you just slide along them.',
+  'Your score is how much of the field you own.',
 ], 'lg-btn', onClose);
+
 
 const tile = (skin, cls = '') => `<span class="lg-tile ${cls}"><img src="${ART}${skin}.png" alt=""></span>`;
 export const landgrabCardArt = () => `<div class="art-landgrab"><i class="lga-a"></i><i class="lga-b"></i><i class="lga-trail"></i>${tile('pig', 'lga-me')}</div>`;
@@ -74,6 +77,62 @@ export function landgrabHomeScreen(app) {
   return screen;
 }
 
+
+// ---------- Smooth outlines ----------
+// Land is kept as cells, but drawn as smooth shapes: trace the outline between cells that are in and cells that
+// are out (marching squares), then round it off (Chaikin's corner cutting). Returns a Path2D in cell units.
+const MS = [null, [3, 2], [2, 1], [3, 1], [0, 1], [[0, 1], [3, 2]], [0, 2], [0, 3], [0, 3], [0, 2], [[0, 3], [2, 1]], [0, 1], [3, 1], [2, 1], [3, 2], null];
+function outline(isIn, box = { x0: 0, y0: 0, x1: N - 1, y1: N - 1 }) {
+  const val = (x, y) => (x >= 0 && y >= 0 && x < N && y < N && isIn(y * N + x) ? 1 : 0);
+  const adj = new Map();
+  // edge midpoints sit on half cells, so twice their position is a whole number (offset by 4 to stay positive at the edge)
+  const key = (x2, y2) => (x2 + 4) * 1024 + (y2 + 4);
+  const link = (a, b) => { (adj.get(a) || adj.set(a, []).get(a)).push(b); (adj.get(b) || adj.set(b, []).get(b)).push(a); };
+  for (let y = Math.max(-1, box.y0 - 1); y <= Math.min(N - 1, box.y1 + 1); y++) {
+    for (let x = Math.max(-1, box.x0 - 1); x <= Math.min(N - 1, box.x1 + 1); x++) {
+      const c = val(x, y) * 8 + val(x + 1, y) * 4 + val(x + 1, y + 1) * 2 + val(x, y + 1);
+      const m = MS[c];
+      if (!m) continue;
+      // the four edge midpoints of this square of cell centres: top, right, bottom, left (doubled)
+      const mid = [key(2 * x + 2, 2 * y + 1), key(2 * x + 3, 2 * y + 2), key(2 * x + 2, 2 * y + 3), key(2 * x + 1, 2 * y + 2)];
+      for (const pair of Array.isArray(m[0]) ? m : [m]) link(mid[pair[0]], mid[pair[1]]);
+    }
+  }
+  const path = new Path2D(), seen = new Set();
+  for (const start of adj.keys()) {
+    if (seen.has(start)) continue;
+    let loop = [], prev = -1, cur = start;
+    while (!seen.has(cur)) {
+      seen.add(cur); loop.push([((cur >> 10) - 4) / 2, ((cur & 1023) - 4) / 2]);
+      const nb = adj.get(cur), next = nb[0] !== prev ? nb[0] : nb[1];
+      prev = cur; cur = next;
+      if (cur === undefined) break;
+    }
+    if (loop.length < 3) continue;
+    // ease out the staircase the cells leave: each point moves to the average of its neighbours, a few times over
+    for (let it = 0; it < 3 && loop.length > 6; it++) {
+      const n = loop.length;
+      loop = loop.map((_, i) => {
+        let sx = 0, sy = 0;
+        for (let d = -2; d <= 2; d++) { const p = loop[(i + d + n) % n]; sx += p[0]; sy += p[1]; }
+        return [sx / 5, sy / 5];
+      });
+    }
+    for (let it = 0; it < 2; it++) { // round the corners off
+      const out = [];
+      for (let i = 0; i < loop.length; i++) {
+        const a = loop[i], b = loop[(i + 1) % loop.length];
+        out.push([a[0] * 0.75 + b[0] * 0.25, a[1] * 0.75 + b[1] * 0.25], [a[0] * 0.25 + b[0] * 0.75, a[1] * 0.25 + b[1] * 0.75]);
+      }
+      loop = out;
+    }
+    path.moveTo(loop[0][0], loop[0][1]);
+    for (let i = 1; i < loop.length; i++) path.lineTo(loop[i][0], loop[i][1]);
+    path.closePath();
+  }
+  return path;
+}
+
 // ---------- Game ----------
 export function landgrabGameScreen(app) {
   const lg = LG();
@@ -84,80 +143,41 @@ export function landgrabGameScreen(app) {
     <div class="lg-stage" data-el="stage"><canvas></canvas>
       <div class="lg-me" data-el="me"><b data-el="pct">0%</b><span data-el="kills"></span></div>
       <ol class="lg-board" data-el="board"></ol>
-      <div class="lg-tip" data-el="tip">Swipe to steer</div>
+      <div class="lg-stick" data-el="stick"><i data-el="knob"></i></div>
+      <div class="lg-tip" data-el="tip">Touch anywhere and drag to steer</div>
     </div>
   </section>`);
   const q = (k) => $(`[data-el="${k}"]`, root);
   const stage = q('stage'), canvas = $('canvas', stage), ctx = canvas.getContext('2d');
-  let w, me, brains, wait, alive = true, raf = 0, last = 0, acc = 0, state = 'play', turns = [], parts = [], boardAt = 0;
-  // the land is drawn into a tiny image, one pixel per cell, and scaled up without smoothing so the edges stay sharp
-  const land = document.createElement('canvas'), lip = document.createElement('canvas');
-  land.width = lip.width = N; land.height = lip.height = N;
-  const landCtx = land.getContext('2d'), lipCtx = lip.getContext('2d');
-  const landImg = landCtx.createImageData(N, N), lipImg = lipCtx.createImageData(N, N);
-  const rgb = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
-  let pal = [], palLip = [];
+  let w, me, brains, wait, alive = true, raf = 0, last = 0, acc = 0, state = 'play', parts = [], boardAt = 0, thinkAt = 0;
+  let landPaths = [], field = { path: null, holes: null, dark: null };
   const imgs = {};
   for (const s of SKINS) { const im = new Image(); im.src = `${ART}${s}.png`; imgs[s] = im; }
 
   function newGame() {
     w = createWorld(Math.random, mapById(lg.map));
-    paintField(dark());
     q('title').textContent = `Land Grab · ${w.map.name}`;
     const others = SKINS.filter((s) => s !== lg.skin);
     me = addPlayer(w, { name: 'You', skin: lg.skin, colour: COLOURS[0], human: true });
     for (let i = 0; i < BOTS; i++) addPlayer(w, { name: NAMES[others[i]], skin: others[i], colour: COLOURS[i + 1] });
-    pal = w.players.map((p) => rgb(p.colour[0])); palLip = w.players.map((p) => rgb(p.colour[1]));
     brains = w.players.map((p, i) => (p.human ? null : makeBrain(w.rng, 0.2 + ((i * 37) % 9) / 10)));
     wait = w.players.map(() => 0);
     spawn(w, me);
     for (const p of w.players) if (!p.human) spawn(w, p);
-    turns = []; parts = []; acc = 0; state = 'play';
+    // the field's shape and any lake or rocks inside it, as smooth outlines
+    const holes = holesOf(w.open);
+    field = { path: outline((i) => w.open[i] === 1), holes: w.map.hole ? outline((i) => holes[i] === 1) : null, dark: null };
+    landPaths = w.players.map(() => null);
+    parts = []; acc = 0; state = 'play';
     q('tip').classList.remove('gone');
-    setTimeout(() => q('tip')?.classList.add('gone'), 2600);
-    paintLand(); hud(true);
+    setTimeout(() => q('tip')?.classList.add('gone'), 3000);
+    hud(true);
   }
 
-  // The map: a cover image for every cell that is not field (outside, water or rock), the darker edge under rocks,
-  // and the outline drawn along every side where field meets non-field.
-  const field = { cover: document.createElement('canvas'), lip: document.createElement('canvas'), edge: null, dark: null };
-  field.cover.width = field.lip.width = N; field.cover.height = field.lip.height = N;
-  function paintField(d) {
-    field.dark = d;
-    const cols = FIELD[d ? 1 : 0], o = w.open, hole = w.map.hole;
-    const cover = field.cover.getContext('2d'), lipC = field.lip.getContext('2d');
-    const ci = cover.createImageData(N, N), li = lipC.createImageData(N, N);
-    const outside = rgb(cols.outside), inner = rgb(hole ? cols[hole] : cols.outside), innerLip = rgb(hole === 'rock' ? cols.rockLip : cols[hole] || cols.outside);
-    const holes = holesOf(o);
-    for (let i = 0; i < N * N; i++) {
-      if (o[i]) continue;
-      const c = holes[i] ? inner : outside, k = i * 4;
-      ci.data[k] = c[0]; ci.data[k + 1] = c[1]; ci.data[k + 2] = c[2]; ci.data[k + 3] = 255;
-      if (holes[i] && hole === 'rock') { li.data[k] = innerLip[0]; li.data[k + 1] = innerLip[1]; li.data[k + 2] = innerLip[2]; li.data[k + 3] = 255; }
-    }
-    cover.putImageData(ci, 0, 0); lipC.putImageData(li, 0, 0);
-    const edge = new Path2D();
-    const isOpen = (x, y) => x >= 0 && y >= 0 && x < N && y < N && o[y * N + x];
-    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-      if (!o[y * N + x]) continue;
-      if (!isOpen(x, y - 1)) { edge.moveTo(x, y); edge.lineTo(x + 1, y); }
-      if (!isOpen(x, y + 1)) { edge.moveTo(x, y + 1); edge.lineTo(x + 1, y + 1); }
-      if (!isOpen(x - 1, y)) { edge.moveTo(x, y); edge.lineTo(x, y + 1); }
-      if (!isOpen(x + 1, y)) { edge.moveTo(x + 1, y); edge.lineTo(x + 1, y + 1); }
-    }
-    field.edge = edge;
-  }
-
-  function paintLand() {
-    const a = landImg.data, b = lipImg.data, o = w.owner;
-    for (let i = 0; i < N * N; i++) {
-      const id = o[i], k = i * 4;
-      if (!id) { a[k + 3] = 0; b[k + 3] = 0; continue; }
-      const c = pal[id - 1], d = palLip[id - 1];
-      a[k] = c[0]; a[k + 1] = c[1]; a[k + 2] = c[2]; a[k + 3] = 255;
-      b[k] = d[0]; b[k + 1] = d[1]; b[k + 2] = d[2]; b[k + 3] = 255;
-    }
-    landCtx.putImageData(landImg, 0, 0); lipCtx.putImageData(lipImg, 0, 0);
+  // rebuild the outline of any player whose land changed
+  function refreshLand() {
+    for (const id of w.changed) { const p = w.players[id - 1]; landPaths[id - 1] = p.cells ? outline((i) => w.owner[i] === id, p.box) : null; }
+    w.changed.clear();
   }
 
   function hud(force) {
@@ -172,42 +192,41 @@ export function landgrabGameScreen(app) {
     q('board').innerHTML = rows.map((p) => `<li class="${p.human ? 'you' : ''}"><i style="background:${p.colour[0]}">${cbOn() ? symbolSvg(symbolFor(p.id - 1), { size: 10, stroke: null }) : ''}</i><span>${top.indexOf(p) + 1}. ${esc(p.name)}</span><b>${pct(p).toFixed(1)}%</b></li>`).join('');
   }
 
-  // ----- the game clock -----
+  // ----- one step of the game -----
   function tick() {
-    if (turns.length) steer(me, turns.shift());
+    thinkAt -= SIM;
+    const thinkNow = thinkAt <= 0; // bots decide about ten times a second, which is plenty
+    if (thinkNow) thinkAt = 0.1;
     w.players.forEach((p, i) => {
-      if (p.human) return;
+      if (p.human || !thinkNow) return;
       if (p.alive) think(w, p, brains[i]);
-      else if (++wait[i] > 3 / TICK && spawn(w, p)) { wait[i] = 0; brains[i] = makeBrain(w.rng, brains[i].level); }
+      else if ((wait[i] += 0.1) > 3 && spawn(w, p)) { wait[i] = 0; brains[i] = makeBrain(w.rng, brains[i].level); }
     });
-    step(w);
-    let landChanged = false;
+    step(w, SIM);
     for (const e of w.events) {
       const p = w.players[e.p - 1];
-      if (e.k === 'claim') { landChanged = true; if (p.human) { sfx.place(); buzz(10); } }
+      if (e.k === 'claim') { if (p.human) { sfx.place(); buzz(10); } }
       else if (e.k === 'die') {
-        landChanged = true;
         burst(p);
         if (e.by === me.id) { sfx.unit(); buzz(30); }
-        if (p.human) { const by = e.by ? w.players[e.by - 1] : null; gameOver(by); }
+        if (p.human) gameOver(e.by ? w.players[e.by - 1] : null);
       }
     }
     w.events = [];
-    if (landChanged) paintLand();
-    hud(false);
     if (me.alive && pct(me) >= 99.5) gameOver(null, true);
   }
 
   function burst(p) {
-    for (let k = 0; k < 18; k++) {
-      const a = (k / 18) * Math.PI * 2, s = 3 + (k % 4) * 1.5;
-      parts.push({ x: p.x + 0.5, y: p.y + 0.5, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.7, c: p.colour[0], r: 0.18 + (k % 3) * 0.06 });
+    for (let k = 0; k < 22; k++) {
+      const a = (k / 22) * Math.PI * 2, s = 4 + (k % 4) * 1.8;
+      parts.push({ x: p.x, y: p.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.7, c: p.colour[0], r: 0.2 + (k % 3) * 0.07 });
     }
   }
 
   async function gameOver(by, won = false) {
     if (state !== 'play') return;
     state = 'over';
+    stick.hide();
     const score = me.bestPct;
     const mapId = w.map.id, was = lg.bests[mapId] || 0;
     const best = score > was, firstBest = best && was > 0;
@@ -218,11 +237,7 @@ export function landgrabGameScreen(app) {
     save(true);
     hud(true);
     if (won) sfx.win(); else sfx.error();
-    const how = won ? 'The whole field is yours.'
-      : by ? `${esc(by.name)} crossed your trail.`
-      : !inField(me) ? 'You ran into the edge of the field.'
-      : !w.open[me.y * N + me.x] ? (w.map.hole === 'water' ? 'You fell in the lake.' : w.map.hole === 'rock' ? 'You ran into a rock.' : 'You ran into the edge of the field.')
-      : 'You crossed your own trail.';
+    const how = won ? 'The whole field is yours.' : by ? `${esc(by.name)} crossed your trail.` : 'You crossed your own trail.';
     await new Promise((r) => setTimeout(r, 700));
     if (!alive) return;
     const v = await dialog({
@@ -233,29 +248,41 @@ export function landgrabGameScreen(app) {
     if (!alive) return;
     if (v === 'again') newGame(); else app.back();
   }
-  const inField = (p) => p.x >= 0 && p.y >= 0 && p.x < N && p.y < N;
 
-  // ----- input: swipes anywhere on the field, or the keyboard -----
-  let swipe = null;
-  const turn = (d) => {
-    if (state !== 'play') return;
-    const lastDir = turns.length ? turns[turns.length - 1] : (me.want >= 0 ? me.want : me.dir);
-    if (d === lastDir || (d + 2) % 4 === lastDir) return;
-    if (turns.length < 2) turns.push(d);
-    q('tip').classList.add('gone');
+  // ----- input: a joystick wherever you touch, or the keyboard -----
+  const stickEl = q('stick'), knob = q('knob');
+  const stick = {
+    id: null, ox: 0, oy: 0,
+    show(x, y) { this.ox = x; this.oy = y; stickEl.style.left = `${x}px`; stickEl.style.top = `${y}px`; knob.style.transform = ''; stickEl.classList.add('on'); },
+    hide() { this.id = null; stickEl.classList.remove('on'); },
   };
-  stage.addEventListener('pointerdown', (e) => { swipe = { x: e.clientX, y: e.clientY, id: e.pointerId }; try { stage.setPointerCapture(e.pointerId); } catch { /* not needed */ } });
-  stage.addEventListener('pointermove', (e) => {
-    if (!swipe || swipe.id !== e.pointerId) return;
-    const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y;
-    if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) return;
-    turn(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0));
-    swipe.x = e.clientX; swipe.y = e.clientY; // keep going: one finger can steer several times
+  stage.addEventListener('pointerdown', (e) => {
+    if (state !== 'play' || stick.id !== null) return;
+    const r = stage.getBoundingClientRect();
+    stick.id = e.pointerId; stick.show(e.clientX - r.left, e.clientY - r.top);
+    try { stage.setPointerCapture(e.pointerId); } catch { /* not needed */ }
   });
-  ['pointerup', 'pointercancel'].forEach((t) => stage.addEventListener(t, () => { swipe = null; }));
-  const KEYS = { ArrowUp: 0, KeyW: 0, ArrowRight: 1, KeyD: 1, ArrowDown: 2, KeyS: 2, ArrowLeft: 3, KeyA: 3 };
-  const onKey = (e) => { const d = KEYS[e.code]; if (d === undefined) return; e.preventDefault(); if (!e.repeat) turn(d); };
-  window.addEventListener('keydown', onKey);
+  stage.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== stick.id) return;
+    const r = stage.getBoundingClientRect();
+    let dx = e.clientX - r.left - stick.ox, dy = e.clientY - r.top - stick.oy;
+    const len = Math.hypot(dx, dy);
+    if (len > STICK) { dx *= STICK / len; dy *= STICK / len; }
+    knob.style.transform = `translate(${dx}px, ${dy}px)`;
+    if (len > 6 && state === 'play') { steer(me, Math.atan2(dy, dx)); q('tip').classList.add('gone'); }
+  });
+  ['pointerup', 'pointercancel'].forEach((t) => stage.addEventListener(t, (e) => { if (e.pointerId === stick.id) stick.hide(); }));
+  const held = new Set();
+  const KEYS = { ArrowUp: [0, -1], KeyW: [0, -1], ArrowDown: [0, 1], KeyS: [0, 1], ArrowLeft: [-1, 0], KeyA: [-1, 0], ArrowRight: [1, 0], KeyD: [1, 0] };
+  const onKey = (e, down) => {
+    if (!KEYS[e.code]) return;
+    e.preventDefault();
+    if (down) held.add(e.code); else held.delete(e.code);
+    let x = 0, y = 0; for (const k of held) { x += KEYS[k][0]; y += KEYS[k][1]; }
+    if ((x || y) && state === 'play') { steer(me, Math.atan2(y, x)); q('tip').classList.add('gone'); }
+  };
+  const kd = (e) => onKey(e, true), ku = (e) => onKey(e, false);
+  window.addEventListener('keydown', kd); window.addEventListener('keyup', ku);
 
   // ----- drawing -----
   let cw = 0, ch = 0, dpr = 1;
@@ -269,73 +296,67 @@ export function landgrabGameScreen(app) {
   const ro = new ResizeObserver(fit); ro.observe(stage);
   const dark = () => document.documentElement.dataset.theme === 'dark';
 
-  function draw(t) {
+  function draw() {
     if (!cw) fit();
-    const cs = Math.max(14, Math.min(cw, ch) / VIEW); // pixels per cell
-    const lerp = (p) => [p.px + (p.x - p.px) * t, p.py + (p.y - p.py) * t];
-    const [mx, my] = me.alive || state === 'play' ? lerp(me) : [me.x, me.y];
-    const ox = cw / 2 - (mx + 0.5) * cs, oy = ch / 2 - (my + 0.5) * cs;
+    refreshLand();
+    const cs = Math.max(12, Math.min(cw, ch) / VIEW); // pixels per cell
+    const ox = cw / 2 - me.x * cs, oy = ch / 2 - me.y * cs;
+    const d = dark(), F = FIELD[d ? 1 : 0];
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const d = dark();
-    if (d !== field.dark) paintField(d);
-    ctx.fillStyle = FIELD[d ? 1 : 0].outside; ctx.fillRect(0, 0, cw, ch);
-    ctx.fillStyle = FIELD[d ? 1 : 0].field;
-    ctx.fillRect(ox, oy, N * cs, N * cs);
-    // faint grid on the part that is showing
-    const c0 = Math.max(0, Math.floor(-ox / cs)), c1 = Math.min(N, Math.ceil((cw - ox) / cs)), r0 = Math.max(0, Math.floor(-oy / cs)), r1 = Math.min(N, Math.ceil((ch - oy) / cs));
-    ctx.strokeStyle = d ? 'rgba(255,255,255,.04)' : 'rgba(40,60,100,.06)'; ctx.lineWidth = 1;
-    ctx.beginPath();
-    for (let x = c0; x <= c1; x++) { const sx = Math.round(ox + x * cs) + 0.5; ctx.moveTo(sx, oy + r0 * cs); ctx.lineTo(sx, oy + r1 * cs); }
-    for (let y = r0; y <= r1; y++) { const sy = Math.round(oy + y * cs) + 0.5; ctx.moveTo(ox + c0 * cs, sy); ctx.lineTo(ox + c1 * cs, sy); }
-    ctx.stroke();
-    // the map's shape: cover everything that is not field, then outline the edge
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(field.lip, ox, oy + cs * 0.22, N * cs, N * cs);
-    ctx.drawImage(field.cover, ox, oy, N * cs, N * cs);
-    ctx.save(); ctx.translate(ox, oy); ctx.scale(cs, cs);
-    ctx.strokeStyle = d ? '#ff6b6b' : '#e9483f'; ctx.lineWidth = Math.max(2, cs * 0.12) / cs; ctx.lineJoin = 'round';
-    ctx.stroke(field.edge);
-    ctx.restore();
-    // land: the darker edge first, nudged down, then the land on top
-    ctx.drawImage(lip, ox, oy + cs * 0.22, N * cs, N * cs);
-    ctx.drawImage(land, ox, oy, N * cs, N * cs);
+    ctx.fillStyle = F.outside; ctx.fillRect(0, 0, cw, ch);
+    // everything else is drawn in cell units
+    ctx.setTransform(dpr * cs, 0, 0, dpr * cs, dpr * ox, dpr * oy);
+    const px = 1 / cs; // one screen pixel
+    ctx.fillStyle = F.field; ctx.fill(field.path, 'evenodd');
+    // a faint grid every four cells on the part that is showing
+    const c0 = Math.max(0, Math.floor(-ox / cs / 4) * 4), c1 = Math.min(N, (cw - ox) / cs), r0 = Math.max(0, Math.floor(-oy / cs / 4) * 4), r1 = Math.min(N, (ch - oy) / cs);
+    ctx.save(); ctx.clip(field.path, 'evenodd');
+    ctx.strokeStyle = F.grid; ctx.lineWidth = px; ctx.beginPath();
+    for (let x = c0; x <= c1; x += 4) { ctx.moveTo(x, r0); ctx.lineTo(x, r1); }
+    for (let y = r0; y <= r1; y += 4) { ctx.moveTo(c0, y); ctx.lineTo(c1, y); }
+    ctx.stroke(); ctx.restore();
+    // water or rocks inside the field (rocks stand up a little)
+    if (field.holes) {
+      if (w.map.hole === 'rock') { ctx.save(); ctx.translate(0, 0.3); ctx.fillStyle = F.rockLip; ctx.fill(field.holes, 'evenodd'); ctx.restore(); }
+      ctx.fillStyle = F[w.map.hole]; ctx.fill(field.holes, 'evenodd');
+    }
+    ctx.strokeStyle = F.edge; ctx.lineWidth = Math.max(2 * px, 0.14); ctx.lineJoin = 'round'; ctx.stroke(field.path);
+    // land: a darker edge nudged down, then the land on top
+    w.players.forEach((p, i) => { const path = landPaths[i]; if (!path) return; ctx.save(); ctx.translate(0, 0.28); ctx.fillStyle = p.colour[1]; ctx.fill(path, 'evenodd'); ctx.restore(); });
+    w.players.forEach((p, i) => { const path = landPaths[i]; if (!path) return; ctx.fillStyle = p.colour[0]; ctx.fill(path, 'evenodd'); });
     // colourblind mode: each player's symbol repeats faintly across their land, so whose land is whose does not rest on colour
     if (cbOn()) {
-      for (let y = r0; y < r1; y++) for (let x = c0; x < c1; x++) {
-        if ((x + 2 * y) % 5) continue;
+      for (let y = Math.floor(r0); y < r1; y += 3) for (let x = Math.floor(c0) + (y % 2) * 2; x < c1; x += 4) {
         const id = w.owner[y * N + x];
-        if (id) drawSymbol(ctx, symbolFor(id - 1), ox + (x + 0.5) * cs, oy + (y + 0.5) * cs, cs * 0.34, 'rgba(255,255,255,.7)', null);
+        if (id) drawSymbol(ctx, symbolFor(id - 1), x + 0.5, y + 0.5, 0.45, 'rgba(255,255,255,.7)', null);
       }
     }
-    // trails, see-through, and stretched to the moving head
+    // trails: a soft band from where the player left home to their head
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     for (const p of w.players) {
-      if (!p.alive || !p.trail.length) continue;
-      ctx.fillStyle = p.colour[0]; ctx.globalAlpha = 0.5;
-      for (let k = 0; k < p.trail.length - 1; k++) { const i = p.trail[k]; ctx.fillRect(ox + (i % N) * cs, oy + ((i / N) | 0) * cs, cs, cs); }
-      const [hx, hy] = lerp(p), lx = p.px, ly = p.py;
-      const x0 = Math.min(lx, hx), y0 = Math.min(ly, hy);
-      if (p.trail.length > 1 || w.owner[ly * N + lx] !== p.id) ctx.fillRect(ox + x0 * cs, oy + y0 * cs, (Math.abs(hx - lx) + 1) * cs, (Math.abs(hy - ly) + 1) * cs);
+      if (!p.alive || !p.path.length) continue;
+      ctx.strokeStyle = p.colour[0]; ctx.globalAlpha = 0.55; ctx.lineWidth = 0.95;
+      ctx.beginPath(); ctx.moveTo(p.path[0][0], p.path[0][1]);
+      for (let k = 1; k < p.path.length; k++) ctx.lineTo(p.path[k][0], p.path[k][1]);
+      ctx.lineTo(p.x, p.y); ctx.stroke();
       ctx.globalAlpha = 1;
     }
-    // players
+    // players: their animal on a block of their colour, with their name above
     for (const p of w.players) {
       if (!p.alive) continue;
-      const [x, y] = lerp(p), s = cs * 1.3, px = ox + (x + 0.5) * cs - s / 2, py = oy + (y + 0.5) * cs - s / 2;
-      if (px < -s * 2 || py < -s * 2 || px > cw + s || py > ch + s) continue;
-      ctx.fillStyle = p.colour[1];
-      roundRect(px, py + s * 0.12, s, s, s * 0.18); ctx.fill();
-      ctx.fillStyle = p.colour[0];
-      roundRect(px, py, s, s, s * 0.18); ctx.fill();
+      const s = 1.7, x = p.x - s / 2, y = p.y - s / 2;
+      if ((x + s) * cs + ox < -40 || x * cs + ox > cw + 40 || (y + s) * cs + oy < -40 || y * cs + oy > ch + 40) continue;
+      ctx.fillStyle = p.colour[1]; ctx.beginPath(); ctx.roundRect(x, y + 0.22, s, s, 0.32); ctx.fill();
+      ctx.fillStyle = p.colour[0]; ctx.beginPath(); ctx.roundRect(x, y, s, s, 0.32); ctx.fill();
       const im = imgs[p.skin];
-      if (im.complete && im.naturalWidth) { const iw = s * 0.86, ih = iw * (im.naturalHeight / im.naturalWidth); ctx.drawImage(im, px + (s - iw) / 2, py + (s - ih) / 2 + s * 0.02, iw, ih); }
-      ctx.font = `700 ${Math.round(Math.max(11, cs * 0.5))}px system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(20,24,36,.65)'; ctx.strokeText(p.name, px + s / 2, py - 3);
-      ctx.fillStyle = '#fff'; ctx.fillText(p.name, px + s / 2, py - 3);
+      if (im.complete && im.naturalWidth) { const iw = s * 0.86, ih = iw * (im.naturalHeight / im.naturalWidth); ctx.drawImage(im, p.x - iw / 2, p.y - ih / 2 + 0.03, iw, ih); }
+      ctx.font = `700 ${Math.max(11, cs * 0.55) / cs}px system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.lineWidth = 3 * px; ctx.strokeStyle = 'rgba(20,24,36,.65)'; ctx.strokeText(p.name, p.x, y - 0.15);
+      ctx.fillStyle = '#fff'; ctx.fillText(p.name, p.x, y - 0.15);
     }
-    for (const q2 of parts) { ctx.globalAlpha = Math.max(0, q2.life / 0.7); ctx.fillStyle = q2.c; ctx.fillRect(ox + (q2.x - q2.r) * cs, oy + (q2.y - q2.r) * cs, q2.r * 2 * cs, q2.r * 2 * cs); }
+    for (const b of parts) { ctx.globalAlpha = Math.max(0, b.life / 0.7); ctx.fillStyle = b.c; ctx.fillRect(b.x - b.r, b.y - b.r, b.r * 2, b.r * 2); }
     ctx.globalAlpha = 1;
   }
-  function roundRect(x, y, wd, ht, r) { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, wd, ht, r) : ctx.rect(x, y, wd, ht); }
 
   function frame(now) {
     if (!alive) return;
@@ -344,16 +365,17 @@ export function landgrabGameScreen(app) {
     if (state === 'play') {
       acc += dt;
       let n = 0;
-      while (acc >= TICK && n < 4 && state === 'play') { acc -= TICK; tick(); n++; }
-      if (n === 4) acc = 0;
+      while (acc >= SIM && n < 8 && state === 'play') { acc -= SIM; tick(); n++; }
+      if (n === 8) acc = 0;
+      hud(false);
     }
     for (const p of parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.9; p.vy *= 0.9; p.life -= dt; }
     parts = parts.filter((p) => p.life > 0);
-    draw(state === 'play' ? Math.min(1, acc / TICK) : 1);
+    draw();
   }
 
   // stop while the app is hidden or help is open
-  const pause = () => { if (state === 'play') state = 'paused'; };
+  const pause = () => { if (state === 'play') { state = 'paused'; stick.hide(); } };
   const resume = () => { if (state === 'paused' && alive) { state = 'play'; last = 0; } };
   const onVis = () => (document.hidden ? pause() : resume());
   document.addEventListener('visibilitychange', onVis);
@@ -362,12 +384,18 @@ export function landgrabGameScreen(app) {
     if (a === 'back') app.back();
     else if (a === 'help') { pause(); landgrabHelp(resume); }
   });
+  // the topbar buttons should not start the joystick
+  root.querySelector('.topbar').addEventListener('pointerdown', (e) => e.stopPropagation());
 
   newGame();
   if (!lg.seenHelp) { lg.seenHelp = true; save(); pause(); setTimeout(() => landgrabHelp(resume), 300); }
   raf = requestAnimationFrame(frame);
   return {
     root,
-    destroy() { alive = false; cancelAnimationFrame(raf); ro.disconnect(); window.removeEventListener('keydown', onKey); document.removeEventListener('visibilitychange', onVis); save(true); },
+    destroy() {
+      alive = false; cancelAnimationFrame(raf); ro.disconnect();
+      window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku);
+      document.removeEventListener('visibilitychange', onVis); save(true);
+    },
   };
 }

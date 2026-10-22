@@ -46,8 +46,8 @@ export function sheet(innerHtml, { onMount, onClose } = {}) {
   return o.close;
 }
 
-// buttons: [{label, value, cls}] -> resolves with the chosen value (or null if dismissed)
-export function dialog({ hero = '', title = '', text = '', notes = '', buttons = [{ label: 'OK', value: true }], dismissible = true, backdrop = dismissible }) {
+// buttons: [{label, value, cls}] -> resolves with the chosen value (or null if dismissed). html: extra markup the caller has already escaped.
+export function dialog({ hero = '', title = '', text = '', notes = '', html = '', buttons = [{ label: 'OK', value: true }], dismissible = true, backdrop = dismissible }) {
   return new Promise((resolve) => {
     let chosen = null;
     const node = el(`<div class="backdrop center"><div class="dialog">
@@ -55,6 +55,7 @@ export function dialog({ hero = '', title = '', text = '', notes = '', buttons =
       ${title ? `<h2>${esc(title)}</h2>` : ''}
       ${text ? `<p>${esc(text)}</p>` : ''}
       ${notes ? `<div class="dlg-notes">${esc(notes)}</div>` : ''}
+      ${html}
       <div class="stack">${buttons.map((b, i) => `<button class="btn ${b.cls || ''}" data-i="${i}">${esc(b.label)}</button>`).join('')}</div>
     </div></div>`);
     const o = mountOverlay(node, { dismissible, backdrop, onClose: () => resolve(chosen) });

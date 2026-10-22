@@ -782,3 +782,16 @@ h1, h2, h3, p { margin: 0; }
 .cb-chip.on { border-color: var(--primary); background: var(--primary-soft); }
 .cb-preview { display: flex; gap: 5px; }
 .cb-preview i { width: 20px; height: 20px; border-radius: 6px; }
+
+/* ---------- Word Search bonus box ---------- */
+.ws-bonus-bar { display: flex; justify-content: center; padding: 0 12px 8px; }
+.ws-star { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px 6px 10px; border-radius: 20px; background: rgba(255, 255, 255, .8); color: #2c3e66; font-weight: 800; box-shadow: 0 2px 6px rgba(30, 40, 80, .12); }
+:root[data-theme="dark"] .ws-star { background: rgba(255, 255, 255, .1); color: #dfe6ff; }
+.ws-star svg { width: 22px; height: 22px; fill: #c9cfdc; transition: fill .2s; }
+.ws-star.has svg { fill: #f5b70a; filter: drop-shadow(0 1px 2px rgba(180, 120, 0, .4)); }
+.ws-star.bump { animation: bump .45s; }
+.ws-lines line.bonus { stroke-opacity: .32; }
+.ws-bonus-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 8px; margin: 4px 0 14px; max-height: 40vh; overflow-y: auto; }
+.ws-bonus-list span { padding: 5px 11px; border-radius: 14px; background: #fff3cc; color: #7a5600; font-weight: 800; font-size: 14px; letter-spacing: .5px; }
+:root[data-theme="dark"] .ws-bonus-list span { background: rgba(245, 183, 10, .18); color: #ffd866; }
+.ws-bonus-empty { color: var(--muted); margin: 4px 0 14px; }

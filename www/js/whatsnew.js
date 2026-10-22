@@ -2,6 +2,11 @@
 // tools/release.mjs uses the same text for the GitHub release notes (it will not publish a version missing here).
 // Keep each line short and plain: what was added or changed, from the player's point of view.
 export const WHATS_NEW = [
+  { v: '1.19.2', items: [
+    'Land Grab: glide freely with a touch joystick (touch anywhere and drag), with smooth, flowing land. Knock someone out and all their land becomes yours, and the edge no longer knocks you out.',
+    'Pressure Point: about 70 kinds of task, including tapping pictures, beats, Simon says and memory, and every block of 10 is made fresh each time you try it.',
+    'Word Search: spot a real word that is not on the list and add it to your bonus box. Tap the star above the grid to see them.',
+  ] },
   { v: '1.19.1', items: [
     'New: Colour vision settings. Tap the colours you find hard to see and the whole app shifts its colours to make them clearer, with a gentle or strong setting.',
     'Share GameHub with a friend: tap the share button on the games screen for a QR code, or send the link.',

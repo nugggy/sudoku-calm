@@ -2,7 +2,8 @@
 import { mulberry32 } from './sudoku-engine.js';
 import { store, save, fmtTime } from './store.js';
 import { icon } from './icons.js';
-import { el, $, $$, sheet, dialog, toast, confetti } from './ui.js';
+import { el, $, $$, sheet, dialog, toast, confetti, esc } from './ui.js';
+import { loadWords } from './words.js';
 import { sfx, buzz } from './sound.js';
 
 const HUES = ['#ff6b8b', '#ffa94d', '#ffd43b', '#69db7c', '#4dabf7', '#9775fa', '#f783ac', '#38d9a9', '#ff8787', '#74c0fc', '#b197fc', '#ffc078', '#63e6be', '#e599f7'];
@@ -103,16 +104,18 @@ export function wsGameScreen(app, { level }) {
       <div class="ws-head"><img data-el="img" alt="" ${FIT}><span data-el="name"></span></div>
       <span class="cross-time" data-el="time">00:00</span>
       <button class="icon-btn" data-act="hint" aria-label="Hint">${icon.bulb}</button></header>
+    <div class="ws-bonus-bar"><button class="ws-star" data-act="bonus" aria-label="Bonus words"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><b data-el="bonusN">0</b></button></div>
     <div class="ws-board-wrap"><div class="ws-board" data-el="board"><svg class="ws-lines" data-el="lines"></svg></div></div>
     <div class="ws-words" data-el="words"></div>
   </section>`);
   const q = (k) => $(`[data-el="${k}"]`, root);
   let spec, puzzle, found, elapsed = 0, done = false, tick = null, cell = 30, size = 8;
+  let bonus = [];   // extra real words the player spotted in this grid: {word, r1, c1, r2, c2}
 
   function build() {
     size = spec.size;
     const board = q('board');
-    cell = Math.floor(Math.min(innerWidth - 24, 520, innerHeight - 300) / size);
+    cell = Math.floor(Math.min(innerWidth - 24, 520, innerHeight - 350) / size);
     board.style.setProperty('--wc', cell + 'px');
     board.style.width = board.style.height = cell * size + 'px';
     board.insertAdjacentHTML('beforeend', puzzle.grid.map((ch, i) => `<div class="wcell" data-i="${i}">${ch}</div>`).join(''));
@@ -134,7 +137,7 @@ export function wsGameScreen(app, { level }) {
     q('lines').querySelector('.found-g').innerHTML = found.map((w) => {
       const p = puzzle.placed.find((x) => x.word === w);
       return capsule(p.r, p.c, p.r + p.dr * (p.word.length - 1), p.c + p.dc * (p.word.length - 1), HUES[found.indexOf(w) % HUES.length] + 'b3', 'found');
-    }).join('');
+    }).join('') + bonus.map((b) => capsule(b.r1, b.c1, b.r2, b.c2, '#f5b70a', 'bonus')).join(''); // bonus words: a faint gold outline
   }
   function dragLine(r1, c1, r2, c2) {
     const line = q('lines').querySelector('.temp');
@@ -197,9 +200,41 @@ export function wsGameScreen(app, { level }) {
       renderFound();
       renderWords();
       checkWin();
-    } else if (s.cells.length > 1) sfx.erase();
+    } else if (s.cells.length >= 3) offerBonus(s, word, rev);
+    else if (s.cells.length > 1) sfx.erase();
     dragLine(null);
   };
+
+  // ---------- Bonus words ----------
+  // A real word that is not on the list (read either way) can go in the bonus box, if the player says so.
+  async function offerBonus(s, word, rev) {
+    const { valid } = await loadWords();
+    const pickWord = valid.has(word.toLowerCase()) ? word : valid.has(rev.toLowerCase()) ? rev : null;
+    if (!pickWord || puzzle.placed.some((p) => p.word === pickWord)) { sfx.erase(); return; }
+    if (bonus.some((b) => b.word === pickWord)) { sfx.erase(); toast(`${pickWord} is already in your bonus box`); return; }
+    const a = s.cells[0], b = s.cells[s.cells.length - 1];
+    dragLine(a[0], a[1], b[0], b[1]); // keep the selection showing while we ask
+    sfx.hint();
+    const v = await dialog({
+      title: pickWord, text: `${pickWord} is not on the list. Is this a new word you want to add to your bonus box?`,
+      buttons: [{ label: 'Add to bonus box', value: 'add' }, { label: 'No thanks', value: 'no', cls: 'ghost' }],
+    });
+    dragLine(null);
+    if (v !== 'add' || done) return;
+    bonus.push({ word: pickWord, r1: a[0], c1: a[1], r2: b[0], c2: b[1] });
+    w.bonusTotal = (w.bonusTotal || 0) + 1;
+    sfx.unit(); buzz(15);
+    persist(); renderFound(); renderBonus();
+    const star = q('bonusN').parentElement; star.classList.remove('bump'); void star.offsetWidth; star.classList.add('bump');
+  }
+  function renderBonus() { q('bonusN').textContent = bonus.length; q('bonusN').parentElement.classList.toggle('has', bonus.length > 0); }
+  function openBonus() {
+    const list = bonus.length
+      ? `<div class="ws-bonus-list">${bonus.map((b) => `<span>${esc(b.word)}</span>`).join('')}</div>`
+      : '<p class="ws-bonus-empty">No bonus words yet. Spot a real word in the grid that is not on the list, and drag across it.</p>';
+    dialog({ title: 'Bonus box', text: bonus.length ? `${bonus.length} extra word${bonus.length === 1 ? '' : 's'} found in this grid` : '', html: list,
+      notes: (w.bonusTotal || 0) > bonus.length ? `${w.bonusTotal} bonus words across all your puzzles` : '', buttons: [{ label: 'Close', value: true }] });
+  }
   board.addEventListener('pointerup', finish);
   board.addEventListener('pointercancel', finish);
 
@@ -212,7 +247,7 @@ export function wsGameScreen(app, { level }) {
     toast(`Look for ${p.word}`);
   }
 
-  function persist() { w.current = { level, found, elapsed }; save(); }
+  function persist() { w.current = { level, found, elapsed, bonus }; save(); }
 
   function checkWin() {
     if (found.length < puzzle.placed.length) return;
@@ -226,7 +261,7 @@ export function wsGameScreen(app, { level }) {
     setTimeout(async () => {
       confetti();
       const v = await dialog({ hero: themeImg(spec.theme), title: `${spec.theme.name} complete!`, dismissible: false,
-        text: `All ${puzzle.placed.length} words found in ${fmtTime(elapsed)}`,
+        text: `All ${puzzle.placed.length} words found in ${fmtTime(elapsed)}${bonus.length ? `, plus ${bonus.length} bonus word${bonus.length === 1 ? '' : 's'}` : ''}`,
         buttons: [{ label: 'Next puzzle', value: 'next' }, { label: 'Back', value: 'back', cls: 'ghost' }] });
       if (v === 'next') app.replace('wsgame', { level: level + 1 }); else app.back();
     }, size * 60 + 400);
@@ -241,6 +276,7 @@ export function wsGameScreen(app, { level }) {
     const a = e.target.closest('[data-act]')?.dataset.act;
     if (a === 'back') app.back();
     else if (a === 'hint') hint();
+    else if (a === 'bonus') openBonus();
   });
 
   (async () => {
@@ -249,8 +285,9 @@ export function wsGameScreen(app, { level }) {
     puzzle = generate(spec);
     const cur = w.current && w.current.level === level ? w.current : null;
     found = cur ? cur.found.filter((x) => puzzle.placed.some((p) => p.word === x)) : [];
+    bonus = cur && Array.isArray(cur.bonus) ? cur.bonus : [];
     elapsed = cur ? cur.elapsed : 0;
-    requestAnimationFrame(() => { build(); renderFound(); renderWords(); startTimer(); });
+    requestAnimationFrame(() => { build(); renderFound(); renderWords(); renderBonus(); startTimer(); });
     if (!w.seenHelp) { w.seenHelp = true; save(); setTimeout(wsHelp, 300); }
   })();
 

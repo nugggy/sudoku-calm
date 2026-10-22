@@ -440,6 +440,37 @@ function gameMatches(g, query) {
   return norm(query).split(' ').filter(Boolean).every((t) => words.includes(` ${t}`));
 }
 
+// Games behind a passcode. A simple lock to keep casual hands out, not real security. Only a scrambled form of
+// each code is kept here (lockHash of the code), so the code itself does not appear in the source.
+// Once the right code is entered, the game stays open until the app is closed.
+const LOCKED = { casino: 'ki1oww' };
+const lockHash = (s) => { let x = 2166136261; for (const c of `gamehub-lock:${s}`) { x ^= c.charCodeAt(0); x = Math.imul(x, 16777619) >>> 0; } return x.toString(36); };
+const unlocked = new Set();
+function askPasscode(g, onOk) {
+  sheet(`<h2>${esc(g.name)} is locked</h2><p class="pin-note">Enter the passcode to open it.</p>
+    <div class="pin-dots" data-el="dots">${'<i></i>'.repeat(4)}</div>
+    <div class="pin-pad">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button data-n="${n}">${n}</button>`).join('')}<span></span><button data-n="0">0</button><button data-n="del" aria-label="Delete">${icon.back}</button></div>`, {
+    onMount(node, close) {
+      let code = '';
+      const dots = $('[data-el="dots"]', node);
+      const show = () => [...dots.children].forEach((d, i) => d.classList.toggle('on', i < code.length));
+      const press = (k) => {
+        if (k === 'del') code = code.slice(0, -1);
+        else if (code.length < 4) code += k;
+        sfx.tap(); show();
+        if (code.length < 4) return;
+        if (lockHash(code) === LOCKED[g.id]) { setTimeout(() => { close(); onOk(); }, 150); return; }
+        dots.classList.remove('bad'); void dots.offsetWidth; dots.classList.add('bad'); sfx.error();
+        $('.pin-note', node).textContent = 'That is not the passcode. Try again.';
+        setTimeout(() => { code = ''; show(); }, 350);
+      };
+      node.addEventListener('click', (e) => { const b = e.target.closest('[data-n]'); if (b) press(b.dataset.n); });
+      const onKey = (e) => { if (!node.isConnected) return document.removeEventListener('keydown', onKey); if (/^[0-9]$/.test(e.key)) press(e.key); else if (e.key === 'Backspace') press('del'); };
+      document.addEventListener('keydown', onKey);
+    },
+  });
+}
+
 function landingScreen() {
   const root = el(`<section class="screen landing with-tabbar">
     <header class="topbar"><button class="icon-btn" data-act="share" aria-label="Share GameHub">${icon.share}</button><div class="title"></div>
@@ -496,8 +527,9 @@ function landingScreen() {
     if (!c) return;
     sfx.tap();
     const g = GAMES.find((x) => x.id === c.dataset.game);
-    if (isNew(g)) { store.meta.opened[g.id] = true; save(); }
-    app.go(g.screen, g.params);
+    const open = () => { if (isNew(g)) { store.meta.opened[g.id] = true; save(); } app.go(g.screen, g.params); };
+    if (LOCKED[g.id] && !unlocked.has(g.id)) askPasscode(g, () => { unlocked.add(g.id); open(); });
+    else open();
   });
   render();
   return { root, refresh: render };

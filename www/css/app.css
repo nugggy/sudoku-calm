@@ -806,3 +806,15 @@ h1, h2, h3, p { margin: 0; }
 .game-search .search-clear svg { width: 18px; height: 18px; }
 .search-none { text-align: center; color: var(--muted); margin: 28px 0; }
 .cat-block[hidden], .game-card[hidden], .search-none[hidden] { display: none; }
+
+/* ---------- Passcode lock ---------- */
+.pin-note { text-align: center; color: var(--muted); margin: 4px 0 14px; }
+.pin-dots { display: flex; justify-content: center; gap: 16px; margin-bottom: 20px; }
+.pin-dots i { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--muted); transition: background .12s, border-color .12s; }
+.pin-dots i.on { background: var(--primary); border-color: var(--primary); }
+.pin-dots.bad { animation: shake .35s; }
+.pin-dots.bad i { border-color: var(--err); }
+.pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 300px; margin: 0 auto 6px; }
+.pin-pad button { height: 58px; border-radius: 16px; background: var(--surface); color: var(--text); font-size: 24px; font-weight: 700; }
+.pin-pad button:active { background: var(--surface-2); }
+.pin-pad button svg { width: 24px; height: 24px; }

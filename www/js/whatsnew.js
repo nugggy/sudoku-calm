@@ -2,6 +2,13 @@
 // tools/release.mjs uses the same text for the GitHub release notes (it will not publish a version missing here).
 // Keep each line short and plain: what was added or changed, from the player's point of view.
 export const WHATS_NEW = [
+  { v: '1.20.0', items: [
+    'New: Slither Snacks. Glide round a glowing arena, eat snacks to grow, boost to cut off fourteen computer snakes, and pick from 12 skins and three speeds.',
+    'Play Together: Slither Snacks and Land Grab for two phones, sharing the arena with computer players.',
+    'Land Grab: choose a speed, and any piece of someone\'s land you cut off is now yours.',
+    'Search: a search box on the games screen finds any game, including the games inside each collection.',
+    'Casino Night is now locked behind a passcode.',
+  ] },
   { v: '1.19.2', items: [
     'Land Grab: glide freely with a touch joystick (touch anywhere and drag), with smooth, flowing land. Knock someone out and all their land becomes yours, and the edge no longer knocks you out.',
     'Pressure Point: about 70 kinds of task, including tapping pictures, beats, Simon says and memory, and every block of 10 is made fresh each time you try it.',

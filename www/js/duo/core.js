@@ -1,7 +1,8 @@
 // Play Together: the game module API and helpers shared by the hub, the games and test harnesses.
 //
 // Each game is www/js/duo/g-<id>.js:
-//   export default { id, name, tag, art: () => html, help: [paragraphs], realtime: bool, cat: 'board'|'action'|'party', create(ctx) }
+//   export default { id, name, tag, art: () => html, help: [paragraphs], realtime: bool, cat: 'board'|'action'|'party', twoPhones?: bool, create(ctx) }
+//   twoPhones: the game needs a phone each (no "On this phone" option), for games whose camera follows one player.
 // create(ctx) fills ctx.root and returns { destroy() }.
 //
 // ctx = {

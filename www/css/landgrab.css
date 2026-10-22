@@ -67,3 +67,8 @@
 .lg-stick.on { opacity: 1; }
 .lg-stick i { position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; margin: -24px 0 0 -24px; border-radius: 50%; background: rgba(255, 255, 255, .92); box-shadow: 0 3px 8px rgba(20, 30, 60, .3); }
 :root:not([data-theme="dark"]) .lg-stick { background: radial-gradient(circle, rgba(40, 60, 100, .14), rgba(40, 60, 100, .05)); border-color: rgba(40, 60, 100, .3); }
+
+/* home: speed choice */
+.lg-speed { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.lg-speed button { padding: 12px 6px; border-radius: 14px; background: var(--surface); border: 2px solid transparent; color: var(--lg-text); font-weight: 700; font-size: 15px; }
+.lg-speed button.on { border-color: #ff5d8f; background: var(--kit-done); }

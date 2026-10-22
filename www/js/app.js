@@ -31,6 +31,7 @@ import { casinoHubScreen, casinoGameScreen, casinoHelp, casinoCardArt } from './
 import { potionHomeScreen, potionGameScreen, potionHelp, potionCardArt } from './potion-game.js';
 import { motoHubScreen, motoGarageScreen, motoGameScreen, motoHelp, motoCardArt } from './moto/hub.js';
 import { landgrabHomeScreen, landgrabGameScreen, landgrabHelp, landgrabCardArt } from './landgrab-game.js';
+import { snakeHomeScreen, snakeGameScreen, snakeHelp, snakeCardArt } from './snake-game.js';
 import { yetiHubScreen, yetiGameScreen, yetiHelp, yetiCardArt, YETI_GAMES } from './yeti/hub.js';
 import { pressHomeScreen, pressGameScreen, pressHelp, pressCardArt } from './press-game.js';
 import { mahjongHomeScreen, mahjongGameScreen, mahjongHelp } from './mahjong-game.js';
@@ -78,7 +79,7 @@ const SCREENS = {
   treat: treatHomeScreen, treatgame: treatGameScreen, block: blockScreen,
   cross: crossHomeScreen, crossgame: crossGameScreen, ws: wsHomeScreen, wsgame: wsGameScreen,
   g2048: screen2048, mines: minesHomeScreen, minesgame: minesGameScreen, guess: guessHomeScreen, guessgame: guessGameScreen,
-  hashi: hashiHomeScreen, hashigame: hashiGameScreen, gridlock: gridlockHomeScreen, gridlockgame: gridlockGameScreen, crate: crateHomeScreen, crategame: crateGameScreen, potion: potionHomeScreen, potiongame: potionGameScreen, arrow: arrowHomeScreen, arrowgame: arrowGameScreen, chess: chessHomeScreen, chessgame: chessGameScreen, rope: ropeHomeScreen, ropegame: ropeGameScreen, snip: snipHomeScreen, sniplobby: snipLobbyScreen, snipgame: snipGameScreen, turtle: turtleHubScreen, turtlegame: turtleGameScreen, hero: heroHubScreen, herobuilder: heroBuilderScreen, herogame: heroGameScreen, duo: duoHubScreen, duolobby: duoLobbyScreen, duogame: duoGameScreen, casino: casinoHubScreen, casinogame: casinoGameScreen, press: pressHomeScreen, pressgame: pressGameScreen, yeti: yetiHubScreen, yetigame: yetiGameScreen, moto: motoHubScreen, motogarage: motoGarageScreen, motogame: motoGameScreen, landgrab: landgrabHomeScreen, landgrabgame: landgrabGameScreen,
+  hashi: hashiHomeScreen, hashigame: hashiGameScreen, gridlock: gridlockHomeScreen, gridlockgame: gridlockGameScreen, crate: crateHomeScreen, crategame: crateGameScreen, potion: potionHomeScreen, potiongame: potionGameScreen, arrow: arrowHomeScreen, arrowgame: arrowGameScreen, chess: chessHomeScreen, chessgame: chessGameScreen, rope: ropeHomeScreen, ropegame: ropeGameScreen, snip: snipHomeScreen, sniplobby: snipLobbyScreen, snipgame: snipGameScreen, turtle: turtleHubScreen, turtlegame: turtleGameScreen, hero: heroHubScreen, herobuilder: heroBuilderScreen, herogame: heroGameScreen, duo: duoHubScreen, duolobby: duoLobbyScreen, duogame: duoGameScreen, casino: casinoHubScreen, casinogame: casinoGameScreen, press: pressHomeScreen, pressgame: pressGameScreen, yeti: yetiHubScreen, yetigame: yetiGameScreen, moto: motoHubScreen, motogarage: motoGarageScreen, motogame: motoGameScreen, landgrab: landgrabHomeScreen, landgrabgame: landgrabGameScreen, snake: snakeHomeScreen, snakegame: snakeGameScreen,
   mahjong: mahjongHomeScreen, mjgame: mahjongGameScreen,
   wheel: wheelHomeScreen, wheelgame: wheelGameScreen, pipe: pipeHomeScreen, pipegame: pipeGameScreen,
   spider: spiderHomeScreen, spidergame: spiderGameScreen,
@@ -338,7 +339,7 @@ registerGame({
 registerGame({
   id: 'duo', cat: 'Casual', screen: 'duo', name: 'Play Together', tag: 'Two-player games over wifi or Bluetooth', theme: 'g-duo',
   art: () => duoCardArt(),
-  progress: () => { const n = Object.values(store.duo.played).reduce((a, b) => a + b, 0); return n ? `${n} games played` : '20 games for two'; },
+  progress: () => { const n = Object.values(store.duo.played).reduce((a, b) => a + b, 0); return n ? `${n} games played` : '22 games for two'; },
 });
 registerGame({
   id: 'snip', cat: 'Casual', screen: 'snip', name: 'Snip Buddies', tag: 'Team up, snip each other into shape', theme: 'g-snip',
@@ -354,6 +355,11 @@ registerGame({
   id: 'landgrab', cat: 'Casual', screen: 'landgrab', name: 'Land Grab', tag: 'Loop out, claim land, cut trails', theme: 'g-landgrab',
   art: () => landgrabCardArt(),
   progress: () => (store.landgrab.best ? `Best ${store.landgrab.best.toFixed(1)}%` : 'Nine animals to beat'),
+});
+registerGame({
+  id: 'snake', cat: 'Casual', screen: 'snake', name: 'Slither Snacks', tag: 'Eat, grow and outsmart the snakes', theme: 'g-snake',
+  art: () => snakeCardArt(),
+  progress: () => (store.snake.best ? `Best length ${store.snake.best.toLocaleString('en-AU')}` : '14 snakes to beat'),
 });
 registerGame({
   id: 'turtle', cat: 'Casual', screen: 'turtle', name: 'Turtle Bay', tag: 'Eight games starring turtles', theme: 'g-turtle',
@@ -398,6 +404,42 @@ function seedOpened() {
 }
 const isNew = (g) => !store.meta.opened[g.id];
 
+// Extra words the search box matches: the games inside each collection, and other names people use.
+const SEARCH_WORDS = {
+  duo: 'two player friend multiplayer wifi bluetooth connect four chess draughts checkers reversi othello battleships dots boxes noughts crosses tic tac toe mancala nine mens morris five in a row gomoku memory duel air hockey paddle ball pong tank duel light cycles tron sumo bumpers penalty shootout soccer football word duel tug of war quick draw',
+  casino: 'blackjack poker texas holdem roulette craps dice baccarat video poker jacks or better pokies slots chips cards',
+  turtle: 'hatchling dash reef glide jelly snack shell stack river hop shell match tortoise trek turtle race',
+  yeti: 'penguin batting orca splash glacier bounce albatross ride flamingo golf big wave stage dive freeride jungle swing llama spit icicle climb grand tour',
+  moto: 'motorbike motorcycle bike moto rush hill rider stunt park rush hour rider bike park delivery dash garage',
+  hero: 'marvel spider man spiderman web swing hero hq power match shield throw captain america villain lockdown infinity stones hero builder avengers',
+  snip: 'two player friend multiplayer paper cut',
+  landgrab: 'paper io territory trail two player friend multiplayer',
+  snake: 'snake io slither worm grow two player friend multiplayer',
+  sudoku: 'numbers grid',
+  gridlock: 'rush hour cars traffic jam parking',
+  hashi: 'island hop bridges hashiwokakero',
+  meow: 'cats queens star battle',
+  sort: 'cat sort water sort ball sort',
+  arrow: 'arrows tap away',
+  rope: 'cut the rope sweet drop frog candy',
+  treat: 'match 3 candy crush',
+  ws: 'word search find words',
+  cross: 'crossword clues',
+  wheel: 'word wheel anagram letters',
+  guess: 'wordle five letter',
+  mines: 'minesweeper bombs',
+  2048: 'merge tiles',
+  sol: 'klondike patience cards', spider: 'patience cards', mahjong: 'tiles solitaire', block: 'blocks tetris puzzle', pipe: 'flow connect the dots',
+  potion: 'water sort colours', crate: 'sokoban boxes push', press: 'button reaction', jigsaw: 'puzzle picture pieces', sticker: 'stickers scenes',
+};
+const norm = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+const searchText = (g) => norm(`${g.name} ${g.tag} ${g.cat} ${SEARCH_WORDS[g.id] || ''}`);
+// every word typed must start a word in the game's text: "conn four" finds Connect Four
+function gameMatches(g, query) {
+  const words = ` ${searchText(g)}`;
+  return norm(query).split(' ').filter(Boolean).every((t) => words.includes(` ${t}`));
+}
+
 function landingScreen() {
   const root = el(`<section class="screen landing with-tabbar">
     <header class="topbar"><button class="icon-btn" data-act="share" aria-label="Share GameHub">${icon.share}</button><div class="title"></div>
@@ -413,19 +455,43 @@ function landingScreen() {
       <div class="brand-row">${brandSvg}<span>GameHub</span></div>
       <div class="landing-head"><h1>${greeting()}</h1><p>What would you like to play?</p></div>
       ${lan.webGuest ? `<button class="web-join-card" data-act="webjoin"><b>Join your friend's game</b><small>${lan.webGuest === 'snip' ? 'Snip Buddies' : 'Play Together'} on ${esc(lan.ip())}</small></button>` : ''}
-      ${CATEGORIES.map((cat) => `<div class="cat-title">${cat}</div><div class="game-grid">${GAMES.filter((g) => g.cat === cat).map((g) => `
+      <label class="game-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+        <input type="search" data-el="search" placeholder="Search games" aria-label="Search games" autocomplete="off" enterkeyhint="search" value="${esc(query)}">
+        <button class="search-clear" data-act="clear" aria-label="Clear search" ${query ? '' : 'hidden'}>${icon.close}</button></label>
+      <p class="search-none" data-el="none" hidden>No games match. Try another word.</p>
+      ${CATEGORIES.map((cat) => `<section class="cat-block"><div class="cat-title">${cat}</div><div class="game-grid">${GAMES.filter((g) => g.cat === cat).map((g) => `
         <button class="game-card ${g.theme}" data-game="${g.id}">
           ${isNew(g) ? '<span class="new-badge">New</span>' : ''}<div class="game-art">${g.art()}</div>
           <div class="game-name">${esc(g.name)}</div>
           <div class="game-tag">${esc(g.tag)}</div>
           <div class="game-progress">${esc(g.progress())}</div>
-        </button>`).join('')}</div>`).join('')}
+        </button>`).join('')}</div></section>`).join('')}
       <p class="landing-foot">No ads. No interruptions. Just puzzles.</p>`;
+    filter();
   }
+  // Show only the games that match the search, and hide categories left empty. Cards stay in the page, so typing is instant.
+  let query = '';
+  function filter() {
+    let shown = 0;
+    $$('.cat-block', body).forEach((block) => {
+      let any = false;
+      $$('[data-game]', block).forEach((c) => { const ok = !query || gameMatches(GAMES.find((x) => x.id === c.dataset.game), query); c.hidden = !ok; any ||= ok; shown += ok; });
+      block.hidden = !any;
+    });
+    $('[data-el="none"]', body).hidden = shown > 0;
+    $('.search-clear', body).hidden = !query;
+  }
+  body.addEventListener('input', (e) => { if (e.target.matches('[data-el="search"]')) { query = e.target.value; filter(); } });
+  body.addEventListener('keydown', (e) => {
+    if (!e.target.matches('[data-el="search"]')) return;
+    if (e.key === 'Enter') { e.target.blur(); const only = $$('[data-game]', body).filter((c) => !c.hidden); if (only.length === 1) only[0].click(); }
+    if (e.key === 'Escape') { query = ''; e.target.value = ''; filter(); }
+  });
   root.addEventListener('click', (e) => {
     if (e.target.closest('[data-act="settings"]')) return app.go('settings');
     if (e.target.closest('[data-act="share"]')) return shareApp();
     if (e.target.closest('[data-act="webjoin"]')) return openWebJoin();
+    if (e.target.closest('[data-act="clear"]')) { e.preventDefault(); query = ''; const s = $('[data-el="search"]', body); s.value = ''; filter(); s.focus(); return; }
     const c = e.target.closest('[data-game]');
     if (!c) return;
     sfx.tap();
@@ -664,8 +730,8 @@ function settingsScreen() {
     else if (a === 'solrules') solHelp();
     else if (a === 'treatrules') treatHelp();
     else if (a === 'crossrules') crossHelp();
-    else if (a === 'rules-more') sheet(`<h2>How to play</h2>${[['2048', '2048'], ['mines', 'Minesweeper'], ['guess', 'Guesswork'], ['wheel', 'Word Wheel'], ['pipe', 'Pipeline'], ['mahjong', 'Mahjong Garden'], ['spider', 'Spider Solitaire'], ['jigsaw', 'Jigsaw'], ['sticker', 'Sticker Studio'], ['hashi', 'Island Hop'], ['gridlock', 'Gridlock'], ['crate', 'Crate Mate'], ['potion', 'Potion Pour'], ['arrow', 'Arrow Away'], ['chess', 'Chess'], ['rope', 'Sweet Drop'], ['snip', 'Snip Buddies'], ['turtle', 'Turtle Bay'], ['hero', 'Marvel Heroes'], ['duo', 'Play Together'], ['casino', 'Casino Night'], ['press', 'Pressure Point'], ['yeti', 'Yeti Games'], ['moto', 'Moto Mania'], ['landgrab', 'Land Grab']].map(([k, n]) => `<button class="sheet-item" data-h="${k}">${n}</button>`).join('')}`, {
-      onMount(node, close) { node.addEventListener('click', (ev) => { const b = ev.target.closest('[data-h]'); if (!b) return; close(); ({ 2048: help2048, mines: minesHelp, guess: guessHelp, wheel: wheelHelp, pipe: pipeHelp, mahjong: mahjongHelp, spider: spiderHelp, jigsaw: jigsawHelp, sticker: stickerHelp, hashi: hashiHelp, gridlock: gridlockHelp, crate: crateHelp, potion: potionHelp, arrow: arrowHelp, chess: chessHelp, rope: ropeHelp, snip: snipHelp, turtle: () => turtleHelp(), hero: () => heroHelp(), duo: () => duoHelp(), casino: () => casinoHelp(), press: () => pressHelp(), yeti: () => yetiHelp(), moto: () => motoHelp(), landgrab: () => landgrabHelp() })[b.dataset.h](); }); },
+    else if (a === 'rules-more') sheet(`<h2>How to play</h2>${[['2048', '2048'], ['mines', 'Minesweeper'], ['guess', 'Guesswork'], ['wheel', 'Word Wheel'], ['pipe', 'Pipeline'], ['mahjong', 'Mahjong Garden'], ['spider', 'Spider Solitaire'], ['jigsaw', 'Jigsaw'], ['sticker', 'Sticker Studio'], ['hashi', 'Island Hop'], ['gridlock', 'Gridlock'], ['crate', 'Crate Mate'], ['potion', 'Potion Pour'], ['arrow', 'Arrow Away'], ['chess', 'Chess'], ['rope', 'Sweet Drop'], ['snip', 'Snip Buddies'], ['turtle', 'Turtle Bay'], ['hero', 'Marvel Heroes'], ['duo', 'Play Together'], ['casino', 'Casino Night'], ['press', 'Pressure Point'], ['yeti', 'Yeti Games'], ['moto', 'Moto Mania'], ['landgrab', 'Land Grab'], ['snake', 'Slither Snacks']].map(([k, n]) => `<button class="sheet-item" data-h="${k}">${n}</button>`).join('')}`, {
+      onMount(node, close) { node.addEventListener('click', (ev) => { const b = ev.target.closest('[data-h]'); if (!b) return; close(); ({ 2048: help2048, mines: minesHelp, guess: guessHelp, wheel: wheelHelp, pipe: pipeHelp, mahjong: mahjongHelp, spider: spiderHelp, jigsaw: jigsawHelp, sticker: stickerHelp, hashi: hashiHelp, gridlock: gridlockHelp, crate: crateHelp, potion: potionHelp, arrow: arrowHelp, chess: chessHelp, rope: ropeHelp, snip: snipHelp, turtle: () => turtleHelp(), hero: () => heroHelp(), duo: () => duoHelp(), casino: () => casinoHelp(), press: () => pressHelp(), yeti: () => yetiHelp(), moto: () => motoHelp(), landgrab: () => landgrabHelp(), snake: () => snakeHelp() })[b.dataset.h](); }); },
     });
     else if (a === 'wsrules') wsHelp();
     else if (a === 'blockrules') blockHelp();
@@ -702,6 +768,7 @@ function aboutScreen() {
         <p><b>Marvel Heroes.</b> An unofficial fan project, not made or endorsed by Marvel or Disney. Marvel characters, names and related marks belong to Marvel. All hero artwork is drawn by the app on Kenney's Toon Characters; robots and gems are from Kenney's Robot Pack and Puzzle Pack 2 (kenney.nl, CC0). Thor's hammer is "mjolner" by OZZYBOI and the arc reactor is "Arc Reactor" by Heiko Jakob, both from poly.pizza under CC-BY 3.0 (creativecommons.org/licenses/by/3.0).</p><br>
         <p><b>Moto Mania.</b> The motorbikes and the scooter are by Poly by Google, and the dirt bike is by Corentin Fatus, all under CC-BY 3.0 (creativecommons.org/licenses/by/3.0), found on poly.pizza. Riders, cars, roads, buildings, food and scenery are from Kenney's Mini Characters, Car Kit, City Kits, Racing Kit, Food Kit and Nature Kit (kenney.nl, CC0). 3D drawing uses three.js (MIT licence).</p><br>
         <p><b>Land Grab.</b> The animals are from Kenney's Animal Pack (kenney.nl, CC0). The field and land are drawn by the app.</p><br>
+        <p><b>Slither Snacks.</b> The snakes' faces are from Kenney's Shape Characters, and the glow on the snacks is from Kenney's Particle Pack (kenney.nl, CC0). The arena and snakes are drawn by the app.</p><br>
         <p><b>Yeti Games.</b> The yeti, llama, ox and snake are by Quaternius (CC0). The penguin, orca, seal, albatross (a gull), giraffe, elephant, vulture, acacia, ibex, bighorn ram, surfboard and icicle are by Poly by Google, and the flamingo is by Хмара Сергей, all under CC-BY 3.0 (creativecommons.org/licenses/by/3.0). The snowboard is by Geldvillager and the bat by CreativeTrio (CC0). All were found on poly.pizza and rendered into pictures for this app.</p><br>
         <p><b>Artwork.</b> Animal, scenery and vehicle pictures are by Kenney (kenney.nl), released into the public domain under CC0. All other illustrations, including the cats, icons and Mahjong tiles, are original to GameHub.</p><br>
         <p><b>Inspiration.</b> GameHub is an independent app. It is not made by, endorsed by or affiliated with Easybrain, Oakever Games, Easetouch, King, Hungry Studio or any other game maker. Its games are our own takes on popular puzzle styles, with original artwork and names.</p><br>

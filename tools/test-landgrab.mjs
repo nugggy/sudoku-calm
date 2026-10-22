@@ -62,12 +62,45 @@ const R = 0, D = Math.PI / 2, L = Math.PI, U = -Math.PI / 2;
   check(b.cells >= bBefore + aLand - 1, `cut: land handed over (${b.cells} from ${bBefore} + ${aLand})`);
   check(recount(w, b) === b.cells && recount(w, a) === 0, 'cut: counts match');
 }
+// 4b. slicing through someone's land: the piece cut off from where they are becomes yours
+{
+  const w = E.createWorld(mulberry32(41)), a = E.addPlayer(w, { name: 'a' }), b = E.addPlayer(w, { name: 'b' });
+  place(w, a, 40, 46, D);
+  for (let y = 44; y <= 48; y++) for (let x = 30; x <= 52; x++) if (w.owner[y * N + x] !== a.id) { w.owner[y * N + x] = a.id; a.cells++; }
+  a.box = { x0: 30, y0: 42, x1: 52, y1: 50 };
+  // b owns a long strip and is standing at its right-hand end
+  b.alive = true; b.x = 70.5; b.y = 62.5; b.ang = R; b.box = { x0: 20, y0: 60, x1: 72, y1: 64 };
+  for (let y = 60; y <= 64; y++) for (let x = 20; x <= 72; x++) { w.owner[y * N + x] = b.id; b.cells++; }
+  const before = b.cells;
+  drive(w, a, D, 3.0); drive(w, a, R, 1.0); drive(w, a, U, 3.2); // down through the strip, across, and back up home
+  b.x = 70.5; b.y = 62.5; // b stays put at its end (it is not being driven)
+  check(a.alive, 'slice: still alive');
+  check(w.owner[62 * N + 70] === b.id, 'slice: the owner keeps the piece they are on');
+  check(w.owner[62 * N + 25] === a.id, 'slice: the cut-off piece is now the cutter\'s');
+  check(b.cells < before / 2, `slice: owner lost the cut-off piece (${b.cells} of ${before})`);
+  check(recount(w, a) === a.cells && recount(w, b) === b.cells, 'slice: counts match');
+}
 // 5. water is a wall too
 {
   const w = E.createWorld(mulberry32(5), E.mapById('lake')), p = E.addPlayer(w, { name: 'a' });
   place(w, p, 30, 60, R);
   drive(w, p, R, 3);
   check(p.alive && w.open[E.cellAt(p.x, p.y)] === 1, 'lake: stopped at the water, still in');
+}
+// 7. Play Together: the guest's copy of the field matches the host's, cell for cell, through a long game
+{
+  const { lgInit, lgStep, lgSnap, lgApply } = await import('../www/js/duo/g-landgrab.js');
+  const s = lgInit(['Ann', 'Ben'], 'rocks', 1, mulberry32(77));
+  let gs = null, worst = 0;
+  for (let f = 0; f < 60 * 90; f++) {
+    lgStep(s, [{ a: Math.sin(f / 90) * 3 }, { a: Math.cos(f / 70) * 3 }], () => {});
+    if (f % 2 === 0) gs = lgApply(gs, JSON.parse(JSON.stringify(lgSnap(s))));
+    // compare straight after an update, when the guest has everything the host has
+    if (f % 300 === 298) { let diff = 0; for (let i = 0; i < N * N; i++) if (gs.w.owner[i] !== s.w.owner[i]) diff++; worst = Math.max(worst, diff); }
+  }
+  gs = lgApply(gs, JSON.parse(JSON.stringify(lgSnap(s))));
+  check(worst === 0, `Play Together: guest field differs from the host's in ${worst} cells`);
+  check(gs.w.players.every((p, i) => p.cells === s.w.players[i].cells), 'Play Together: land counts match');
 }
 // 6. long bot-only games on every map
 let deaths = 0, peak = 0, claims = 0, kills = 0, handed = 0;

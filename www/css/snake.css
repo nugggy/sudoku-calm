@@ -1,0 +1,61 @@
+/* ---------- Slither Snacks ---------- */
+.snake-theme {
+  --kit-accent: #55d36a; --kit-done: #1f3a2a; --ss-text: #eef2ff;
+  color: var(--ss-text);
+  background: radial-gradient(ellipse 90% 50% at 50% 0%, #22305e, transparent 70%), linear-gradient(180deg, #151d3a 0%, #0c1124 100%);
+}
+.snake-theme .icon-btn, .snake-theme .kit-title, .snake-theme .topbar .title { color: var(--ss-text); }
+.snake-theme .section-title { color: rgba(238, 242, 255, .7); }
+.snake-theme .kit-btn { box-shadow: 0 4px 0 #2e8c3d; }
+.ss-btn { background: #55d36a; }
+.g-snake { background: linear-gradient(150deg, #22305e, #121a33 60%, #2e8c3d); }
+
+/* a snake's head: its colours in a circle with its face */
+.ss-tile { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, var(--b), var(--a) 60%); box-shadow: 0 3px 0 rgba(0, 0, 0, .35); }
+.ss-tile img { width: 74%; height: auto; display: block; }
+/* card and home art: a wiggling snake chasing glowing snacks */
+.art-snake { position: relative; width: 140px; height: 80px; }
+.ss-wiggle { position: absolute; left: 6px; top: 26px; display: block; }
+.ss-wiggle i { position: absolute; left: calc(var(--k) * 11px); top: calc(sin(var(--k) * 40deg) * 12px); width: 22px; height: 22px; border-radius: 50%;
+  background: var(--k-col, #55d36a); box-shadow: 0 2px 0 rgba(0, 0, 0, .3); animation: ss-wig 1.6s ease-in-out infinite; animation-delay: calc(var(--k) * -.16s); }
+.ss-wiggle i:nth-child(odd) { --k-col: #d9ff8a; }
+@keyframes ss-wig { 50% { transform: translateY(7px); } }
+.art-snake .ss-head { position: absolute; left: 100px; top: 18px; width: 34px; height: 34px; }
+.ss-snack { position: absolute; width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 10px 4px currentColor; background: currentColor; }
+.ss-snack.s1 { left: 18px; top: 4px; color: #ff6be0; }
+.ss-snack.s2 { left: 70px; top: 66px; color: #ffe84a; }
+.ss-snack.s3 { left: 128px; top: 64px; color: #36e0d2; }
+.ss-hero { display: grid; place-items: center; padding: 10px 0 4px; }
+.ss-hero .art-snake { transform: scale(1.4); margin: 18px 0 14px; }
+
+/* home: speed, skins and records */
+.ss-speed { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.ss-speed button { padding: 12px 6px; border-radius: 14px; background: rgba(255, 255, 255, .08); border: 2px solid transparent; color: var(--ss-text); font-weight: 700; font-size: 15px; }
+.ss-speed button.on { border-color: #55d36a; background: rgba(85, 211, 106, .16); }
+.ss-skins { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.ss-skin { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 0; border-radius: 14px; background: rgba(255, 255, 255, .06); border: 2px solid transparent; color: var(--ss-text); }
+.ss-skin small { font-size: 12px; font-weight: 600; opacity: .8; }
+.ss-skin.on { border-color: #55d36a; background: rgba(85, 211, 106, .14); }
+.ss-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 18px; }
+.ss-stats span { display: flex; flex-direction: column; align-items: center; padding: 10px 4px; border-radius: 14px; background: rgba(255, 255, 255, .06); font-size: 13px; color: rgba(238, 242, 255, .7); }
+.ss-stats b { font-size: 20px; color: var(--ss-text); }
+
+/* ---------- Game ---------- */
+.ss-game { user-select: none; -webkit-user-select: none; background: #0c1124; }
+.ss-stage { position: relative; flex: 1; min-height: 0; margin: 0 0 var(--safe-bottom); touch-action: none; overflow: hidden; }
+.ss-stage canvas { position: absolute; inset: 0; display: block; }
+.ss-me { position: absolute; left: 10px; top: 8px; display: flex; flex-direction: column; padding: 6px 12px; border-radius: 14px; background: rgba(10, 14, 30, .62); pointer-events: none; }
+.ss-me b { font-size: 24px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.ss-me span { font-size: 12px; font-weight: 600; opacity: .75; }
+.ss-board { position: absolute; right: 10px; top: 8px; margin: 0; padding: 6px 10px; list-style: none; min-width: 150px; border-radius: 14px; background: rgba(10, 14, 30, .62); font-size: 13px; pointer-events: none; }
+.ss-board li { display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; }
+.ss-board li span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ss-board li b { font-variant-numeric: tabular-nums; }
+.ss-board li.you { color: #fff36b; font-weight: 800; }
+.ss-boost { position: absolute; right: 18px; bottom: 22px; width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .14); border: 2px solid rgba(255, 255, 255, .4); touch-action: none; -webkit-tap-highlight-color: transparent; }
+.ss-boost svg { width: 34px; height: 34px; fill: #fff36b; }
+.ss-boost.on { background: rgba(255, 243, 107, .3); border-color: #fff36b; transform: scale(.94); }
+.ss-tip { position: absolute; left: 50%; bottom: 16%; transform: translateX(-50%); padding: 10px 18px; border-radius: 20px; background: rgba(10, 14, 30, .78); color: #fff; font-weight: 700; pointer-events: none; transition: opacity .4s; }
+.ss-tip.gone { opacity: 0; }
+/* the joystick look is shared with Land Grab (landgrab.css); on this dark arena use the light version */
+.ss-stick { background: radial-gradient(circle, rgba(255, 255, 255, .2), rgba(255, 255, 255, .06)) !important; border-color: rgba(255, 255, 255, .5) !important; }

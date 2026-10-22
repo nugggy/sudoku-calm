@@ -795,3 +795,14 @@ h1, h2, h3, p { margin: 0; }
 .ws-bonus-list span { padding: 5px 11px; border-radius: 14px; background: #fff3cc; color: #7a5600; font-weight: 800; font-size: 14px; letter-spacing: .5px; }
 :root[data-theme="dark"] .ws-bonus-list span { background: rgba(245, 183, 10, .18); color: #ffd866; }
 .ws-bonus-empty { color: var(--muted); margin: 4px 0 14px; }
+
+/* ---------- Game search ---------- */
+.game-search { position: relative; display: flex; align-items: center; margin: 4px 0 6px; }
+.game-search > svg { position: absolute; left: 14px; width: 20px; height: 20px; fill: none; stroke: var(--muted); stroke-width: 2.2; stroke-linecap: round; pointer-events: none; }
+.game-search input { width: 100%; height: 46px; padding: 0 44px 0 44px; border: 0; border-radius: 23px; background: var(--surface); color: var(--text); font: inherit; font-size: 16px; outline: none; box-shadow: inset 0 0 0 1px var(--surface-2); -webkit-appearance: none; appearance: none; }
+.game-search input:focus { box-shadow: inset 0 0 0 2px var(--primary); }
+.game-search input::-webkit-search-cancel-button { display: none; }
+.game-search .search-clear { position: absolute; right: 4px; width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%; color: var(--muted); }
+.game-search .search-clear svg { width: 18px; height: 18px; }
+.search-none { text-align: center; color: var(--muted); margin: 28px 0; }
+.cat-block[hidden], .game-card[hidden], .search-none[hidden] { display: none; }

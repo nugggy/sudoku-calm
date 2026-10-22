@@ -22,7 +22,7 @@ export { makePair, makeCtx } from './core.js';
 // The single list of games, in hub order. Each loads from g-<id>.js; one that is missing or fails to load is skipped.
 const GAME_IDS = [
   'connect4', 'chess', 'draughts', 'reversi', 'ships', 'dots', 'mancala', 'morris', 'gomoku',
-  'hockey', 'tanks', 'paddle', 'cycles', 'tug', 'quickdraw', 'sumo', 'penalty',
+  'hockey', 'tanks', 'paddle', 'cycles', 'snake', 'landgrab', 'tug', 'quickdraw', 'sumo', 'penalty',
   'ttt', 'memory', 'wordduel',
 ];
 const GROUPS = [['board', 'Board games'], ['action', 'Action'], ['party', 'Party']];
@@ -140,7 +140,7 @@ export function duoHubScreen(app) {
       return;
     }
     sheet(`<h2>${esc(g.name)}</h2><p class="duo-sheet-tag">${esc(g.tag)}</p>
-      <button class="sheet-item" data-m="local"><b>On this phone</b><small>${g.realtime ? 'Share the screen, one side each' : 'Take turns passing the phone'}</small></button>
+      ${g.twoPhones ? '' : `<button class="sheet-item" data-m="local"><b>On this phone</b><small>${g.realtime ? 'Share the screen, one side each' : 'Take turns passing the phone'}</small></button>`}
       <button class="sheet-item" data-m="net"><b>Two phones</b><small>Connect over wifi, a hotspot or Bluetooth</small></button>
       <button class="sheet-item" data-m="help"><b>How to play</b></button>`, {
       onMount(node, close) {

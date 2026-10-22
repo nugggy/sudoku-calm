@@ -247,3 +247,22 @@
   background: linear-gradient(135deg, #6a5cf0, #3c6bdc); box-shadow: 0 6px 18px rgba(60, 70, 180, .3); font: inherit; }
 .web-join-card b { display: block; font-size: 18px; }
 .web-join-card small { display: block; margin-top: 4px; opacity: .9; font-size: 13px; }
+
+/* Slither Snacks card: two snake heads */
+.duo-art-snake { position: relative; width: 96px; height: 56px; }
+.duo-art-snake span { position: absolute; width: 30px; height: 30px; border-radius: 50%; box-shadow: 0 3px 0 rgba(0, 0, 0, .3); }
+.duo-art-snake span:nth-child(1) { left: 10px; top: 14px; }
+.duo-art-snake span:nth-child(2) { right: 10px; top: 14px; }
+.duo-art-snake img { position: absolute; width: 22px; top: 21px; }
+.duo-art-snake img:nth-of-type(1) { left: 14px; }
+.duo-art-snake img:nth-of-type(2) { right: 14px; }
+.snake-duo .rtd-stage { background: #0c1124; }
+
+/* Land Grab card: two patches of land with their animals */
+.duo-art-lg { position: relative; width: 96px; height: 56px; }
+.duo-art-lg i { position: absolute; top: 8px; width: 42px; height: 38px; border-radius: 14px; }
+.duo-art-lg i.a { left: 2px; background: #ff8a3d; box-shadow: 0 4px 0 #c25412; }
+.duo-art-lg i.b { right: 2px; background: #2fb8ff; box-shadow: 0 4px 0 #0f7fbf; }
+.duo-art-lg img { position: absolute; top: 15px; width: 24px; height: 24px; border-radius: 6px; }
+.duo-art-lg img:nth-of-type(1) { left: 11px; }
+.duo-art-lg img:nth-of-type(2) { right: 11px; }

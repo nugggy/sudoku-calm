@@ -48,12 +48,13 @@ export function holesOf(open) {
   return holes;
 }
 
-export function createWorld(rng = Math.random, map = MAPS[0]) {
+// pace: how fast everyone moves, from the player's speed setting (1 is normal)
+export function createWorld(rng = Math.random, map = MAPS[0], pace = 1) {
   const open = maskOf(map);
   let area = 0; for (let i = 0; i < N * N; i++) area += open[i];
   return {
     owner: new Uint8Array(N * N), trail: new Uint8Array(N * N), order: new Int32Array(N * N), open, area, map,
-    players: [], time: 0, rng, events: [], changed: new Set(), // changed: players whose land changed since the page last drew it
+    players: [], time: 0, rng, events: [], changed: new Set(), pace, // changed: players whose land changed since the page last drew it
   };
 }
 
@@ -101,6 +102,7 @@ function setOwner(w, i, id) {
   if (was) { w.players[was - 1].cells--; w.changed.add(was); }
   w.owner[i] = id;
   if (id) { w.players[id - 1].cells++; w.changed.add(id); }
+  if (w.dirty) w.dirty.push(i, id); // Play Together: the host sends these cell changes to the guest
 }
 
 // Steer towards an angle (radians, 0 = right, down is positive), or null to carry straight on.
@@ -142,8 +144,10 @@ export function step(w, dt) {
   const dead = new Map(); // player -> who knocked them out (or null)
   const out = (p, by) => { if (!dead.has(p)) dead.set(p, by); };
   for (const p of movers) {
-    if (p.want !== null && p.want !== undefined) { const d = wrap(p.want - p.ang); p.ang = wrap(p.ang + Math.max(-TURN * dt, Math.min(TURN * dt, d))); }
-    let nx = p.x + Math.cos(p.ang) * SPEED * dt, ny = p.y + Math.sin(p.ang) * SPEED * dt;
+    // turning keeps pace with speed, so curves are the same shape at any speed
+    const sp = SPEED * w.pace, tr = TURN * w.pace;
+    if (p.want !== null && p.want !== undefined) { const d = wrap(p.want - p.ang); p.ang = wrap(p.ang + Math.max(-tr * dt, Math.min(tr * dt, d))); }
+    let nx = p.x + Math.cos(p.ang) * sp * dt, ny = p.y + Math.sin(p.ang) * sp * dt;
     // walls: slide along them rather than stop dead
     if (!openAt(w, nx, ny)) {
       if (openAt(w, nx, p.y)) ny = p.y;
@@ -209,6 +213,7 @@ export function capture(w, p) {
     const x = x0 + lx, y = y0 + ly, i = y * N + x;
     if (inside(x, y) && w.owner[i] !== p.id && w.open[i]) claim(w, p, i); // a lake or rock inside the loop stays as it is
   }
+  takeSevered(w, p);
   w.events.push({ k: 'claim', p: p.id });
 }
 
@@ -216,7 +221,7 @@ function claim(w, p, i) {
   const was = w.owner[i];
   setOwner(w, i, p.id);
   // took the last of someone's land: they are out
-  if (was && was !== p.id) { const q = w.players[was - 1]; if (q.alive && q.cells === 0) kill(w, q, p); }
+  if (was && was !== p.id) { const q = w.players[was - 1]; (w.cut ||= new Set()).add(q); if (q.alive && q.cells === 0) kill(w, q, p); }
 }
 
 // ---------- computer players ----------
@@ -341,4 +346,42 @@ function huntTarget(w, p) {
     }
   }
   return best;
+}
+
+// After a capture cuts through someone's land, any piece of their land left cut off from the rest goes to the
+// player who cut it. The owner keeps the piece they are standing on, or their biggest piece if they are out roaming.
+function takeSevered(w, p) {
+  const hit = w.cut; w.cut = null;
+  if (!hit) return;
+  for (const q of hit) {
+    if (!q.alive || !q.cells) continue;
+    const seen = new Uint8Array(N * N), parts = [];
+    for (let i = 0; i < N * N; i++) {
+      if (w.owner[i] !== q.id || seen[i]) continue;
+      const part = [i], stack = [i]; seen[i] = 1;
+      while (stack.length) {
+        const c = stack.pop(), x = c % N, y = (c / N) | 0;
+        for (const [dx, dy] of DIRS) {
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= N || ny >= N) continue;
+          const j = ny * N + nx;
+          if (seen[j] || w.owner[j] !== q.id) continue;
+          seen[j] = 1; part.push(j); stack.push(j);
+        }
+      }
+      parts.push(part);
+    }
+    if (parts.length < 2) continue;
+    const at = cellAt(q.x, q.y);
+    const keep = parts.find((pt) => pt.includes(at)) || parts.reduce((a, b) => (b.length > a.length ? b : a));
+    const b = p.box;
+    for (const part of parts) {
+      if (part === keep) continue;
+      for (const i of part) {
+        setOwner(w, i, p.id);
+        const x = i % N, y = (i / N) | 0;
+        if (x < b.x0) b.x0 = x; if (x > b.x1) b.x1 = x; if (y < b.y0) b.y0 = y; if (y > b.y1) b.y1 = y;
+      }
+    }
+  }
 }

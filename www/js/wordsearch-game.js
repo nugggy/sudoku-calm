@@ -7,10 +7,12 @@ import { loadWords } from './words.js';
 import { sfx, buzz } from './sound.js';
 
 const HUES = ['#ff6b8b', '#ffa94d', '#ffd43b', '#69db7c', '#4dabf7', '#9775fa', '#f783ac', '#38d9a9', '#ff8787', '#74c0fc', '#b197fc', '#ffc078', '#63e6be', '#e599f7'];
-let themes = null;
+let themes = null, hard = null;
 async function loadThemes() {
   if (themes) return themes;
   try { themes = (await (await fetch('levels/wordsearch.json')).json()).themes; } catch { themes = []; }
+  // the 1,000 pre-built hard puzzles that follow the first 50 (tools/gen-wordsearch.mjs)
+  try { hard = await (await fetch('levels/wordsearch-levels.json')).json(); } catch { hard = null; }
   return themes;
 }
 const WS = () => store.ws;
@@ -18,9 +20,18 @@ const WS = () => store.ws;
 const themeImg = (t) => `img/${t.img}`;
 const FIT = 'style="object-fit:contain"';
 
-// Level recipe: bigger grids, more words and more directions as you go.
-export function wsSpec(level, T) {
+// Directions in the pre-built file, in the order tools/gen-wordsearch.mjs numbers them.
+const DIRS = [[0, 1], [1, 0], [1, 1], [-1, 1], [0, -1], [-1, 0], [-1, -1], [1, -1]];
+
+// Level recipe: bigger grids, more words and more directions as you go. From puzzle 51 the puzzles come
+// pre-built and keep getting harder up to 15×15; after the last one, the hardest 200 come round again.
+export function wsSpec(level, T, H = hard) {
   const n = level + 1;
+  if (H && H.levels.length && level >= H.first) {
+    const L = H.levels.length, k = level - H.first, back = Math.min(200, L);
+    const pre = H.levels[k < L ? k : L - back + ((k - L) % back)];
+    return { n, theme: T[pre.t], size: pre.n, count: pre.w.length, pre };
+  }
   const theme = T[level % T.length];
   const size = n <= 8 ? 8 : n <= 24 ? 10 : 12;
   const count = n <= 8 ? 7 : n <= 24 ? 10 : 13;
@@ -29,6 +40,7 @@ export function wsSpec(level, T) {
 }
 
 function generate(spec) {
+  if (spec.pre) return { grid: [...spec.pre.g], placed: spec.pre.w.map(([word, r, c, d]) => ({ word, r, c, dr: DIRS[d][0], dc: DIRS[d][1] })) };
   const rng = mulberry32(spec.seed);
   const { size } = spec;
   for (let attempt = 0; attempt < 50; attempt++) {
@@ -64,6 +76,7 @@ export function wsHelp() {
   sheet(`<h2>How to play Word Search</h2><div class="help-body">
     <p>Find every word in the list. Drag your finger from the first letter to the last.</p>
     <p>Words run across and down at first. Later puzzles add diagonals, then words written backwards.</p>
+    <p>From puzzle 51 the grids grow to 15×15, with more and longer words, and the spare letters hide look-alikes: the start of a word, or a word with its last letter wrong.</p>
     <p>The light bulb lights up the first letter of a word you have not found yet.</p>
   </div><button class="btn ws-btn" data-x>Let's find them</button>`, { onMount: (n, close) => { $('[data-x]', n).onclick = close; } });
 }
@@ -115,7 +128,10 @@ export function wsGameScreen(app, { level }) {
   function build() {
     size = spec.size;
     const board = q('board');
-    cell = Math.floor(Math.min(innerWidth - 24, 520, innerHeight - 350) / size);
+    // big grids use more of the width, and leave room for a longer word list
+    const many = puzzle.placed.length > 14;
+    cell = Math.floor(Math.min(innerWidth - (size > 12 ? 12 : 24), 520, innerHeight - (many ? 390 : 350)) / size);
+    q('words').classList.toggle('many', many);
     board.style.setProperty('--wc', cell + 'px');
     board.style.width = board.style.height = cell * size + 'px';
     board.insertAdjacentHTML('beforeend', puzzle.grid.map((ch, i) => `<div class="wcell" data-i="${i}">${ch}</div>`).join(''));

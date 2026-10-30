@@ -731,6 +731,8 @@ h1, h2, h3, p { margin: 0; }
 .ws-words span { padding: 5px 10px; border-radius: 14px; background: rgba(255, 255, 255, .8); font-weight: 700; font-size: 13px; letter-spacing: .5px; color: #2c3e66; }
 :root[data-theme="dark"] .ws-words span { background: rgba(255, 255, 255, .1); color: #dfe6ff; }
 .ws-words span.got { background: var(--hue); color: #fff; text-decoration: line-through; animation: bump .35s; }
+.ws-words.many { gap: 4px 6px; padding-top: 6px; }
+.ws-words.many span { padding: 3px 8px; font-size: 12px; letter-spacing: .3px; }
 
 /* landing art */
 .g-cross { background: linear-gradient(150deg, #4a4740, #24221e); }

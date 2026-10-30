@@ -44,3 +44,6 @@ tools/duo/sheets/
 tools/treat/art-src/
 tools/casino/art-src/
 tools/casino/art-src-b/
+
+# Paint Pixels picture builder: downloaded images and working files (rebuilt by tools/paint/candidates.mjs)
+tools/paint/cache/

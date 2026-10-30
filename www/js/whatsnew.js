@@ -2,6 +2,10 @@
 // tools/release.mjs uses the same text for the GitHub release notes (it will not publish a version missing here).
 // Keep each line short and plain: what was added or changed, from the player's point of view.
 export const WHATS_NEW = [
+  { v: '1.21.0', items: [
+    'New: Paint Pixels. Colour by numbers with over 1,000 pictures, from cartoon animals to Australian birds, butterflies and Japanese prints. Pinch to zoom, drag to paint, and share what you finish.',
+    'Word Search: 1,000 new puzzles after puzzle 50 that keep getting harder, with grids up to 15×15, up to 20 words, more diagonal and backwards words, and look-alike letters to catch you out.',
+  ] },
   { v: '1.20.0', items: [
     'New: Slither Snacks. Glide round a glowing arena, eat snacks to grow, boost to cut off fourteen computer snakes, and pick from 12 skins and three speeds.',
     'Play Together: Slither Snacks and Land Grab for two phones, sharing the arena with computer players.',

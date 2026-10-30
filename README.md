@@ -4,13 +4,13 @@
 
 All your games in one place, with no ads.
 
-An ad-free Android games app with 32 game cards, grouped on one landing page:
+An ad-free Android games app with 33 game cards, grouped on one landing page:
 
 - **Sudoku.** Six difficulty levels from Easy to Extreme, notes, smart hints that explain the next move, mistake checking, scoring with row, column and box bonuses, statistics, and light and dark themes with five accent colours. A colourblind mode in Settings adds symbols, outlines and labels across the games wherever colour carries meaning.
 - **Meowdoku.** Place one cat in every row, column and colour region, with no two cats touching. 1,000 hand-checked levels from 4×4 to 12×12 that get harder as you go, then endless generated levels.
 - **Cosy Cat Sort.** Shelves line both sides of a centre aisle. Pick up the cat nearest the aisle (matching neighbours come too), only place cats next to the same outfit, and gather four on one shelf to send them home. 600 pre-checked levels plus endless levels, Hard levels, boosters and a hint button.
 - **Crosswords.** 150 freeform crosswords from quick 7×7 minis to 11×11, with clues written in plain Australian English, an on-screen keyboard, and Letter, Check and Reveal helpers.
-- **Word Search.** 32 picture themes (Animals, Ocean, Australia, Space and more). Grids grow from 8×8 to 12×12 and words run across and down, then diagonally, then backwards. Spot a real word that is not on the list and you can add it to the bonus box (tap the star).
+- **Word Search.** 32 picture themes (Animals, Ocean, Australia, Space and more) across 1,050 puzzles, then endless repeats of the hardest. Grids grow from 8×8 to 15×15 and words run across and down, then diagonally, then backwards. From puzzle 51 there are more and longer words, and the spare letters hide look-alikes to catch you out. Spot a real word that is not on the list and you can add it to the bonus box (tap the star).
 - **2048.** Slide and merge tiles, with undo and a best score.
 - **Minesweeper.** Easy, Medium and Hard boards that can always be cleared without guessing; first tap is always safe.
 - **Pipeline.** Join matching dots and fill every square, boards from 5×5 to 9×9.
@@ -20,6 +20,7 @@ An ad-free Android games app with 32 game cards, grouped on one landing page:
 - **Mahjong Garden.** Mahjong solitaire on six layouts with cartoon tiles; every deal can be cleared.
 - **Jigsaw.** Interlocking pieces of 12 cartoon scenes, from 9 to 49 pieces.
 - **Sticker Studio.** Peel stickers off the sheet and press them onto numbered outlines to fill 50 cosy isometric scenes, from a living room and a bakery to a moon base and a zoo. Stickers snap onto their outline or stay wherever you drop them, and you can move them later. Tap a placed sticker to swap its style (about 300 stickers have alternatives, such as three kinds of couch) or recolour it. Hints, zoom and an option to hide the numbers.
+- **Paint Pixels.** Colour by numbers with 1,089 pictures in 20 categories: original cartoon animals, plus public-domain Australian birds and animals, parrots, butterflies, fish, roses, orchids, fruit, storybook animals, fairy tales and Hokusai and Hiroshige prints. Easy, Medium and Hard pictures, pinch to zoom, drag to paint, long-press to pick up a colour, a hint that finds the next square, a picture of the day, favourites, and finished pictures to share.
 - **Island Hop.** Join numbered islands with bridges. 320 puzzles from 7×7 to 12×12, each with exactly one solution.
 - **Gridlock.** Slide cars and trucks to free the red car. 320 car parks from 3 to 51 moves that climb quickly with easier breathers between, with a target, stars and hints.
 - **Crate Mate.** Push every crate onto its spot. 218 original warehouses from one crate to six, each checked by a solver.
@@ -91,6 +92,8 @@ node tools/gen-solitaire-deals.mjs 500  # find winnable Solitaire deals
 node tools/gen-crosswords.mjs 150       # build crosswords from tools/crossword-bank.txt
 python tools/build_words.py <scowl>/final # build the word lists from SCOWL
 node tools/gen-wordwheel.mjs 250        # build Word Wheel levels
+node tools/gen-wordsearch.mjs            # Word Search puzzles 51 to 1,050 (--check to re-verify)
+node tools/paint/candidates.mjs && node tools/paint/cartoons.mjs && node tools/paint/build-puzzles.mjs # rebuild the Paint Pixels pictures (slow, needs npm i sharp)
 node tools/gen-hashi.mjs                # Island Hop puzzles
 node tools/gen-gridlock.mjs             # Gridlock car parks
 node tools/gen-crate.mjs                # Crate Mate warehouses
@@ -120,6 +123,7 @@ tools/               tests, level generator and release script
 
 - Animal, scenery, vehicle, warehouse and island pictures: [Kenney](https://kenney.nl), CC0 (public domain). See `www/img/kenney/LICENSE-CC0.txt`.
 - Sticker Studio scenes are rendered from Kenney's CC0 3D kits (furniture, food, nature, holiday, cube pets, fantasy town, pirate, space, cars, graveyard, castle, trains, survival, mini market, coaster, minigolf, toy cars, mini arcade, mini characters, mini dungeon, platformer, suburban city and mini skate). See `www/img/stickers/LICENSE.txt`.
+- Paint Pixels pictures: the cartoon animals are original drawings (tools/paint/cartoons.mjs, CC0). Every other picture is public domain or CC0 on Wikimedia Commons, from John Gould, Edward Lear, Redouté, Haeckel, Beatrix Potter, Walter Crane, Kate Greenaway, Hokusai, Hiroshige, Kōno Bairei, the USDA Pomological Watercolor Collection and others. Each puzzle keeps a link to its original file. tools/paint/rejects.txt lists images removed after review.
 - All other illustrations (cats, Mahjong tiles, icons, candies and scene objects) are original SVG drawings made for this app.
 
 GameHub is an independent project. It is not made by, endorsed by or affiliated with Easybrain, Oakever Games, Easetouch, King, Hungry Studio or any other game maker. Its games are original takes on popular puzzle styles.

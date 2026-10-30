@@ -56,6 +56,7 @@ function mew(delay = 0, pitch = 1) {
 }
 
 const on = () => store.settings.sound;
+let lastPaint = 0;
 
 export const sfx = {
   tap() { if (on()) tone(880, 0.05, { vol: 0.05, type: 'triangle' }); },
@@ -69,6 +70,9 @@ export const sfx = {
     buzz([40, 60, 40]);
   },
   hint() { if (on()) [880, 1320].forEach((f, i) => tone(f, 0.15, { delay: i * 0.08, vol: 0.06 })); },
+  // Paint Pixels: a soft pop per square (at most one every 45 ms while dragging), and a chime when a colour is finished.
+  paint() { const now = performance.now(); if (!on() || now - lastPaint < 45) return; lastPaint = now; tone(520 + Math.random() * 160, 0.07, { vol: 0.04, type: 'triangle' }); },
+  colourDone() { if (on()) [660, 880, 1320].forEach((f, i) => tone(f, 0.25, { delay: i * 0.08, vol: 0.06 })); buzz(25); },
   cross() { if (on()) tone(420, 0.05, { vol: 0.05, type: 'triangle' }); },
   cat() { if (on()) mew(0, 0.9 + Math.random() * 0.25); },
   meowWin() { if (on()) { mew(0, 1); mew(0.35, 1.25); [784, 988, 1319].forEach((f, i) => tone(f, 0.3, { delay: 0.7 + i * 0.09, vol: 0.07, type: 'triangle' })); } buzz([40, 60, 40]); },

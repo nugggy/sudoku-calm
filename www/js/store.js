@@ -66,6 +66,7 @@ const defaults = () => ({
   spider: { current: null, played: {}, won: {}, best: {} },
   jigsaw: { level: 0, current: null, ghost: false },
   sticker: { placed: {}, done: {}, numbers: true, last: 0 },
+  paint: { pics: {}, favs: [], grid: true, autoNext: true }, // Paint Pixels: a summary per picture (the painted squares are kept under their own keys)
   block: { best: 0, games: 0, current: null },
   sol: { draw: 1, current: null, next: {}, stats: { played: 0, won: 0, bestTime: 0, fewestMoves: 0, streak: 0, bestStreak: 0, bestScore: 0 } },
   meta: { installed: Date.now(), lastUpdateCheck: 0, skipVersion: '', opened: {}, openedSeeded: false, seenVersion: '' },

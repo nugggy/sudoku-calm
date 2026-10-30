@@ -113,6 +113,30 @@ public class NativeBridge {
         });
     }
 
+    /** Opens Android's share sheet with a PNG picture (sent from the page as base64) and a line of text. */
+    @JavascriptInterface
+    public void shareImage(String base64Png, String name, String text) {
+        new Thread(() -> {
+            try {
+                File dir = new File(activity.getFilesDir(), "shared");
+                dir.mkdirs();
+                File[] old = dir.listFiles();
+                if (old != null) for (File f : old) f.delete();
+                File png = new File(dir, name.replaceAll("[^0-9A-Za-z.-]", "-"));
+                try (FileOutputStream fo = new FileOutputStream(png)) { fo.write(android.util.Base64.decode(base64Png, android.util.Base64.DEFAULT)); }
+                Uri uri = FileProvider.getUriForFile(activity, activity.getPackageName() + ".files", png);
+                activity.runOnUiThread(() -> {
+                    try {
+                        Intent send = new Intent(Intent.ACTION_SEND).setType("image/png")
+                            .putExtra(Intent.EXTRA_STREAM, uri).putExtra(Intent.EXTRA_TEXT, text)
+                            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        activity.startActivity(Intent.createChooser(send, "Share picture"));
+                    } catch (Exception ignored) { }
+                });
+            } catch (Exception ignored) { }
+        }).start();
+    }
+
     /**
      * Downloads a release APK from GitHub (with retries) and hands it to the Android installer.
      * Every outcome is reported back to the page, so the update screen never just sits there:

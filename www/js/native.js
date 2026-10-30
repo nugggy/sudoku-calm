@@ -22,6 +22,19 @@ export const native = {
     else window.open(url, '_blank', 'noopener');
   },
   exit() { if (N) N.exitApp(); },
+  // Share a canvas as a PNG: Android's share sheet in the app (older shells and browsers fall back to the browser's
+  // share sheet, then a download). Resolves to how it went.
+  async shareImage(canvas, name, text) {
+    const url = canvas.toDataURL('image/png');
+    if (N && N.shareImage) { N.shareImage(url.split(',')[1], name, text); return 'shared'; }
+    try {
+      const blob = await (await fetch(url)).blob();
+      const file = new File([blob], name, { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text }); return 'shared'; }
+    } catch { return 'cancelled'; }
+    const a = document.createElement('a'); a.href = url; a.download = name; a.click();
+    return 'saved';
+  },
   // Android's share sheet in the app; the browser's own share sheet, or the clipboard, elsewhere. Resolves to how it went.
   async share(text, url) {
     if (N && N.shareText) { N.shareText(`${text} ${url}`); return 'shared'; }

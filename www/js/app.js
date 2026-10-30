@@ -40,6 +40,7 @@ import { pipeHomeScreen, pipeGameScreen, pipeHelp } from './pipe-game.js';
 import { spiderHomeScreen, spiderGameScreen, spiderHelp } from './spider-game.js';
 import { jigsawHomeScreen, jigsawGameScreen, jigsawHelp } from './jigsaw-game.js';
 import { stickerHomeScreen, stickerGameScreen, stickerHelp, stickerCardArt } from './sticker-game.js';
+import { paintHomeScreen, paintGameScreen, paintHelp, paintCardArt, paintProgress } from './paint-game.js';
 import { crossHomeScreen, crossGameScreen, crossHelp } from './crossword-game.js';
 import { wsHomeScreen, wsGameScreen, wsHelp } from './wordsearch-game.js';
 import { meowHomeScreen, meowGameScreen, meowLevelsScreen, meowCatsScreen, loadLevels, meowHelp } from './meow-game.js';
@@ -84,6 +85,7 @@ const SCREENS = {
   wheel: wheelHomeScreen, wheelgame: wheelGameScreen, pipe: pipeHomeScreen, pipegame: pipeGameScreen,
   spider: spiderHomeScreen, spidergame: spiderGameScreen,
   jigsaw: jigsawHomeScreen, jiggame: jigsawGameScreen, sticker: stickerHomeScreen, stickergame: stickerGameScreen,
+  paint: paintHomeScreen, paintgame: paintGameScreen,
   sudoku: sudokuScreen, meowgame: meowGameScreen, meowlevels: meowLevelsScreen, meowcats: meowCatsScreen,
   settings: settingsScreen, about: aboutScreen,
 };
@@ -302,6 +304,11 @@ registerGame({
   progress: () => `${Object.keys(store.sticker.done).length} of 50 scenes`,
 });
 registerGame({
+  id: 'paint', cat: 'Casual', screen: 'paint', name: 'Paint Pixels', tag: 'Colour by numbers, 1,000 pictures', theme: 'g-paint',
+  art: () => paintCardArt(),
+  progress: () => paintProgress(),
+});
+registerGame({
   id: 'hashi', cat: 'Logic', screen: 'hashi', name: 'Island Hop', tag: 'Join the islands with bridges', theme: 'g-hashi',
   art: () => hashiCardArt(),
   progress: () => `Level ${store.hashi.level + 1}`,
@@ -431,6 +438,7 @@ const SEARCH_WORDS = {
   2048: 'merge tiles',
   sol: 'klondike patience cards', spider: 'patience cards', mahjong: 'tiles solitaire', block: 'blocks tetris puzzle', pipe: 'flow connect the dots',
   potion: 'water sort colours', crate: 'sokoban boxes push', press: 'button reaction', jigsaw: 'puzzle picture pieces', sticker: 'stickers scenes',
+  paint: 'colour by numbers color pixel art painting pictures colouring',
 };
 const norm = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
 const searchText = (g) => norm(`${g.name} ${g.tag} ${g.cat} ${SEARCH_WORDS[g.id] || ''}`);
@@ -611,6 +619,7 @@ function statsScreen() {
         ${row('trophy', 'Spider Solitaire games won', Object.values(store.spider.won).reduce((a, b) => a + b, 0))}
         ${row('star', 'Jigsaws completed', store.jigsaw.level)}
         ${row('sparkles', 'Sticker scenes finished', Object.keys(store.sticker.done).length)}
+        ${row('star', 'Paint Pixels pictures finished', Object.values(store.paint.pics).filter((s) => s.completed).length)}
         ${row('fire', 'Pressure Point best level', store.press.reached)}
         ${row('sparkles', 'Arrow Away levels', store.arrow.level)}
         ${row('star', 'Sweet Drop stars', Object.values(store.rope.stars).reduce((a, b) => a + b, 0))}
@@ -762,8 +771,8 @@ function settingsScreen() {
     else if (a === 'solrules') solHelp();
     else if (a === 'treatrules') treatHelp();
     else if (a === 'crossrules') crossHelp();
-    else if (a === 'rules-more') sheet(`<h2>How to play</h2>${[['2048', '2048'], ['mines', 'Minesweeper'], ['guess', 'Guesswork'], ['wheel', 'Word Wheel'], ['pipe', 'Pipeline'], ['mahjong', 'Mahjong Garden'], ['spider', 'Spider Solitaire'], ['jigsaw', 'Jigsaw'], ['sticker', 'Sticker Studio'], ['hashi', 'Island Hop'], ['gridlock', 'Gridlock'], ['crate', 'Crate Mate'], ['potion', 'Potion Pour'], ['arrow', 'Arrow Away'], ['chess', 'Chess'], ['rope', 'Sweet Drop'], ['snip', 'Snip Buddies'], ['turtle', 'Turtle Bay'], ['hero', 'Marvel Heroes'], ['duo', 'Play Together'], ['casino', 'Casino Night'], ['press', 'Pressure Point'], ['yeti', 'Yeti Games'], ['moto', 'Moto Mania'], ['landgrab', 'Land Grab'], ['snake', 'Slither Snacks']].map(([k, n]) => `<button class="sheet-item" data-h="${k}">${n}</button>`).join('')}`, {
-      onMount(node, close) { node.addEventListener('click', (ev) => { const b = ev.target.closest('[data-h]'); if (!b) return; close(); ({ 2048: help2048, mines: minesHelp, guess: guessHelp, wheel: wheelHelp, pipe: pipeHelp, mahjong: mahjongHelp, spider: spiderHelp, jigsaw: jigsawHelp, sticker: stickerHelp, hashi: hashiHelp, gridlock: gridlockHelp, crate: crateHelp, potion: potionHelp, arrow: arrowHelp, chess: chessHelp, rope: ropeHelp, snip: snipHelp, turtle: () => turtleHelp(), hero: () => heroHelp(), duo: () => duoHelp(), casino: () => casinoHelp(), press: () => pressHelp(), yeti: () => yetiHelp(), moto: () => motoHelp(), landgrab: () => landgrabHelp(), snake: () => snakeHelp() })[b.dataset.h](); }); },
+    else if (a === 'rules-more') sheet(`<h2>How to play</h2>${[['2048', '2048'], ['mines', 'Minesweeper'], ['guess', 'Guesswork'], ['wheel', 'Word Wheel'], ['pipe', 'Pipeline'], ['mahjong', 'Mahjong Garden'], ['spider', 'Spider Solitaire'], ['jigsaw', 'Jigsaw'], ['sticker', 'Sticker Studio'], ['paint', 'Paint Pixels'], ['hashi', 'Island Hop'], ['gridlock', 'Gridlock'], ['crate', 'Crate Mate'], ['potion', 'Potion Pour'], ['arrow', 'Arrow Away'], ['chess', 'Chess'], ['rope', 'Sweet Drop'], ['snip', 'Snip Buddies'], ['turtle', 'Turtle Bay'], ['hero', 'Marvel Heroes'], ['duo', 'Play Together'], ['casino', 'Casino Night'], ['press', 'Pressure Point'], ['yeti', 'Yeti Games'], ['moto', 'Moto Mania'], ['landgrab', 'Land Grab'], ['snake', 'Slither Snacks']].map(([k, n]) => `<button class="sheet-item" data-h="${k}">${n}</button>`).join('')}`, {
+      onMount(node, close) { node.addEventListener('click', (ev) => { const b = ev.target.closest('[data-h]'); if (!b) return; close(); ({ 2048: help2048, mines: minesHelp, guess: guessHelp, wheel: wheelHelp, pipe: pipeHelp, mahjong: mahjongHelp, spider: spiderHelp, jigsaw: jigsawHelp, sticker: stickerHelp, paint: paintHelp, hashi: hashiHelp, gridlock: gridlockHelp, crate: crateHelp, potion: potionHelp, arrow: arrowHelp, chess: chessHelp, rope: ropeHelp, snip: snipHelp, turtle: () => turtleHelp(), hero: () => heroHelp(), duo: () => duoHelp(), casino: () => casinoHelp(), press: () => pressHelp(), yeti: () => yetiHelp(), moto: () => motoHelp(), landgrab: () => landgrabHelp(), snake: () => snakeHelp() })[b.dataset.h](); }); },
     });
     else if (a === 'wsrules') wsHelp();
     else if (a === 'blockrules') blockHelp();
@@ -801,6 +810,7 @@ function aboutScreen() {
         <p><b>Moto Mania.</b> The motorbikes and the scooter are by Poly by Google, and the dirt bike is by Corentin Fatus, all under CC-BY 3.0 (creativecommons.org/licenses/by/3.0), found on poly.pizza. Riders, cars, roads, buildings, food and scenery are from Kenney's Mini Characters, Car Kit, City Kits, Racing Kit, Food Kit and Nature Kit (kenney.nl, CC0). 3D drawing uses three.js (MIT licence).</p><br>
         <p><b>Land Grab.</b> The animals are from Kenney's Animal Pack (kenney.nl, CC0). The field and land are drawn by the app.</p><br>
         <p><b>Slither Snacks.</b> The snakes' faces are from Kenney's Shape Characters, and the glow on the snacks is from Kenney's Particle Pack (kenney.nl, CC0). The arena and snakes are drawn by the app.</p><br>
+        <p><b>Paint Pixels.</b> The cartoon animals were drawn for this app (CC0). Every other picture is in the public domain, from Wikimedia Commons: natural history plates by John Gould, Edward Lear, Levaillant, Lilford, Thorburn, Hewitson, Hübner and Bloch, flowers by Pierre-Joseph Redouté, Curtis's Botanical Magazine, Thomé and Köhler, the USDA Pomological Watercolor Collection, Ernst Haeckel, storybook pictures by Beatrix Potter, Walter Crane and Kate Greenaway, and prints by Hokusai, Hiroshige and Kōno Bairei. Each picture's menu links to its original file.</p><br>
         <p><b>Yeti Games.</b> The yeti, llama, ox and snake are by Quaternius (CC0). The penguin, orca, seal, albatross (a gull), giraffe, elephant, vulture, acacia, ibex, bighorn ram, surfboard and icicle are by Poly by Google, and the flamingo is by Хмара Сергей, all under CC-BY 3.0 (creativecommons.org/licenses/by/3.0). The snowboard is by Geldvillager and the bat by CreativeTrio (CC0). All were found on poly.pizza and rendered into pictures for this app.</p><br>
         <p><b>Artwork.</b> Animal, scenery and vehicle pictures are by Kenney (kenney.nl), released into the public domain under CC0. All other illustrations, including the cats, icons and Mahjong tiles, are original to GameHub.</p><br>
         <p><b>Inspiration.</b> GameHub is an independent app. It is not made by, endorsed by or affiliated with Easybrain, Oakever Games, Easetouch, King, Hungry Studio or any other game maker. Its games are our own takes on popular puzzle styles, with original artwork and names.</p><br>

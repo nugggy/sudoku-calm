@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.View;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -34,6 +35,9 @@ public class MainActivity extends ComponentActivity {
     FrameLayout root;
     WebView web;
     NativeBridge bridge;
+    // Set by Jump Mates while a game is on screen: controller buttons the page does not use are swallowed
+    // here, so B (which Android otherwise turns into Back) cannot quit the level.
+    volatile boolean padCapture;
 
     // Runtime permission and system prompts (Bluetooth). One at a time; the callback gets true when allowed.
     private Consumer<Boolean> permDone, actDone;
@@ -120,6 +124,18 @@ public class MainActivity extends ComponentActivity {
 
         if (savedInstanceState != null) web.restoreState(savedInstanceState);
         else web.loadUrl(START_URL);
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (padCapture && KeyEvent.isGamepadButton(keyCode)) return true;
+        return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (padCapture && KeyEvent.isGamepadButton(keyCode)) return true;
+        return super.onKeyUp(keyCode, event);
     }
 
     @Override

@@ -26,6 +26,7 @@ import { ropeHomeScreen, ropeGameScreen, ropeHelp, ropeCardArt } from './rope-ga
 import { snipHomeScreen, snipLobbyScreen, snipGameScreen, snipHelp, snipCardArt, SNIP_LEVEL_COUNT } from './snip-game.js';
 import { turtleHubScreen, turtleGameScreen, turtleHelp, turtleCardArt, TURTLE_GAMES } from './turtle/hub.js';
 import { heroHubScreen, heroBuilderScreen, heroGameScreen, heroHelp, heroCardArt } from './hero/hub.js';
+import { matesHubScreen, matesGameScreen, matesHelp, matesCardArt, matesProgress } from './mates/hub.js';
 import { duoHubScreen, duoLobbyScreen, duoGameScreen, duoHelp, duoCardArt } from './duo/hub.js';
 import { casinoHubScreen, casinoGameScreen, casinoHelp, casinoCardArt } from './casino/hub.js';
 import { potionHomeScreen, potionGameScreen, potionHelp, potionCardArt } from './potion-game.js';
@@ -80,7 +81,7 @@ const SCREENS = {
   treat: treatHomeScreen, treatgame: treatGameScreen, block: blockScreen,
   cross: crossHomeScreen, crossgame: crossGameScreen, ws: wsHomeScreen, wsgame: wsGameScreen,
   g2048: screen2048, mines: minesHomeScreen, minesgame: minesGameScreen, guess: guessHomeScreen, guessgame: guessGameScreen,
-  hashi: hashiHomeScreen, hashigame: hashiGameScreen, gridlock: gridlockHomeScreen, gridlockgame: gridlockGameScreen, crate: crateHomeScreen, crategame: crateGameScreen, potion: potionHomeScreen, potiongame: potionGameScreen, arrow: arrowHomeScreen, arrowgame: arrowGameScreen, chess: chessHomeScreen, chessgame: chessGameScreen, rope: ropeHomeScreen, ropegame: ropeGameScreen, snip: snipHomeScreen, sniplobby: snipLobbyScreen, snipgame: snipGameScreen, turtle: turtleHubScreen, turtlegame: turtleGameScreen, hero: heroHubScreen, herobuilder: heroBuilderScreen, herogame: heroGameScreen, duo: duoHubScreen, duolobby: duoLobbyScreen, duogame: duoGameScreen, casino: casinoHubScreen, casinogame: casinoGameScreen, press: pressHomeScreen, pressgame: pressGameScreen, yeti: yetiHubScreen, yetigame: yetiGameScreen, moto: motoHubScreen, motogarage: motoGarageScreen, motogame: motoGameScreen, landgrab: landgrabHomeScreen, landgrabgame: landgrabGameScreen, snake: snakeHomeScreen, snakegame: snakeGameScreen,
+  hashi: hashiHomeScreen, hashigame: hashiGameScreen, gridlock: gridlockHomeScreen, gridlockgame: gridlockGameScreen, crate: crateHomeScreen, crategame: crateGameScreen, potion: potionHomeScreen, potiongame: potionGameScreen, arrow: arrowHomeScreen, arrowgame: arrowGameScreen, chess: chessHomeScreen, chessgame: chessGameScreen, rope: ropeHomeScreen, ropegame: ropeGameScreen, snip: snipHomeScreen, sniplobby: snipLobbyScreen, snipgame: snipGameScreen, mates: matesHubScreen, matesgame: matesGameScreen, turtle: turtleHubScreen, turtlegame: turtleGameScreen, hero: heroHubScreen, herobuilder: heroBuilderScreen, herogame: heroGameScreen, duo: duoHubScreen, duolobby: duoLobbyScreen, duogame: duoGameScreen, casino: casinoHubScreen, casinogame: casinoGameScreen, press: pressHomeScreen, pressgame: pressGameScreen, yeti: yetiHubScreen, yetigame: yetiGameScreen, moto: motoHubScreen, motogarage: motoGarageScreen, motogame: motoGameScreen, landgrab: landgrabHomeScreen, landgrabgame: landgrabGameScreen, snake: snakeHomeScreen, snakegame: snakeGameScreen,
   mahjong: mahjongHomeScreen, mjgame: mahjongGameScreen,
   wheel: wheelHomeScreen, wheelgame: wheelGameScreen, pipe: pipeHomeScreen, pipegame: pipeGameScreen,
   spider: spiderHomeScreen, spidergame: spiderGameScreen,
@@ -354,6 +355,11 @@ registerGame({
   progress: () => { const n = Object.keys(store.snip.done).length; return n ? `${n} of ${SNIP_LEVEL_COUNT} solved` : 'Play with a friend'; },
 });
 registerGame({
+  id: 'mates', cat: 'Casual', screen: 'mates', name: 'Jump Mates', tag: 'Twenty co-op platform games for two', theme: 'g-mates',
+  art: () => matesCardArt(),
+  progress: () => matesProgress(),
+});
+registerGame({
   id: 'moto', cat: 'Casual', screen: 'moto', name: 'Moto Mania', tag: 'Six motorbike games and a garage', theme: 'g-moto',
   art: () => motoCardArt(),
   progress: () => `${(store.moto.coins || 0).toLocaleString('en-AU')} coins`,
@@ -415,6 +421,7 @@ const isNew = (g) => !store.meta.opened[g.id];
 const SEARCH_WORDS = {
   duo: 'two player friend multiplayer wifi bluetooth connect four chess draughts checkers reversi othello battleships dots boxes noughts crosses tic tac toe mancala nine mens morris five in a row gomoku memory duel air hockey paddle ball pong tank duel light cycles tron sumo bumpers penalty shootout soccer football word duel tug of war quick draw',
   casino: 'blackjack poker texas holdem roulette craps dice baccarat video poker jacks or better pokies slots chips cards',
+  mates: 'two player co-op coop platformer platform jump controller gamepad pip bo twin trek ember frost tall order rope mates flip side colour blocks key keepers seesaw night lights lava climb coin rush heavy lifting swap shop scroll sprint bug stomp updraft slippery slopes block builders jetpack pals bomb squad',
   turtle: 'hatchling dash reef glide jelly snack shell stack river hop shell match tortoise trek turtle race',
   yeti: 'penguin batting orca splash glacier bounce albatross ride flamingo golf big wave stage dive freeride jungle swing llama spit icicle climb grand tour',
   moto: 'motorbike motorcycle bike moto rush hill rider stunt park rush hour rider bike park delivery dash garage',
@@ -771,8 +778,8 @@ function settingsScreen() {
     else if (a === 'solrules') solHelp();
     else if (a === 'treatrules') treatHelp();
     else if (a === 'crossrules') crossHelp();
-    else if (a === 'rules-more') sheet(`<h2>How to play</h2>${[['2048', '2048'], ['mines', 'Minesweeper'], ['guess', 'Guesswork'], ['wheel', 'Word Wheel'], ['pipe', 'Pipeline'], ['mahjong', 'Mahjong Garden'], ['spider', 'Spider Solitaire'], ['jigsaw', 'Jigsaw'], ['sticker', 'Sticker Studio'], ['paint', 'Paint Pixels'], ['hashi', 'Island Hop'], ['gridlock', 'Gridlock'], ['crate', 'Crate Mate'], ['potion', 'Potion Pour'], ['arrow', 'Arrow Away'], ['chess', 'Chess'], ['rope', 'Sweet Drop'], ['snip', 'Snip Buddies'], ['turtle', 'Turtle Bay'], ['hero', 'Marvel Heroes'], ['duo', 'Play Together'], ['casino', 'Casino Night'], ['press', 'Pressure Point'], ['yeti', 'Yeti Games'], ['moto', 'Moto Mania'], ['landgrab', 'Land Grab'], ['snake', 'Slither Snacks']].map(([k, n]) => `<button class="sheet-item" data-h="${k}">${n}</button>`).join('')}`, {
-      onMount(node, close) { node.addEventListener('click', (ev) => { const b = ev.target.closest('[data-h]'); if (!b) return; close(); ({ 2048: help2048, mines: minesHelp, guess: guessHelp, wheel: wheelHelp, pipe: pipeHelp, mahjong: mahjongHelp, spider: spiderHelp, jigsaw: jigsawHelp, sticker: stickerHelp, paint: paintHelp, hashi: hashiHelp, gridlock: gridlockHelp, crate: crateHelp, potion: potionHelp, arrow: arrowHelp, chess: chessHelp, rope: ropeHelp, snip: snipHelp, turtle: () => turtleHelp(), hero: () => heroHelp(), duo: () => duoHelp(), casino: () => casinoHelp(), press: () => pressHelp(), yeti: () => yetiHelp(), moto: () => motoHelp(), landgrab: () => landgrabHelp(), snake: () => snakeHelp() })[b.dataset.h](); }); },
+    else if (a === 'rules-more') sheet(`<h2>How to play</h2>${[['2048', '2048'], ['mines', 'Minesweeper'], ['guess', 'Guesswork'], ['wheel', 'Word Wheel'], ['pipe', 'Pipeline'], ['mahjong', 'Mahjong Garden'], ['spider', 'Spider Solitaire'], ['jigsaw', 'Jigsaw'], ['sticker', 'Sticker Studio'], ['paint', 'Paint Pixels'], ['hashi', 'Island Hop'], ['gridlock', 'Gridlock'], ['crate', 'Crate Mate'], ['potion', 'Potion Pour'], ['arrow', 'Arrow Away'], ['chess', 'Chess'], ['rope', 'Sweet Drop'], ['snip', 'Snip Buddies'], ['mates', 'Jump Mates'], ['turtle', 'Turtle Bay'], ['hero', 'Marvel Heroes'], ['duo', 'Play Together'], ['casino', 'Casino Night'], ['press', 'Pressure Point'], ['yeti', 'Yeti Games'], ['moto', 'Moto Mania'], ['landgrab', 'Land Grab'], ['snake', 'Slither Snacks']].map(([k, n]) => `<button class="sheet-item" data-h="${k}">${n}</button>`).join('')}`, {
+      onMount(node, close) { node.addEventListener('click', (ev) => { const b = ev.target.closest('[data-h]'); if (!b) return; close(); ({ 2048: help2048, mines: minesHelp, guess: guessHelp, wheel: wheelHelp, pipe: pipeHelp, mahjong: mahjongHelp, spider: spiderHelp, jigsaw: jigsawHelp, sticker: stickerHelp, paint: paintHelp, hashi: hashiHelp, gridlock: gridlockHelp, crate: crateHelp, potion: potionHelp, arrow: arrowHelp, chess: chessHelp, rope: ropeHelp, snip: snipHelp, mates: () => matesHelp(), turtle: () => turtleHelp(), hero: () => heroHelp(), duo: () => duoHelp(), casino: () => casinoHelp(), press: () => pressHelp(), yeti: () => yetiHelp(), moto: () => motoHelp(), landgrab: () => landgrabHelp(), snake: () => snakeHelp() })[b.dataset.h](); }); },
     });
     else if (a === 'wsrules') wsHelp();
     else if (a === 'blockrules') blockHelp();

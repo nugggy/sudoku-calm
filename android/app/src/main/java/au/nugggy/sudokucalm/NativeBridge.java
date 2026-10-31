@@ -85,6 +85,9 @@ public class NativeBridge {
         });
     }
 
+    /** Jump Mates: keep controller buttons from turning into Back while a level is being played. */
+    @JavascriptInterface public void setPadCapture(boolean on) { activity.padCapture = on; }
+
     @JavascriptInterface
     public void vibrate(int ms) {
         Vibrator v = (Vibrator) activity.getSystemService(Context.VIBRATOR_SERVICE);

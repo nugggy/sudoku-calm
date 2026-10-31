@@ -22,6 +22,8 @@ export const native = {
     else window.open(url, '_blank', 'noopener');
   },
   exit() { if (N) N.exitApp(); },
+  // While on, controller buttons the page ignores are not turned into Back by Android (older shells skip this).
+  padCapture(on) { try { N && N.setPadCapture && N.setPadCapture(!!on); } catch { /* older shell */ } },
   // Share a canvas as a PNG: Android's share sheet in the app (older shells and browsers fall back to the browser's
   // share sheet, then a download). Resolves to how it went.
   async shareImage(canvas, name, text) {

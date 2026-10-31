@@ -1,5 +1,6 @@
 // Jump Mates: twenty co-op platform games for two players on one device. The hub lists the games, and the
 // play screen runs one with two sets of on-screen buttons, the keyboard and up to two game controllers.
+// The lobby links two phones over wifi; then the host phone runs the game and the other phone shows it (net.js).
 // Games are modules (see README.md) built on engine.js; draw.js paints them.
 import { store, save } from '../store.js';
 import { icon } from '../icons.js';
@@ -11,6 +12,9 @@ import { makeWorld, STEP } from './engine.js';
 import { Cam, Parts, render, eventFx, COLOURS, NAMES } from './draw.js';
 import { createInput, menuPad } from './input.js';
 import { MATES_GAMES } from './games.js';
+import { lan } from '../lan.js';
+import { webJoinPanel } from '../webjoin.js';
+import { net, isNet, snapshot, decode, apply, setGrid } from './net.js';
 
 export { MATES_GAMES };
 const M = () => store.mates;
@@ -42,6 +46,7 @@ export function matesHelp(game) {
   const paras = game ? game.how : [
     'Twenty platform games for two players on one phone or tablet. Pip (orange, with a leaf) and Bo (blue, with an antenna) have to work together: most levels need both of you at the door.',
     'Each player has a set of buttons at the bottom of the screen: left and right on the outside, then the action button and the jump button. Hold jump for a higher jump. You can stand on your partner\'s head to reach higher ledges.',
+    'Playing on two phones? Tap Play on two phones on the Jump Mates screen. Both phones need the same wifi, or a hotspot on one phone. One phone hosts and plays Pip, picks the games and runs the levels; the other joins and plays Bo with one big set of buttons.',
     'Game controllers work too. Connect one or two (USB or Bluetooth): the stick or d-pad moves, A jumps, B or X is the action button and Start pauses. With one controller, the other player uses the screen. On a keyboard, player 1 uses A, D and W (E for action) and player 2 uses the arrow keys (Enter for action).',
     'Levels give a star for finishing, a star for every coin and gem, and a star if nobody falls. Some games are endless and keep your best score instead.',
   ];
@@ -93,6 +98,7 @@ export function matesHubScreen(app) {
   }
   function render() {
     body.innerHTML = `<div class="mates-hero">${matesCardArt()}</div>
+      <button class="btn mates-btn mates-two" data-act="two">Play on two phones<small>Same wifi or a phone hotspot</small></button>
       <p class="mates-pads-line" data-el="pads">${esc(padLine())}</p>
       <div class="mates-list">${MATES_GAMES.map((gm, i) => `
         <button class="mates-card" data-g="${gm.id}">
@@ -111,11 +117,114 @@ export function matesHubScreen(app) {
     const a = e.target.closest('[data-act]')?.dataset.act;
     if (a === 'back') return app.back();
     if (a === 'help') return matesHelp();
+    if (a === 'two') return app.go('mateslobby');
     const c = e.target.closest('[data-g]');
     if (c) { const gm = byId(c.dataset.g); app.go('matesgame', { id: gm.id, level: firstOpen(gm) }); }
   });
   render();
   return { root, refresh: render, destroy() { window.removeEventListener('gamepadconnected', onPad); window.removeEventListener('gamepaddisconnected', onPad); } };
+}
+
+// ---------- Lobby: host or join a game on another phone ----------
+// The host is Pip and picks the games; the friend who joins is Bo.
+export function matesLobbyScreen(app) {
+  let state = 'idle', found = new Map(), hostInfo = null, alive = true;
+  // web: this page is a friend's browser opened from the host phone; webAsked/webInfo: the host is also serving a browser friend
+  const web = lan.mode === 'web';
+  let webAsked = false, webInfo = null;
+  const root = el(`<section class="screen mates-theme mates-lobby">
+    <header class="topbar"><button class="icon-btn" data-act="back" aria-label="Back">${icon.back}</button><div class="title">Play on two phones</div>
+      <button class="icon-btn" data-act="help" aria-label="How to play">${icon.help}</button></header>
+    <div class="scroll"></div></section>`);
+  const body = $('.scroll', root);
+  const myName = () => (M().name || '').trim() || 'Player';
+  const nameField = () => `<label class="ml-field"><span>Your name</span><input data-el="name" maxlength="14" value="${esc(M().name || '')}" placeholder="Player" autocomplete="off"></label>`;
+  const keepName = () => { M().name = $('[data-el="name"]', root).value.trim().slice(0, 14); save(); };
+
+  function render() {
+    if (!lan.available) { body.innerHTML = '<p class="ml-note">Playing on two phones is not available here.</p>'; return; }
+    if (state === 'idle' && web) {
+      body.innerHTML = `<div class="mates-hero">${matesCardArt()}</div>
+        <p class="ml-note">Join the game on <b>${esc(lan.ip())}</b>. You play as ${NAMES[1]}.</p>
+        ${nameField()}
+        <button class="btn mates-btn" data-act="join">Join the game<small>Your friend picks the games</small></button>
+        <p class="ml-note">Keep this page open while you play. If your phone locks, unlock it and the game carries on.</p>`;
+    } else if (state === 'idle') {
+      body.innerHTML = `<div class="mates-hero">${matesCardArt()}</div>
+        ${nameField()}
+        <button class="btn mates-btn" data-act="host">Host a game<small>You play as ${NAMES[0]} and pick the games</small></button>
+        <button class="btn secondary" data-act="join">Join a game<small>You play as ${NAMES[1]}</small></button>
+        <p class="ml-note">Both phones need to be on the same wifi. No wifi? Turn on the hotspot on one phone and connect the other phone to it.</p>`;
+    } else if (state === 'hosting') {
+      body.innerHTML = `<div class="ml-wait"><div class="spinner"></div><h2>Waiting for your friend</h2>
+        <p>Ask them to open Jump Mates, tap <b>Play on two phones</b>, then <b>Join a game</b> and pick <b>${esc(myName())}</b>.</p>
+        ${hostInfo && hostInfo.ip && lan.mode === 'app' ? `<div class="ml-ip"><small>If your game does not show up, they can type this address</small><b>${esc(hostInfo.ip)}</b></div>` : ''}
+        ${lan.webHostAvailable ? (webAsked ? webJoinPanel(webInfo, 'mates') : '<button class="btn secondary" data-act="web">Friend on a browser<small>iPhone or computer, no app needed</small></button>') : ''}
+        <button class="btn ghost" data-act="cancel">Cancel</button></div>`;
+    } else if (state === 'joining') {
+      body.innerHTML = `<div class="section-title">Games nearby</div>
+        <div class="ml-found">${found.size ? [...found].map(([id, n]) => `<button class="sheet-item" data-join="${esc(id)}">${esc(n)}<small>Tap to join</small></button>`).join('') : '<div class="ml-searching"><div class="spinner"></div>Looking for games on this network</div>'}</div>
+        ${lan.mode === 'app' ? `<div class="section-title">Or join by address</div>
+        <div class="ml-ipjoin"><input data-el="ip" inputmode="decimal" placeholder="192.168.0.10" autocomplete="off"><button class="btn mates-btn" data-act="joinip">Join</button></div>` : ''}
+        <button class="btn ghost" data-act="cancel">Cancel</button>`;
+    } else if (state === 'connecting') {
+      body.innerHTML = '<div class="ml-wait"><div class="spinner"></div><h2>Connecting</h2><button class="btn ghost" data-act="cancel">Cancel</button></div>';
+    } else if (state === 'connected') {
+      const peer = esc(net.peer || 'your friend');
+      body.innerHTML = net.role === 'host'
+        ? `<div class="ml-partner"><span class="dot"></span>Playing with <b>${peer}</b></div>
+          <div class="section-title">Pick a game</div>
+          <div class="mates-list">${MATES_GAMES.map((gm, i) => `
+            <button class="mates-card" data-g="${gm.id}"><div class="mates-info"><b>${i + 1}. ${esc(gm.name)}</b><span>${esc(gm.blurb)}</span><em>${esc(progressLine(gm))}</em></div></button>`).join('')}</div>
+          <button class="btn ghost ml-leave" data-act="cancel">Leave</button>`
+        : `<div class="ml-wait"><div class="ml-partner"><span class="dot"></span>Connected to <b>${peer}</b></div>
+          <h2>Waiting for ${peer} to pick a game</h2><button class="btn ghost" data-act="cancel">Leave</button></div>`;
+    }
+  }
+  function reset(msg) {
+    lan.close(); net.role = null; net.peer = ''; net.inGame = false; state = 'idle'; found = new Map();
+    if (msg) toast(msg, 3000);
+    render();
+  }
+  const off = lan.on((e) => {
+    if (!alive) return;
+    if (e.type === 'hosting') { hostInfo = e; if (state === 'hosting') render(); }
+    else if (e.type === 'webhost') { webInfo = e; if (state === 'hosting') render(); }
+    else if (e.type === 'found') { found.set(e.id, e.name); if (state === 'joining') render(); }
+    else if (e.type === 'lost') { found.delete(e.id); if (state === 'joining') render(); }
+    else if (e.type === 'connected') {
+      net.role = e.role; state = 'connected'; lan.stopDiscover();
+      lan.send({ t: 'hi', name: myName(), v: 1 });
+      sfx.unit(); buzz(30); render();
+    } else if (e.type === 'error') { toast(e.msg, 3000); if (state === 'connecting') { state = web ? 'idle' : 'joining'; render(); } }
+    else if (e.type === 'closed') { if (net.inGame) return; reset('Your friend has left'); }
+    else if (e.type === 'msg') {
+      const m = e.data;
+      if (m.t === 'hi') { net.peer = String(m.name || '').slice(0, 14); render(); }
+      else if (m.t === 'game' && net.role === 'guest' && !net.inGame && byId(m.id)) { net.inGame = true; app.go('matesgame', { id: m.id, mode: 'guest' }); }
+    }
+  });
+  root.addEventListener('click', (e) => {
+    const a = e.target.closest('[data-act]')?.dataset.act;
+    if (a === 'back') return app.back();
+    if (a === 'help') return matesHelp();
+    if (a === 'host') { keepName(); state = 'hosting'; hostInfo = null; webAsked = false; webInfo = null; lan.host(myName()); render(); }
+    else if (a === 'join' && web) { keepName(); state = 'connecting'; render(); lan.join('web'); }
+    else if (a === 'web') { webAsked = true; webInfo = null; render(); lan.webStart(); }
+    else if (a === 'join') { keepName(); state = 'joining'; found = new Map(); lan.discover(); render(); }
+    else if (a === 'joinip') { const ip = $('[data-el="ip"]', root).value.trim(); if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) { toast('Type the address shown on the host phone'); return; } state = 'connecting'; render(); lan.joinIp(ip, 0); }
+    else if (a === 'cancel') reset();
+    const j = e.target.closest('[data-join]');
+    if (j) { state = 'connecting'; render(); lan.join(j.dataset.join); }
+    const c = e.target.closest('[data-g]');
+    if (c && net.role === 'host') { const gm = byId(c.dataset.g); net.inGame = true; lan.send({ t: 'game', id: gm.id }); app.go('matesgame', { id: gm.id, level: firstOpen(gm), mode: 'host' }); }
+  });
+  render();
+  return {
+    root,
+    onShow() { net.inGame = false; if (!isNet() && state === 'connected') state = 'idle'; render(); },
+    destroy() { alive = false; off(); lan.close(); net.role = null; net.peer = ''; net.inGame = false; },
+  };
 }
 
 // ---------- Playing ----------
@@ -131,32 +240,43 @@ function padHTML(p, game) {
     <div class="mp-padnote">${PADICON}${NAMES[p]} is on a controller</div></div>`;
 }
 
-export function matesGameScreen(app, { id, level = 0 }) {
+// mode: 'local' (both players on this device), 'host' (this phone runs the game as Pip) or 'guest' (shows the
+// host's game and plays Bo).
+export function matesGameScreen(app, { id, level = 0, mode = 'local' }) {
   const game = byId(id);
   const endless = isEndless(game);
+  const netMode = mode !== 'local', guest = mode === 'guest', me = guest ? 1 : 0;
   const root = el(`<section class="screen mates-theme mates-play">
     <header class="topbar"><button class="icon-btn" data-act="back" aria-label="Back">${icon.back}</button>
       <div class="title" data-el="title"></div>
-      ${endless ? '' : `<button class="icon-btn" data-act="levels" aria-label="Levels">${icon.grid}</button>`}
+      ${endless || guest ? '' : `<button class="icon-btn" data-act="levels" aria-label="Levels">${icon.grid}</button>`}
       <button class="icon-btn" data-act="pause" aria-label="Pause">${icon.pause}</button></header>
     <div class="mates-stage" data-el="stage">
       <canvas data-el="cv"></canvas>
       <div class="mates-hud"><span data-el="l"></span><span data-el="c"></span><span data-el="r"></span></div>
       <div class="mates-banner" data-el="banner"></div>
     </div>
-    <div class="mates-pads">${padHTML(0, game)}${padHTML(1, game)}</div>
+    <div class="mates-pads">${netMode ? padHTML(me, game) : padHTML(0, game) + padHTML(1, game)}</div>
   </section>`);
+  if (netMode) root.classList.add('mates-net');
   const q = (k) => $(`[data-el="${k}"]`, root);
   const cv = q('cv'), stage = q('stage'), g = cv.getContext('2d');
   const input = createInput(root, { swap: () => !!M().padSwap });
   const menu = menuPad();
   const cam = new Cam(), parts = new Parts();
   let world = null, idx = level, raf = 0, last = 0, alive = true, paused = false, acc = 0, t = 0, overlay = null, bannerT = 0, seed = 0;
+  // two phones: the host's step count, the friend's buttons and whether the friend has paused;
+  // the guest keeps recent snapshots and plays them a little behind, smoothly (see guestFrame)
+  let frameN = 0, sent = {}, evOut = [], peerPaused = false, moving = false;
+  const remote = { x: 0, up: false, down: false, jump: false, act: false, jn: 0, an: 0 }, seen = { jn: 0, an: 0 };
+  let snaps = [], playF = null, lastIn = '', inAt = 0, jn = 0, an = 0;
+  const peer = () => net.peer || 'Your friend';
 
   input.onPads((has, n) => {
-    root.classList.toggle('pad0', has[0]); root.classList.toggle('pad1', has[1]);
+    if (netMode) root.classList.toggle(`pad${me}`, has[0] || has[1]);
+    else { root.classList.toggle('pad0', has[0]); root.classList.toggle('pad1', has[1]); }
     if (world) requestAnimationFrame(resize);
-    if (n) toast(has[0] && has[1] ? 'Controllers: one each' : has[0] ? `Controller: ${NAMES[0]} (player 1)` : `Controller: ${NAMES[1]} (player 2)`);
+    if (n) toast(netMode ? 'Controller connected' : has[0] && has[1] ? 'Controllers: one each' : has[0] ? `Controller: ${NAMES[0]} (player 1)` : `Controller: ${NAMES[1]} (player 2)`);
   });
 
   function banner(text, sec = 2.2) { const b = q('banner'); b.textContent = text; b.classList.toggle('show', !!text); bannerT = text ? sec : 0; }
@@ -171,9 +291,13 @@ export function matesGameScreen(app, { id, level = 0 }) {
   }
   function title() { q('title').textContent = endless ? game.name : `${game.name} · ${idx + 1}`; }
 
-  function start() {
+  function start(fromHost) {
+    if (guest && !fromHost) return;
     closeOverlay();
-    seed = (Math.random() * 1e9) | 0;
+    seed = fromHost ? fromHost.seed : (Math.random() * 1e9) | 0;
+    if (fromHost) idx = fromHost.idx;
+    if (mode === 'host') { sent = {}; evOut = []; lan.send({ t: 'start', idx, seed }); }
+    snaps = []; playF = null;
     const lv = endless ? game.endless.gen(seed) : game.levels[idx];
     world = makeWorld(lv, game, { seed });
     parts.list = []; parts.texts = [];
@@ -215,23 +339,36 @@ export function matesGameScreen(app, { id, level = 0 }) {
     }
   }
 
+  // On two phones, this phone's player takes the buttons, keys and controllers of both sides.
+  function mine(inp) {
+    const [a, b] = inp.players;
+    return { x: a.x || b.x, up: a.up || b.up, down: a.down || b.down, jump: a.jump || b.jump, act: a.act || b.act, jumpP: a.jumpP || b.jumpP, actP: a.actP || b.actP };
+  }
   function frame(now) {
     if (!alive) return;
     raf = requestAnimationFrame(frame);
     const dt = Math.min(1 / 20, Math.max(0, (now - last) / 1000)); last = now;
-    if (overlay || paused) { pollMenu(); return; }
+    if (overlay || paused) { pollMenu(); if (guest && world && !paused) guestFrame(dt, null); return; }
     if (!world) return;
     const inp = input.poll();
     if (inp.pauseP) { pause(); return; }
+    if (guest) { guestFrame(dt, mine(inp)); return; }
     world.players.forEach((p, i) => {
-      const s = inp.players[i];
-      p.in.x = s.x; p.in.up = s.up; p.in.down = s.down; p.in.jump = s.jump; p.in.act = s.act;
-      p.in.jumpP ||= s.jumpP; p.in.actP ||= s.actP;
+      const s = !netMode ? inp.players[i] : i === me ? mine(inp) : null;
+      if (s) { p.in.x = s.x; p.in.up = s.up; p.in.down = s.down; p.in.jump = s.jump; p.in.act = s.act; p.in.jumpP ||= s.jumpP; p.in.actP ||= s.actP; return; }
+      // the friend's buttons, from their phone; a press counts once even if it was let go before this frame
+      p.in.x = remote.x; p.in.up = remote.up; p.in.down = remote.down; p.in.jump = remote.jump; p.in.act = remote.act;
+      if (remote.jn !== seen.jn) { p.in.jumpP = true; seen.jn = remote.jn; }
+      if (remote.an !== seen.an) { p.in.actP = true; seen.an = remote.an; }
     });
-    acc += dt;
-    while (acc >= STEP) { world.step(STEP); acc -= STEP; }
+    if (peerPaused) banner(`${peer()} paused the game`, 0.5);
+    else acc += dt;
+    while (acc >= STEP) {
+      world.step(STEP); acc -= STEP; frameN++;
+      if (mode === 'host' && frameN % 4 === 0) sendSnap();
+    }
     t += dt;
-    for (const e of world.ev) { eventFx(parts, e, world); sounds(e); }
+    for (const e of world.ev) { eventFx(parts, e, world); sounds(e); if (mode === 'host') evOut.push(plainEv(e)); }
     world.ev.length = 0;
     parts.update(dt);
     cam.update(world, dt);
@@ -241,10 +378,67 @@ export function matesGameScreen(app, { id, level = 0 }) {
     // a short pause on the finished level before the result card
     if ((world.won || world.over) && !overlay) {
       overlay = 'pending';
+      if (mode === 'host') sendSnap();
       const w = world;
       setTimeout(() => { if (alive && world === w && overlay === 'pending') { if (w.won) levelDone(); else endlessDone(w.over); } }, w.won ? 600 : 900);
     }
   }
+
+  // ----- two phones -----
+  // events carry only plain values across, so the friend's phone can play the same sounds and sparkles
+  function plainEv(e) { const o = {}; for (const k in e) if (e[k] === null || typeof e[k] !== 'object') o[k] = e[k]; return o; }
+  function sendSnap() {
+    const m = snapshot(world, frameN, sent);
+    if (evOut.length) { m.e = evOut; evOut = []; }
+    lan.send(m);
+  }
+  function sendInput(s, now) {
+    if (s) { if (s.jumpP) jn++; if (s.actP) an++; }
+    const k = s ? [s.x, +s.up, +s.down, +s.jump, +s.act, jn, an].join(',') : lastIn;
+    if (k !== lastIn || now - inAt > 200) { lan.send({ t: 'in', k }); lastIn = k; inAt = now; }
+  }
+  // The guest shows the host's world a few steps behind the newest snapshot, so movement stays smooth.
+  // Playback runs a little faster or slower to hold that gap, so bunched snapshots still play out evenly.
+  function guestFrame(dt, s) {
+    sendInput(s, performance.now());
+    if (snaps.length) {
+      const goal = snaps[snaps.length - 1].f - 10;
+      if (playF === null || Math.abs(goal - playF) > 120) playF = goal;
+      else playF += (dt / STEP) * Math.max(0.5, Math.min(1.5, 1 + (goal - playF) * 0.02));
+      let a = null, b = null;
+      for (let i = snaps.length - 1; i >= 0; i--) if (snaps[i].f <= playF) { a = snaps[i]; b = snaps[i + 1] || null; break; }
+      if (!a) a = snaps[0];
+      apply(world, a, b, b ? Math.max(0, Math.min(1, (playF - a.f) / Math.max(1, b.f - a.f))) : 0);
+      for (const sn of snaps) if (sn.f <= playF && sn.e) { for (const e of sn.e) { eventFx(parts, e, world); sounds(e); } sn.e = null; }
+    }
+    t += dt;
+    parts.update(dt);
+    cam.update(world, dt);
+    g.save(); render(g, world, cam, parts, t); g.restore();
+    if (bannerT > 0) { bannerT -= dt; if (bannerT <= 0) banner(''); }
+    if (peerPaused) banner(`${peer()} paused the game`, 0.5);
+    hud();
+    if ((world.won || world.over) && !overlay) { overlay = 'pending'; const w = world; setTimeout(() => { if (alive && world === w && overlay === 'pending') { if (w.won) levelDone(); else endlessDone(w.over); } }, 600); }
+  }
+  const offNet = !netMode ? () => {} : lan.on((e) => {
+    if (!alive) return;
+    if (e.type === 'closed') { toast(`${peer()} has left`, 3000); net.role = null; moving = true; app.backTo('mates'); return; }
+    if (e.type !== 'msg') return;
+    const m = e.data;
+    if (m.t === 'pause') { peerPaused = !!m.on; if (!peerPaused) banner(''); return; }
+    if (m.t === 'menu') { if (!moving) { moving = true; closeTopOverlay(); toast(`${peer()} went back to the games`); app.back(); } return; }
+    if (mode === 'host') {
+      if (m.t === 'in') { const v = String(m.k).split(',').map(Number); Object.assign(remote, { x: v[0] || 0, up: !!v[1], down: !!v[2], jump: !!v[3], act: !!v[4], jn: v[5] | 0, an: v[6] | 0 }); }
+    } else if (m.t === 'start') {
+      closeTopOverlay(); start({ idx: m.idx | 0, seed: m.seed | 0 });
+    } else if (m.t === 's' && world) {
+      const d = decode(m);
+      if (d.g) setGrid(world, d.g);
+      d.e = m.e || null;
+      snaps.push(d); if (snaps.length > 16) snaps.shift();
+    }
+  });
+  function sendPause(on) { if (netMode) lan.send({ t: 'pause', on }); }
 
   // Controllers can drive the result card and pause menu: A picks the highlighted button, up/down moves, B backs out.
   function pollMenu() {
@@ -295,11 +489,11 @@ export function matesGameScreen(app, { id, level = 0 }) {
       <h2>${last ? `All ${game.levels.length} levels done` : 'Level complete'}</h2>
       <div class="mates-stars">${st(1, 'Finished')}${st(2, w.coinsTotal || w.gemsTotal ? 'Every coin' : 'No coins here')}${st(4, w.deaths ? `${w.deaths} ${w.deaths === 1 ? 'fall' : 'falls'}` : 'No falls')}</div>
       <p class="sub">Time ${fmtT(w.t)}${!best && prev.t ? ` · best ${fmtT(prev.t)}` : prev.t && best ? ' · new best' : ''}</p>
-      <div class="stack">
+      ${guest ? waitStack() : `<div class="stack">
         ${last ? '' : '<button class="btn mates-btn" data-r="next">Next level</button>'}
         <button class="btn ${last ? 'mates-btn' : 'secondary'}" data-r="again">Play again</button>
         <button class="btn ghost" data-r="levels">Levels</button>
-      </div>`);
+      </div>`}`);
   }
   function endlessDone({ score, line }) {
     score = Math.max(0, Math.round(score));
@@ -311,8 +505,9 @@ export function matesGameScreen(app, { id, level = 0 }) {
       <div class="big">${esc(fmtScore(game, score))}</div>
       ${line ? `<p>${esc(line)}</p>` : ''}
       <p class="sub">${prev ? (isBest ? `Previous best ${esc(fmtScore(game, prev))}` : `Best ${esc(fmtScore(game, prev))}`) : 'First score on the board'}</p>
-      <div class="stack"><button class="btn mates-btn" data-r="again">Play again</button><button class="btn ghost" data-r="back">Back</button></div>`);
+      ${guest ? waitStack() : '<div class="stack"><button class="btn mates-btn" data-r="again">Play again</button><button class="btn ghost" data-r="back">Back</button></div>'}`);
   }
+  const waitStack = () => `<p class="sub">Waiting for ${esc(peer())} to choose what is next</p><div class="stack"><button class="btn ghost" data-r="back">Leave</button></div>`;
 
   function levels(fromResult = false) {
     paused = true;
@@ -330,12 +525,12 @@ export function matesGameScreen(app, { id, level = 0 }) {
 
   function pause() {
     if (paused) return;
-    paused = true;
-    const one = (() => { try { return [...(navigator.getGamepads?.() || [])].filter((x) => x && x.connected).length === 1; } catch { return false; } })();
+    paused = true; sendPause(true);
+    const one = !netMode && (() => { try { return [...(navigator.getGamepads?.() || [])].filter((x) => x && x.connected).length === 1; } catch { return false; } })();
     sheet(`<div class="mates-sheet"><h2>Paused</h2>
       <button class="sheet-item" data-r="resume">Carry on</button>
-      <button class="sheet-item" data-r="restart">${endless ? 'Start again' : 'Restart level'}</button>
-      ${endless ? '' : '<button class="sheet-item" data-r="levelsP">Choose a level</button>'}
+      ${guest ? '' : `<button class="sheet-item" data-r="restart">${endless ? 'Start again' : 'Restart level'}</button>`}
+      ${endless || guest ? '' : '<button class="sheet-item" data-r="levelsP">Choose a level</button>'}
       ${one ? `<button class="sheet-item" data-r="swap">Give the controller to ${M().padSwap ? `${NAMES[0]} (player 1)` : `${NAMES[1]} (player 2)`}</button>` : ''}
       <button class="sheet-item" data-r="how">How to play</button>
       <button class="sheet-item" data-r="quit">Leave the game</button></div>`, {
@@ -353,7 +548,7 @@ export function matesGameScreen(app, { id, level = 0 }) {
       onClose() { setTimeout(() => { if (!document.querySelector('#overlay-root .backdrop')) resume(); }, 0); },
     });
   }
-  function resume() { paused = false; last = performance.now(); acc = 0; }
+  function resume() { paused = false; last = performance.now(); acc = 0; sendPause(false); }
 
   root.addEventListener('click', (e) => {
     const a = e.target.closest('[data-act]')?.dataset.act;
@@ -371,13 +566,17 @@ export function matesGameScreen(app, { id, level = 0 }) {
   (async () => {
     resize();
     start();
+    if (guest) { q('title').textContent = game.name; banner(`Waiting for ${peer()}`, 30); }
     if (!M().seen[game.id]) { M().seen[game.id] = true; save(); paused = true; await matesHelp(game); resume(); }
     last = performance.now();
     raf = requestAnimationFrame(frame);
   })();
   return {
     root,
-    destroy() { alive = false; cancelAnimationFrame(raf); ro.disconnect(); input.destroy(); native.padCapture(false); document.removeEventListener('visibilitychange', onVis); },
+    destroy() {
+      if (netMode && !moving && isNet()) lan.send({ t: 'menu' });
+      alive = false; cancelAnimationFrame(raf); ro.disconnect(); input.destroy(); offNet(); native.padCapture(false); document.removeEventListener('visibilitychange', onVis);
+    },
     onHide() { paused = true; native.padCapture(false); },
     onShow() { native.padCapture(true); resume(); },
   };

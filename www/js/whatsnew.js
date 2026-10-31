@@ -2,6 +2,10 @@
 // tools/release.mjs uses the same text for the GitHub release notes (it will not publish a version missing here).
 // Keep each line short and plain: what was added or changed, from the player's point of view.
 export const WHATS_NEW = [
+  { v: '1.23.0', items: [
+    'Jump Mates: play on two phones over the same wifi or a phone hotspot, no internet needed. One phone hosts as Pip and picks the games, the other joins as Bo. A friend without the app can join from their browser.',
+    'Meowdoku: crossed-out squares are darker and easier to see.',
+  ] },
   { v: '1.22.0', items: [
     'New: Jump Mates. Twenty co-op platform games for two players on one phone or tablet, from Twin Trek and Ember and Frost to Rope Mates, Flip Side, Bomb Squad and Lava Climb. Help each other to the door, with 128 levels and four endless games.',
     'Jump Mates works with game controllers. Pair or plug in one or two: the stick or d-pad moves, A jumps, B or X is the action button and Start pauses. Keyboards work too.',

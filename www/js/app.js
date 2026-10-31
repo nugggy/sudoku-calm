@@ -26,7 +26,7 @@ import { ropeHomeScreen, ropeGameScreen, ropeHelp, ropeCardArt } from './rope-ga
 import { snipHomeScreen, snipLobbyScreen, snipGameScreen, snipHelp, snipCardArt, SNIP_LEVEL_COUNT } from './snip-game.js';
 import { turtleHubScreen, turtleGameScreen, turtleHelp, turtleCardArt, TURTLE_GAMES } from './turtle/hub.js';
 import { heroHubScreen, heroBuilderScreen, heroGameScreen, heroHelp, heroCardArt } from './hero/hub.js';
-import { matesHubScreen, matesGameScreen, matesHelp, matesCardArt, matesProgress } from './mates/hub.js';
+import { matesHubScreen, matesLobbyScreen, matesGameScreen, matesHelp, matesCardArt, matesProgress } from './mates/hub.js';
 import { duoHubScreen, duoLobbyScreen, duoGameScreen, duoHelp, duoCardArt } from './duo/hub.js';
 import { casinoHubScreen, casinoGameScreen, casinoHelp, casinoCardArt } from './casino/hub.js';
 import { potionHomeScreen, potionGameScreen, potionHelp, potionCardArt } from './potion-game.js';
@@ -81,7 +81,7 @@ const SCREENS = {
   treat: treatHomeScreen, treatgame: treatGameScreen, block: blockScreen,
   cross: crossHomeScreen, crossgame: crossGameScreen, ws: wsHomeScreen, wsgame: wsGameScreen,
   g2048: screen2048, mines: minesHomeScreen, minesgame: minesGameScreen, guess: guessHomeScreen, guessgame: guessGameScreen,
-  hashi: hashiHomeScreen, hashigame: hashiGameScreen, gridlock: gridlockHomeScreen, gridlockgame: gridlockGameScreen, crate: crateHomeScreen, crategame: crateGameScreen, potion: potionHomeScreen, potiongame: potionGameScreen, arrow: arrowHomeScreen, arrowgame: arrowGameScreen, chess: chessHomeScreen, chessgame: chessGameScreen, rope: ropeHomeScreen, ropegame: ropeGameScreen, snip: snipHomeScreen, sniplobby: snipLobbyScreen, snipgame: snipGameScreen, mates: matesHubScreen, matesgame: matesGameScreen, turtle: turtleHubScreen, turtlegame: turtleGameScreen, hero: heroHubScreen, herobuilder: heroBuilderScreen, herogame: heroGameScreen, duo: duoHubScreen, duolobby: duoLobbyScreen, duogame: duoGameScreen, casino: casinoHubScreen, casinogame: casinoGameScreen, press: pressHomeScreen, pressgame: pressGameScreen, yeti: yetiHubScreen, yetigame: yetiGameScreen, moto: motoHubScreen, motogarage: motoGarageScreen, motogame: motoGameScreen, landgrab: landgrabHomeScreen, landgrabgame: landgrabGameScreen, snake: snakeHomeScreen, snakegame: snakeGameScreen,
+  hashi: hashiHomeScreen, hashigame: hashiGameScreen, gridlock: gridlockHomeScreen, gridlockgame: gridlockGameScreen, crate: crateHomeScreen, crategame: crateGameScreen, potion: potionHomeScreen, potiongame: potionGameScreen, arrow: arrowHomeScreen, arrowgame: arrowGameScreen, chess: chessHomeScreen, chessgame: chessGameScreen, rope: ropeHomeScreen, ropegame: ropeGameScreen, snip: snipHomeScreen, sniplobby: snipLobbyScreen, snipgame: snipGameScreen, mates: matesHubScreen, mateslobby: matesLobbyScreen, matesgame: matesGameScreen, turtle: turtleHubScreen, turtlegame: turtleGameScreen, hero: heroHubScreen, herobuilder: heroBuilderScreen, herogame: heroGameScreen, duo: duoHubScreen, duolobby: duoLobbyScreen, duogame: duoGameScreen, casino: casinoHubScreen, casinogame: casinoGameScreen, press: pressHomeScreen, pressgame: pressGameScreen, yeti: yetiHubScreen, yetigame: yetiGameScreen, moto: motoHubScreen, motogarage: motoGarageScreen, motogame: motoGameScreen, landgrab: landgrabHomeScreen, landgrabgame: landgrabGameScreen, snake: snakeHomeScreen, snakegame: snakeGameScreen,
   mahjong: mahjongHomeScreen, mjgame: mahjongGameScreen,
   wheel: wheelHomeScreen, wheelgame: wheelGameScreen, pipe: pipeHomeScreen, pipegame: pipeGameScreen,
   spider: spiderHomeScreen, spidergame: spiderGameScreen,
@@ -500,7 +500,7 @@ function landingScreen() {
     body.innerHTML = `
       <div class="brand-row">${brandSvg}<span>GameHub</span></div>
       <div class="landing-head"><h1>${greeting()}</h1><p>What would you like to play?</p></div>
-      ${lan.webGuest ? `<button class="web-join-card" data-act="webjoin"><b>Join your friend's game</b><small>${lan.webGuest === 'snip' ? 'Snip Buddies' : 'Play Together'} on ${esc(lan.ip())}</small></button>` : ''}
+      ${lan.webGuest ? `<button class="web-join-card" data-act="webjoin"><b>Join your friend's game</b><small>${lan.webGuest === 'snip' ? 'Snip Buddies' : lan.webGuest === 'mates' ? 'Jump Mates' : 'Play Together'} on ${esc(lan.ip())}</small></button>` : ''}
       <label class="game-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
         <input type="search" data-el="search" placeholder="Search games" aria-label="Search games" autocomplete="off" enterkeyhint="search" value="${esc(query)}">
         <button class="search-clear" data-act="clear" aria-label="Clear search" ${query ? '' : 'hidden'}>${icon.close}</button></label>
@@ -946,7 +946,7 @@ app.reset('games');
 // Opened in a friend's browser from the host phone's address: go straight to joining their game.
 function openWebJoin() {
   app.reset('games');
-  if (lan.webGuest === 'snip') { app.go('snip'); app.go('sniplobby'); } else { app.go('duo'); app.go('duolobby', {}); }
+  if (lan.webGuest === 'snip') { app.go('snip'); app.go('sniplobby'); } else if (lan.webGuest === 'mates') { app.go('mates'); app.go('mateslobby'); } else { app.go('duo'); app.go('duolobby', {}); }
 }
 if (lan.webGuest) openWebJoin();
 loadLevels();

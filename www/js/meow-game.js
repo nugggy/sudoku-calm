@@ -182,7 +182,7 @@ export function meowGameScreen(app, { idx }) {
       const want = s === CAT ? 'cat' : s === CROSS ? 'x' : blocked && blocked.has(i) ? 'dot' : '';
       if (c.dataset.show !== want) {
         c.dataset.show = want;
-        c.innerHTML = sym(i) + (want === 'cat' ? `<img src="${src}" alt="cat">` : want === 'x' ? `<span class="x" style="color:#5a4a42">${icon.x}</span>` : want === 'dot' ? '<span class="dot"></span>' : '');
+        c.innerHTML = sym(i) + (want === 'cat' ? `<img src="${src}" alt="cat">` : want === 'x' ? `<span class="x" style="color:#1f1612">${icon.x}</span>` : want === 'dot' ? '<span class="dot"></span>' : '');
         if (want === 'x') c.querySelector('.x svg').style.cssText = 'width:100%;height:100%';
       }
       c.classList.toggle('bad', bad.has(i));

@@ -104,3 +104,37 @@
 .mates-levels .lv.done { box-shadow: inset 0 0 0 2px #6a54d6; }
 .mates-levels .lv.cur { background: #6a54d6; color: #fff; }
 .mates-levels .lv:disabled { opacity: .35; }
+
+/* two phones: the hub button, the lobby and one set of buttons */
+.mates-two { margin: 4px 0 2px; }
+.mates-lobby .btn { margin-bottom: 10px; }
+.mates-lobby .mates-card { padding: 12px 14px; }
+.ml-field { display: flex; flex-direction: column; gap: 6px; margin: 10px 0 16px; font-size: 13px; font-weight: 800; }
+.ml-field input, .ml-ipjoin input { font: inherit; font-size: 17px; font-weight: 600; padding: 12px 14px; border-radius: 14px; border: 2px solid rgba(106, 84, 214, .25); background: var(--card); color: var(--text); }
+.ml-note { font-size: 14px; line-height: 1.45; opacity: .8; text-align: center; margin: 14px 8px; }
+.ml-wait { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 34px 10px 0; }
+.ml-wait h2 { margin: 6px 0 0; font-size: 21px; }
+.ml-wait p { margin: 0 0 6px; line-height: 1.45; }
+.ml-ip { display: flex; flex-direction: column; gap: 4px; padding: 12px 18px; border-radius: 16px; background: var(--card); }
+.ml-ip small { font-size: 12px; opacity: .75; }
+.ml-ip b { font-size: 24px; letter-spacing: .5px; font-variant-numeric: tabular-nums; }
+.ml-found { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.ml-found .sheet-item { background: var(--card); border-radius: 14px; display: flex; flex-direction: column; align-items: flex-start; }
+.ml-found .sheet-item small { font-size: 12px; opacity: .7; font-weight: 600; }
+.ml-searching { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 14px; background: var(--card); font-weight: 600; }
+.ml-searching .spinner { width: 22px; height: 22px; }
+.ml-ipjoin { display: flex; gap: 8px; margin-bottom: 14px; }
+.ml-ipjoin input { flex: 1; min-width: 0; }
+.ml-ipjoin .btn { width: auto; padding: 0 22px; margin: 0; }
+.ml-partner { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; border-radius: 14px; background: var(--card); font-size: 15px; margin: 6px 0 4px; }
+.ml-partner .dot { width: 10px; height: 10px; border-radius: 50%; background: #33c46b; box-shadow: 0 0 0 4px rgba(51, 196, 107, .22); }
+.ml-leave { margin-top: 14px; }
+.mates-net .mp-b { height: 72px; }
+.mates-net .mp-b svg { width: 32px; height: 32px; }
+@media (orientation: landscape) and (max-height: 560px) {
+  .mates-net .mates-pads { justify-content: stretch; }
+  .mates-net .mp-pad { flex: 1 1 auto; background: none; backdrop-filter: none; }
+  .mates-net .mp-row { justify-content: space-between; }
+  .mates-net .mp-b { flex: 0 0 76px; height: 60px; }
+  .mates-net .mp-gap { flex: 1; }
+}

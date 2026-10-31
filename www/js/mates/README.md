@@ -7,6 +7,9 @@ Twenty co-op platform games for two players on one device (touch buttons, keyboa
 - `input.js` merges on-screen buttons, keyboard and controllers into one state per player.
 - `hub.js` is the list of games and the play screen (levels, stars, pause, results).
 - `games.js` lists the game modules in hub order. Each game is `g-<id>.js`.
+- `net.js` is two-phone play: the host runs the world and sends generic snapshots (every list of bodies, `w.data`, the grid
+  when it changes) about 30 times a second; the guest builds the same level from the same seed, plays the snapshots back
+  a little behind with smoothing, and sends its buttons. Keep game state in the world (not in module variables) so it travels.
 - `tools/test-mates.mjs` checks every game: levels parse, both players can reach the exit (optimistically), the
   engine runs with random input without throwing, and each game's own `tests` pass.
 

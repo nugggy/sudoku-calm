@@ -361,7 +361,7 @@ h1, h2, h3, p { margin: 0; }
 .mcell:active { filter: brightness(.94); }
 .mcell img { width: 86%; height: 86%; object-fit: contain; animation: cat-drop .35s cubic-bezier(.2, 1.5, .4, 1); pointer-events: none; }
 @keyframes cat-drop { from { transform: scale(.2) translateY(-30%); opacity: 0; } }
-.mcell .x { width: 34%; height: 34%; opacity: .55; pointer-events: none; }
+.mcell .x { width: 40%; height: 40%; opacity: .9; pointer-events: none; }
 .mcell .dot { width: 18%; height: 18%; border-radius: 50%; background: rgba(0, 0, 0, .18); pointer-events: none; }
 .mcell.bad img { animation: wiggle .5s infinite; filter: drop-shadow(0 0 6px #ff3b5c) saturate(1.3); }
 @keyframes wiggle { 25% { transform: rotate(-8deg); } 75% { transform: rotate(8deg); } }

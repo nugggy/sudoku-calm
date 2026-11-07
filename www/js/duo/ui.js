@@ -1,5 +1,5 @@
 // Shared bits for the turn-based Play Together games: the player bar, a pass-the-phone cover and an animation helper.
-import { whoName, turnText, esc } from './core.js';
+import { whoName, turnText, mine, esc } from './core.js';
 
 // Player bar across the top of a game: two name chips with a piece swatch and score, and a turn line.
 // pieces: [html0, html1] small swatches. Returns { el, set({turn, score, text}) }.
@@ -17,7 +17,9 @@ export function playerBar(ctx, pieces) {
         c.querySelector('.dg-s').textContent = score ? score[p] : '';
       });
       el.querySelector('.dg-turn').innerHTML = text !== null ? text : turn >= 0 ? turnText(ctx, turn) : '';
-      el.classList.toggle('mine', turn >= 0 && (ctx.local || turn === ctx.me));
+      el.classList.toggle('mine', turn >= 0 && mine(ctx, turn));
+      // against the computer, a soft pulse on the turn line while it thinks
+      el.classList.toggle('ai-think', !!ctx.ai && turn === 1 && text === null);
     },
   };
 }

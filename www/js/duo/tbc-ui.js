@@ -35,8 +35,9 @@ export function frame(ctx, cls) {
 
 // "You" on this phone, the player's name otherwise.
 export const label = (ctx, p) => (!ctx.local && ctx.me === p ? `${ctx.names[p]} (you)` : ctx.names[p]);
-export const canAct = (ctx, p) => ctx.local || ctx.me === p;
-export const turnText = (ctx, p, verb = 'turn') => (ctx.local ? `${ctx.names[p]}'s ${verb}` : ctx.me === p ? `Your ${verb}` : `${ctx.names[p]}'s ${verb}`);
+// Against the computer (ctx.ai) the person only acts for player 0.
+export const canAct = (ctx, p) => (ctx.ai ? p === 0 : ctx.local || ctx.me === p);
+export const turnText = (ctx, p, verb = 'turn') => (ctx.ai ? (p === 0 ? `Your ${verb}` : 'The computer is thinking') : ctx.local ? `${ctx.names[p]}'s ${verb}` : ctx.me === p ? `Your ${verb}` : `${ctx.names[p]}'s ${verb}`);
 // Which player this phone shows at the bottom (player 0 when both share the phone).
 export const viewer = (ctx) => (ctx.local || ctx.me == null ? 0 : ctx.me);
 
@@ -64,7 +65,7 @@ export function mover(ctx, apply, idle) {
 export function finish(ctx, winner, text, ms = 1300) {
   setTimeout(() => { if (ctx.alive()) ctx.end({ winner, text }); }, ms);
 }
-export const winText = (ctx, w, extra = '') => (w == null ? `It's a draw${extra}` : `${ctx.names[w]} wins${extra}`);
+export const winText = (ctx, w, extra = '') => (w == null ? `It's a draw${extra}` : ctx.ai ? `${w === 0 ? 'You win' : 'The computer wins'}${extra}` : `${ctx.names[w]} wins${extra}`);
 
 // A full-screen cover used in pass-and-play when something must stay secret.
 export function cover(host, html, btn, onGo) {

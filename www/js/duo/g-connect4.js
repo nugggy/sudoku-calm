@@ -3,13 +3,14 @@ import { c4New, c4Drop, c4CanDrop, c4Win, c4Full } from './rules.js';
 import { mine } from './core.js';
 import { playerBar, fitBoard } from './ui.js';
 import { cbOn, symbolSvg } from '../cb.js';
+import { c4Ai, aiTurn } from './ai-board.js';
 
 // Colourblind mode adds a symbol on top of each disc image: a ring for red, a cross for yellow.
 const C4SYM = ['ring', 'cross'];
 const disc = (p) => `<i class="c4-disc p${p}">${cbOn() ? symbolSvg(C4SYM[p], { fill: 'rgba(25,20,35,.72)', stroke: 'rgba(255,255,255,.55)', cls: 'cb-sym c4-sym' }) : ''}</i>`;
 
 export default {
-  id: 'connect4', name: 'Connect Four', tag: 'Drop discs, line up four', cat: 'board', realtime: false,
+  id: 'connect4', name: 'Connect Four', tag: 'Drop discs, line up four', cat: 'board', realtime: false, ai: true,
   art: () => `<div class="art-c4">${[0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1].map((v, i) => `<i class="${[2, 8, 9, 15, 16, 17, 20].includes(i) ? 'p' + v : ''}"></i>`).join('')}</div>`,
   help: [
     'Take turns dropping a disc into a column. It falls to the lowest free space.',
@@ -52,7 +53,13 @@ export default {
       if (c4Full(b)) { over = true; draw(); setTimeout(() => ctx.end({ winner: null, text: 'The frame is full' }), 700); return true; }
       turn = 1 - turn;
       draw();
+      computer();
       return true;
+    }
+
+    // against the computer: it plays player 1's turns after a short pause
+    function computer() {
+      if (ctx.ai && turn === 1 && !over) aiTurn(ctx, () => c4Ai(b, 1, ctx.ai), (c) => play(c, 1));
     }
 
     area.addEventListener('click', (e) => {
@@ -66,6 +73,7 @@ export default {
     });
     const off = ctx.onMsg((m) => { if (m.t === 'move') play(m.c, m.p); });
     draw();
+    computer();
     // state() and bot() are for tests: bot plays a random legal move when it is this phone's turn.
     const bot = () => {
       if (over || !mine(ctx, turn)) return false;

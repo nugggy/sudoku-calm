@@ -1,14 +1,15 @@
 // Noughts and Crosses, best of five rounds. The starter alternates each round.
 import { tttWin, tttFull } from './rules.js';
-import { mine, whoName } from './core.js';
+import { mine, who } from './core.js';
 import { playerBar, fitBoard } from './ui.js';
+import { tttAi, aiTurn } from './ai-board.js';
 
 const X = '<img class="tt-x" src="img/duo/mark_x.svg" alt="">';
 const O = '<img class="tt-o" src="img/duo/mark_o.svg" alt="">';
 const mark = (p) => (p === 0 ? X : O);
 
 export default {
-  id: 'ttt', name: 'Noughts and Crosses', tag: 'Best of five, three in a row', cat: 'party', realtime: false,
+  id: 'ttt', name: 'Noughts and Crosses', tag: 'Best of five, three in a row', cat: 'party', realtime: false, ai: true,
   art: () => `<div class="art-ttt">${[0, -1, 1, -1, 0, 1, 1, -1, 0].map((v) => `<i>${v < 0 ? '' : mark(v)}</i>`).join('')}</div>`,
   help: [
     'Take turns placing your mark. Three in a row across, down or diagonally wins the round.',
@@ -42,6 +43,7 @@ export default {
       round++; starter = 1 - starter; turn = starter; roundOver = false;
       b = new Array(9).fill(0);
       draw();
+      computer();
       early.splice(0).forEach((m) => { if (m.round === round) play(m.i, m.p); else if (m.round > round) early.push(m); });
     }
 
@@ -50,7 +52,7 @@ export default {
       if (win) wins[win.player]++;
       const done = wins[0] === 3 || wins[1] === 3 || round === 4;
       draw(win);
-      if (win) { ctx.sfx.unit(); ctx.toast(`${whoName(ctx, win.player)} takes round ${round + 1}`); } else ctx.toast(`Round ${round + 1} is a draw`);
+      if (win) { ctx.sfx.unit(); ctx.toast(who(ctx, win.player, `take round ${round + 1}`, `takes round ${round + 1}`)); } else ctx.toast(`Round ${round + 1} is a draw`);
       if (done) {
         over = true;
         setTimeout(() => {
@@ -67,8 +69,15 @@ export default {
       ctx.sfx.place(); ctx.buzz(10);
       const win = tttWin(b);
       if (win || tttFull(b)) finishRound(win);
-      else { turn = 1 - turn; draw(); }
+      else { turn = 1 - turn; draw(); computer(); }
       return true;
+    }
+
+    // against the computer: it plays player 1's turns after a short pause
+    function computer() {
+      if (!ctx.ai || turn !== 1 || over || roundOver) return;
+      const r = round;
+      aiTurn(ctx, () => tttAi(b, 1, ctx.ai), (i) => { if (r === round) play(i, 1); });
     }
 
     area.addEventListener('click', (e) => {
@@ -83,6 +92,7 @@ export default {
     const early = [];
     const off = ctx.onMsg((m) => { if (m.t !== 'move') return; if (m.round === round && !roundOver) play(m.i, m.p); else if (m.round > round || roundOver) early.push(m); });
     draw();
+    computer();
     const bot = () => {
       if (over || roundOver || !mine(ctx, turn)) return false;
       const free = b.map((v, i) => (v ? -1 : i)).filter((i) => i >= 0), i = free[Math.floor(Math.random() * free.length)], p = turn;

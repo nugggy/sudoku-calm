@@ -2,6 +2,11 @@
 // tools/release.mjs uses the same text for the GitHub release notes (it will not publish a version missing here).
 // Keep each line short and plain: what was added or changed, from the player's point of view.
 export const WHATS_NEW = [
+  { v: '1.25.0', items: [
+    'New: Bubble Pop. Aim and shoot glossy bubbles to pop groups of three or more and drop everything hanging below. 60 levels with stars, plus an endless mode.',
+    'Play the computer: Connect Four, Draughts, Reversi, Battleships, Dots and Boxes, Mancala and Noughts and Crosses in Play Together can now be played on your own against the computer, at easy, medium or hard.',
+    'A fresh, cleaner look: softer game cards, a tidier search box and headings, and smoother menus and buttons throughout.',
+  ] },
   { v: '1.24.0', items: [
     'New: Dance Party. Dance along with a coach to six songs, from Easy to Hard. Hold the phone in your hand and it scores your moves, or play Tap along with taps, holds and swipes on the beat. Earn up to five stars a song.',
     'New in Play Together: 8 Ball. Pool on a tall table for two players on one phone or two phones, with a break, solids and stripes, fouls and ball in hand. Drag to aim with a guide line, set the power and spin, and pot the 8 to win.',

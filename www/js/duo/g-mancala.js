@@ -1,6 +1,8 @@
 // Mancala (Kalah): sow seeds round the board, land in your store for another turn, capture from an empty pit.
 import { kalahNew, kalahLegal, kalahPlay, storeOf, pitsOf } from './tbc-rules.js';
 import { frame, mover, canAct, turnText, viewer, finish, winText, fx, sleep, label, esc } from './tbc-ui.js';
+import { who } from './core.js';
+import { kalahAi, aiTurn } from './ai-board.js';
 
 const SEED_COLS = ['#e8604c', '#3b7ddd', '#f2b631', '#3fae6a', '#9a7cf0', '#f08a4b', '#2bb5b8'];
 // Seed positions inside a pit are fixed per (pit, seed number), so a pit looks the same on both phones.
@@ -17,7 +19,7 @@ function seedSpots(pit, n, w, h) {
 const seedsHTML = (pit, n, w = 100, h = 100) => seedSpots(pit, Math.min(n, 24), w, h).map(([x, y, c]) => `<i style="left:${x}%;top:${y}%;--sc:${SEED_COLS[c]};background-image:url(img/duo/seed_${c}.webp)"></i>`).join('');
 
 export default {
-  id: 'mancala', name: 'Mancala', tag: 'Sow the seeds, fill your store', realtime: false, cat: 'board',
+  id: 'mancala', name: 'Mancala', tag: 'Sow the seeds, fill your store', realtime: false, cat: 'board', ai: true,
   art: () => `<div class="tbc-art-mancala">${[3, 5, 2, 4].map((n, i) => `<div class="mc-pit"><div class="mc-seeds">${seedsHTML(i + 3, n)}</div></div>`).join('')}</div>`,
   help: [
     'Each player owns six pits and a store. Your pits run down the left, and your store is at the bottom.',
@@ -48,6 +50,7 @@ export default {
       ui.turn(s.over ? -1 : s.turn);
       ui.score([s.pits[6], s.pits[13]]);
       if (!s.over) ui.status(turnText(ctx, s.turn) + (canAct(ctx, s.turn) ? ': tap a pit on your side' : ''));
+      ui.el.querySelector('.tbc-status').classList.toggle('ai-think', !!ctx.ai && s.turn === 1 && !s.over);
     }
 
     const m = mover(ctx, async (i) => {
@@ -58,15 +61,23 @@ export default {
       shown = before; shown[i] = 0; hot = i; render(); fx(ctx, 'tap');
       for (const at of r.trace) { await sleep(150); if (!ctx.alive()) return; shown[at]++; hot = at; render(); fx(ctx, 'soft'); }
       await sleep(200);
-      if (r.capture) { flash = [r.capture.pit, r.capture.opp]; render(); fx(ctx, 'good'); ctx.toast && ctx.toast(`${ctx.names[r.player]} captures ${r.capture.seeds}`); await sleep(650); flash = null; }
-      else if (r.extra && !s.over) { fx(ctx, 'good'); ctx.toast && ctx.toast(`${ctx.names[r.player]} goes again`); }
+      if (r.capture) { flash = [r.capture.pit, r.capture.opp]; render(); fx(ctx, 'good'); ctx.toast && ctx.toast(who(ctx, r.player, `capture ${r.capture.seeds}`, `captures ${r.capture.seeds}`)); await sleep(650); flash = null; }
+      else if (r.extra && !s.over) { fx(ctx, 'good'); ctx.toast && ctx.toast(who(ctx, r.player, 'go again', 'goes again')); }
       shown = s.pits.slice(); hot = -1; render();
       if (s.over) {
         const sc = `, ${Math.max(s.pits[6], s.pits[13])} to ${Math.min(s.pits[6], s.pits[13])}`;
         ui.status(winText(ctx, s.winner, sc)); fx(ctx, 'win');
         finish(ctx, s.winner, winText(ctx, s.winner, sc));
       }
-    }, () => render());
+    }, () => { render(); computer(); });
+
+    // against the computer: it sows for player 1 after a short pause, and again after an extra turn
+    let thinking = false;
+    function computer() {
+      if (!ctx.ai || s.turn !== 1 || s.over || m.busy || thinking) return;
+      thinking = true;
+      aiTurn(ctx, () => kalahAi(s, ctx.ai), (i) => { thinking = false; m.local(i); });
+    }
 
     ui.body.addEventListener('click', (e) => {
       const b = e.target.closest('[data-pit]');
@@ -77,6 +88,7 @@ export default {
     });
     ctx.onMsg((msg) => { if (msg.t === 'mv') m.remote(msg.m); });
     render();
+    computer();
     return { destroy() { ctx.root.innerHTML = ''; } };
   },
 };

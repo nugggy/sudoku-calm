@@ -14,6 +14,7 @@ import { sortHomeScreen, sortGameScreen, sortLevelsScreen, sortHelp, cutie } fro
 import { solitaireScreen, solHelp } from './solitaire-game.js';
 import { treatHomeScreen, treatGameScreen, treatHelp, treatCardArt } from './treat-game.js';
 import { blockScreen, blockHelp } from './block-game.js';
+import { bubbleHomeScreen, bubbleGameScreen, bubbleHelp, bubbleCardArt, bubbleProgress } from './bubble-game.js';
 import { screen2048, help2048 } from './g2048.js';
 import { minesHomeScreen, minesGameScreen, minesHelp } from './mines-game.js';
 import { guessHomeScreen, guessGameScreen, guessHelp } from './guess-game.js';
@@ -79,7 +80,7 @@ const SCREENS = {
   games: landingScreen, home: homeScreen, meow: meowHomeScreen, me: statsScreen,
   sort: sortHomeScreen, sortgame: sortGameScreen, sortlevels: sortLevelsScreen,
   solitaire: solitaireScreen,
-  treat: treatHomeScreen, treatgame: treatGameScreen, block: blockScreen,
+  treat: treatHomeScreen, treatgame: treatGameScreen, block: blockScreen, bubble: bubbleHomeScreen, bubblegame: bubbleGameScreen,
   cross: crossHomeScreen, crossgame: crossGameScreen, ws: wsHomeScreen, wsgame: wsGameScreen,
   g2048: screen2048, mines: minesHomeScreen, minesgame: minesGameScreen, guess: guessHomeScreen, guessgame: guessGameScreen,
   hashi: hashiHomeScreen, hashigame: hashiGameScreen, gridlock: gridlockHomeScreen, gridlockgame: gridlockGameScreen, crate: crateHomeScreen, crategame: crateGameScreen, potion: potionHomeScreen, potiongame: potionGameScreen, arrow: arrowHomeScreen, arrowgame: arrowGameScreen, chess: chessHomeScreen, chessgame: chessGameScreen, rope: ropeHomeScreen, ropegame: ropeGameScreen, snip: snipHomeScreen, sniplobby: snipLobbyScreen, snipgame: snipGameScreen, dance: danceHubScreen, dancegame: danceGameScreen, mates: matesHubScreen, mateslobby: matesLobbyScreen, matesgame: matesGameScreen, turtle: turtleHubScreen, turtlegame: turtleGameScreen, hero: heroHubScreen, herobuilder: heroBuilderScreen, herogame: heroGameScreen, duo: duoHubScreen, duolobby: duoLobbyScreen, duogame: duoGameScreen, casino: casinoHubScreen, casinogame: casinoGameScreen, press: pressHomeScreen, pressgame: pressGameScreen, yeti: yetiHubScreen, yetigame: yetiGameScreen, moto: motoHubScreen, motogarage: motoGarageScreen, motogame: motoGameScreen, landgrab: landgrabHomeScreen, landgrabgame: landgrabGameScreen, snake: snakeHomeScreen, snakegame: snakeGameScreen,
@@ -248,6 +249,11 @@ registerGame({
   id: 'block', cat: 'Casual', screen: 'block', name: 'Block Pounce', tag: 'Fit the blocks, clear the lines', theme: 'g-block',
   art: () => `<div class="art-block">${'1100011101111011001110011'.split('').map((v, i) => `<i style="${v === '1' ? `background:${['#ff5d73', '#38b6ff', '#ffd23f', '#3ddc84', '#8f6bff'][i % 5]}` : ''}"></i>`).join('')}</div>`,
   progress: () => (store.block.best ? `Best ${store.block.best.toLocaleString('en-AU')}` : 'New game'),
+});
+registerGame({
+  id: 'bubble', cat: 'Casual', screen: 'bubble', name: 'Bubble Pop', tag: 'Aim, match three, pop', theme: 'g-bubble',
+  art: () => bubbleCardArt(),
+  progress: () => bubbleProgress(),
 });
 registerGame({
   id: 'meow', cat: 'Logic', screen: 'meow', name: 'Meowdoku', tag: 'One cat per row, column and colour', theme: 'g-meow',
@@ -450,7 +456,7 @@ const SEARCH_WORDS = {
   guess: 'wordle five letter',
   mines: 'minesweeper bombs',
   2048: 'merge tiles',
-  sol: 'klondike patience cards', spider: 'patience cards', mahjong: 'tiles solitaire', block: 'blocks tetris puzzle', pipe: 'flow connect the dots',
+  sol: 'klondike patience cards', spider: 'patience cards', mahjong: 'tiles solitaire', block: 'blocks tetris puzzle', bubble: 'bubble shooter pop match three balls aim endless', pipe: 'flow connect the dots',
   potion: 'water sort colours', crate: 'sokoban boxes push', press: 'button reaction', jigsaw: 'puzzle picture pieces', sticker: 'stickers scenes',
   paint: 'colour by numbers color pixel art painting pictures colouring',
 };
@@ -785,8 +791,8 @@ function settingsScreen() {
     else if (a === 'solrules') solHelp();
     else if (a === 'treatrules') treatHelp();
     else if (a === 'crossrules') crossHelp();
-    else if (a === 'rules-more') sheet(`<h2>How to play</h2>${[['2048', '2048'], ['mines', 'Minesweeper'], ['guess', 'Guesswork'], ['wheel', 'Word Wheel'], ['pipe', 'Pipeline'], ['mahjong', 'Mahjong Garden'], ['spider', 'Spider Solitaire'], ['jigsaw', 'Jigsaw'], ['sticker', 'Sticker Studio'], ['paint', 'Paint Pixels'], ['hashi', 'Island Hop'], ['gridlock', 'Gridlock'], ['crate', 'Crate Mate'], ['potion', 'Potion Pour'], ['arrow', 'Arrow Away'], ['chess', 'Chess'], ['rope', 'Sweet Drop'], ['snip', 'Snip Buddies'], ['dance', 'Dance Party'], ['mates', 'Jump Mates'], ['turtle', 'Turtle Bay'], ['hero', 'Marvel Heroes'], ['duo', 'Play Together'], ['casino', 'Casino Night'], ['press', 'Pressure Point'], ['yeti', 'Yeti Games'], ['moto', 'Moto Mania'], ['landgrab', 'Land Grab'], ['snake', 'Slither Snacks']].map(([k, n]) => `<button class="sheet-item" data-h="${k}">${n}</button>`).join('')}`, {
-      onMount(node, close) { node.addEventListener('click', (ev) => { const b = ev.target.closest('[data-h]'); if (!b) return; close(); ({ 2048: help2048, mines: minesHelp, guess: guessHelp, wheel: wheelHelp, pipe: pipeHelp, mahjong: mahjongHelp, spider: spiderHelp, jigsaw: jigsawHelp, sticker: stickerHelp, paint: paintHelp, hashi: hashiHelp, gridlock: gridlockHelp, crate: crateHelp, potion: potionHelp, arrow: arrowHelp, chess: chessHelp, rope: ropeHelp, snip: snipHelp, dance: () => danceHelp(), mates: () => matesHelp(), turtle: () => turtleHelp(), hero: () => heroHelp(), duo: () => duoHelp(), casino: () => casinoHelp(), press: () => pressHelp(), yeti: () => yetiHelp(), moto: () => motoHelp(), landgrab: () => landgrabHelp(), snake: () => snakeHelp() })[b.dataset.h](); }); },
+    else if (a === 'rules-more') sheet(`<h2>How to play</h2>${[['2048', '2048'], ['mines', 'Minesweeper'], ['guess', 'Guesswork'], ['wheel', 'Word Wheel'], ['pipe', 'Pipeline'], ['mahjong', 'Mahjong Garden'], ['spider', 'Spider Solitaire'], ['jigsaw', 'Jigsaw'], ['sticker', 'Sticker Studio'], ['paint', 'Paint Pixels'], ['hashi', 'Island Hop'], ['gridlock', 'Gridlock'], ['crate', 'Crate Mate'], ['potion', 'Potion Pour'], ['arrow', 'Arrow Away'], ['chess', 'Chess'], ['rope', 'Sweet Drop'], ['snip', 'Snip Buddies'], ['bubble', 'Bubble Pop'], ['dance', 'Dance Party'], ['mates', 'Jump Mates'], ['turtle', 'Turtle Bay'], ['hero', 'Marvel Heroes'], ['duo', 'Play Together'], ['casino', 'Casino Night'], ['press', 'Pressure Point'], ['yeti', 'Yeti Games'], ['moto', 'Moto Mania'], ['landgrab', 'Land Grab'], ['snake', 'Slither Snacks']].map(([k, n]) => `<button class="sheet-item" data-h="${k}">${n}</button>`).join('')}`, {
+      onMount(node, close) { node.addEventListener('click', (ev) => { const b = ev.target.closest('[data-h]'); if (!b) return; close(); ({ 2048: help2048, mines: minesHelp, guess: guessHelp, wheel: wheelHelp, pipe: pipeHelp, mahjong: mahjongHelp, spider: spiderHelp, jigsaw: jigsawHelp, sticker: stickerHelp, paint: paintHelp, hashi: hashiHelp, gridlock: gridlockHelp, crate: crateHelp, potion: potionHelp, arrow: arrowHelp, chess: chessHelp, rope: ropeHelp, snip: snipHelp, bubble: () => bubbleHelp(), dance: () => danceHelp(), mates: () => matesHelp(), turtle: () => turtleHelp(), hero: () => heroHelp(), duo: () => duoHelp(), casino: () => casinoHelp(), press: () => pressHelp(), yeti: () => yetiHelp(), moto: () => motoHelp(), landgrab: () => landgrabHelp(), snake: () => snakeHelp() })[b.dataset.h](); }); },
     });
     else if (a === 'wsrules') wsHelp();
     else if (a === 'blockrules') blockHelp();
@@ -821,6 +827,7 @@ function aboutScreen() {
         <p><b>Snip Buddies.</b> Faces, tiles, balloons and clouds are from Kenney's Shape Characters and Background Elements (kenney.nl, CC0). Snipping uses polygon-clipping by Mike Fogel (MIT licence), with splaytree (MIT) and robust-predicates (Unlicense).</p><br>
         <p><b>Turtle Bay.</b> The turtles, tortoises, crab, jellyfish, gull, kelp, coral and lily pad are by Poly by Google, the green turtle by jeremy, the long-necked turtle by Crispy_Prawn and the seagrass by Laney XR Labs, all under CC-BY 3.0 (creativecommons.org/licenses/by/3.0). The fish, lettuce, log and rock are by Quaternius and the bag by Kenney (CC0). All were found on poly.pizza and rendered into pictures for this app. River Hop's cars and trees come from Moto Mania.</p><br>
         <p><b>Marvel Heroes.</b> An unofficial fan project, not made or endorsed by Marvel or Disney. Marvel characters, names and related marks belong to Marvel. All hero artwork is drawn by the app on Kenney's Toon Characters; robots and gems are from Kenney's Robot Pack and Puzzle Pack 2 (kenney.nl, CC0). Thor's hammer is "mjolner" by OZZYBOI and the arc reactor is "Arc Reactor" by Heiko Jakob, both from poly.pizza under CC-BY 3.0 (creativecommons.org/licenses/by/3.0).</p><br>
+        <p><b>Bubble Pop.</b> The bubble shine is "Transparent Bubble (Soap Bubble)" by aloknarula and the sea is "Underwater scene (loopable)" by Scribe, both CC0 from opengameart.org. The bubbles and launcher are drawn by the app.</p><br>
         <p><b>Dance Party.</b> Music by Kevin MacLeod (incompetech.com): Kawai Kitsune, Disco Medusae, Funky Chunk, Electro Cabello, Exit the Premises and Getting it Done, licensed under Creative Commons: By Attribution 4.0 (creativecommons.org/licenses/by/4.0). The songs are shortened and faded out for the game. Coaches are Kenney's Toon Characters and the stage lights use Kenney's Particle Pack (kenney.nl, CC0).</p><br>
         <p><b>Moto Mania.</b> The motorbikes and the scooter are by Poly by Google, and the dirt bike is by Corentin Fatus, all under CC-BY 3.0 (creativecommons.org/licenses/by/3.0), found on poly.pizza. Riders, cars, roads, buildings, food and scenery are from Kenney's Mini Characters, Car Kit, City Kits, Racing Kit, Food Kit and Nature Kit (kenney.nl, CC0). 3D drawing uses three.js (MIT licence).</p><br>
         <p><b>Land Grab.</b> The animals are from Kenney's Animal Pack (kenney.nl, CC0). The field and land are drawn by the app.</p><br>

@@ -45,11 +45,13 @@ writeFileSync(propsPath, props);
 console.log(`Version ${version} (build ${code})`);
 
 // 2. tests, then a signed release build
-for (const t of ['test-sudoku.mjs', 'test-sort.mjs', 'test-press.mjs', 'test-arrow.mjs', 'test-chess.mjs', 'test-rope.mjs', 'test-snip.mjs', 'test-turtle.mjs', 'test-hero.mjs', 'test-duo.mjs', 'test-duo-rt.mjs', 'test-duo-c.mjs', 'test-duo-d.mjs', 'test-treat.mjs', 'test-casino.mjs', 'test-casino-b.mjs', 'test-landgrab.mjs', 'test-snake.mjs', 'test-mates.mjs', 'test-dance.mjs', 'test-pool.mjs', 'webhost-test/run.mjs']) run(`node tools/${t}`);
+for (const t of ['test-sudoku.mjs', 'test-sort.mjs', 'test-press.mjs', 'test-arrow.mjs', 'test-chess.mjs', 'test-rope.mjs', 'test-snip.mjs', 'test-turtle.mjs', 'test-hero.mjs', 'test-duo.mjs', 'test-duo-rt.mjs', 'test-duo-c.mjs', 'test-duo-d.mjs', 'test-treat.mjs', 'test-casino.mjs', 'test-casino-b.mjs', 'test-landgrab.mjs', 'test-snake.mjs', 'test-mates.mjs', 'test-dance.mjs', 'test-pool.mjs', 'test-duo-ai.mjs', 'test-bubble.mjs', 'webhost-test/run.mjs']) run(`node tools/${t}`);
 const gradlew = join(ROOT, 'android', process.platform === 'win32' ? 'gradlew.bat' : 'gradlew');
 run(`"${gradlew}" assembleRelease --console=plain -q`, { cwd: join(ROOT, 'android') });
 mkdirSync(join(ROOT, 'dist'), { recursive: true });
-const apk = join(ROOT, 'dist', `sudoku-calm-${version}.apk`);
+// Published as GameHub.apk (the in-app updater takes any .apk on the release); dist keeps one folder per version.
+mkdirSync(join(ROOT, 'dist', version), { recursive: true });
+const apk = join(ROOT, 'dist', version, 'GameHub.apk');
 copyFileSync(join(ROOT, 'android', 'app', 'build', 'outputs', 'apk', 'release', 'app-release.apk'), apk);
 console.log('Built ' + apk);
 if (dry) { console.log('Dry run: nothing committed or published.'); process.exit(0); }

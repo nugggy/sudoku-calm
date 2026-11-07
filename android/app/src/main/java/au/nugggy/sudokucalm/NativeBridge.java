@@ -166,7 +166,7 @@ public class NativeBridge {
             if (dir == null) dir = activity.getFilesDir();
             File[] old = dir.listFiles();
             if (old != null) for (File f : old) if (f.getName().endsWith(".apk")) f.delete();
-            File apk = new File(dir, "sudoku-calm-" + version.replaceAll("[^0-9A-Za-z.-]", "") + ".apk");
+            File apk = new File(dir, "GameHub-" + version.replaceAll("[^0-9A-Za-z.-]", "") + ".apk");
             boolean ok = false;
             for (int attempt = 1; attempt <= 4 && !ok; attempt++) {
                 try {

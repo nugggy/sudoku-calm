@@ -1,7 +1,8 @@
 /* GameHub: styles for the second wave of games. */
 
 /* ---------- Picker sections ---------- */
-.cat-title { font-size: 15px; font-weight: 800; color: var(--muted); margin: 18px 4px 10px; letter-spacing: .3px; }
+.cat-title { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 800; color: var(--text); margin: 24px 4px 12px; letter-spacing: -.2px; }
+.cat-title::after { content: ""; flex: 1; height: 1px; background: var(--hairline); }
 .landing-head + .cat-title { margin-top: 0; }
 
 /* ---------- Shared game home ---------- */

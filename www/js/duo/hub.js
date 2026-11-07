@@ -65,6 +65,9 @@ export const duoCardArt = () => `<svg class="art-duo" viewBox="0 0 120 80" aria-
   <circle cx="25" cy="42" r="7" class="pc a"/><circle cx="95" cy="42" r="7" class="pc b"/>
   <path d="M46 30q14-14 28 0M50 36q10-9 20 0" class="wave"/><circle cx="60" cy="40" r="2.6" class="dotc"/></svg>`;
 
+// A small computer chip, on the hub cards of games that can be played against the computer.
+const CHIP = '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="6.5" y="6.5" width="3" height="3" rx=".5" fill="currentColor"/><path d="M6 1.5v2M10 1.5v2M6 12.5v2M10 12.5v2M1.5 6h2M1.5 10h2M12.5 6h2M12.5 10h2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
+
 // ---------- Connection session (survives screen changes while connected) ----------
 const session = { connected: false, role: null, via: 'wifi', peer: '', names: ['', ''], score: [0, 0], played: 0, lastId: null, first: 0, off: null };
 const localScore = { key: '', score: [0, 0] };
@@ -123,6 +126,7 @@ export function duoHubScreen(app) {
         if (!gs.length) return '';
         return `<div class="section-title">${title}</div><div class="duo-grid">${gs.map((g) => `<button class="duo-card" data-id="${g.id}">
           <div class="duo-art">${g.art()}</div><div class="duo-name">${esc(g.name)}</div><div class="duo-tag">${esc(g.tag)}</div>
+          ${g.ai ? `<span class="duo-solo" title="You can also play the computer">${CHIP}Solo</span>` : ''}
           ${DB().played[g.id] ? `<div class="duo-played">Played ${DB().played[g.id]}</div>` : '<span class="new-badge">New</span>'}</button>`).join('')}</div>`;
       }).join('')}`;
   }

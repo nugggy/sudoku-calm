@@ -1,8 +1,10 @@
 // Battleships: hide a fleet, then take turns firing at each other's waters. Each phone keeps its own fleet secret
 // and answers the other phone's shots. On one phone, a cover screen hides each board while the phone is passed.
+// Against the computer its fleet is placed at random and never drawn; only its shots at your fleet are shown.
 import { FLEET, SHIP_NAMES, shipCells, fleetValid, randomFleet, answerShot } from './rules.js';
 import { mine, whoName, esc } from './core.js';
 import { playerBar, passCover } from './ui.js';
+import { shipsAi, aiTurn } from './ai-board.js';
 
 // Ship pictures from the CC0 Sea Warfare set by Lowder2, stretched to the ship's length.
 // FLEET is [5, 4, 3, 3, 2]; the second 3 is the submarine.
@@ -15,7 +17,7 @@ const MISS = '<img class="sh-miss" src="img/duo/ship_miss.webp" alt="">';
 const HIT = '<img class="sh-hit" src="img/duo/ship_hit.webp" alt="">';
 
 export default {
-  id: 'ships', name: 'Battleships', tag: 'Hide your fleet, sink theirs', cat: 'board', realtime: false,
+  id: 'ships', name: 'Battleships', tag: 'Hide your fleet, sink theirs', cat: 'board', realtime: false, ai: true,
   art: () => `<div class="art-ships">${hullSvg(4, false)}<i class="m1">${MISS}</i><i class="h1">${HIT}</i><i class="m2">${MISS}</i></div>`,
   help: [
     'First place your five ships: drag a ship to move it and tap it to turn it. Shuffle places them at random. Ships may touch but not overlap.',
@@ -28,10 +30,13 @@ export default {
     const shots = [new Map(), new Map()]; // shots[p]: cell -> 'miss' | 'hit' | 'sunk', fired BY player p
     const hitOn = [new Set(), new Set()]; // cells hit on player p's fleet (owner side bookkeeping)
     const sunkShips = [[], []]; // sunkShips[p]: cells of p's ships that the other player has sunk
-    let phase = 'place', turn = ctx.first, over = false, waiting = false, placing = ctx.local ? ctx.first : ctx.me;
+    const lastShot = [-1, -1]; // the latest cell each player fired at, ringed on the target's own grid
+    // pass: one phone shared by two people, so boards hide behind a cover (not against the computer)
+    const pass = ctx.local && !ctx.ai;
+    let phase = 'place', turn = ctx.first, over = false, waiting = false, placing = ctx.ai ? 0 : ctx.local ? ctx.first : ctx.me;
     let cover = null;
     // whose eyes are on the board: on one phone it only changes behind the pass-the-phone cover
-    let viewer = ctx.local ? null : ctx.me;
+    let viewer = ctx.ai ? 0 : ctx.local ? null : ctx.me;
     const others = (p) => 1 - p;
 
     ctx.root.innerHTML = '';
@@ -45,7 +50,7 @@ export default {
     function placeView() {
       const p = placing, f = fleets[p] || (fleets[p] = randomFleet(Math.random));
       area.innerHTML = `<div class="sh-place">
-        <p class="sh-note">${ctx.local ? `<b>${whoName(ctx, p)}</b>, place` : 'Place'} your fleet. Drag to move, tap to turn.</p>
+        <p class="sh-note">${pass ? `<b>${whoName(ctx, p)}</b>, place` : 'Place'} your fleet. Drag to move, tap to turn.</p>
         <div class="sh-grid big" data-grid="own">${cellsHtml()}${f.map((s, k) => shipHtml(s, k)).join('')}</div>
         <div class="dg-tool-row"><button class="btn ghost" data-act="shuffle">Shuffle</button><button class="btn duo-btn" data-act="ready">Ready</button></div>
         ${!ctx.local && ready[others(p)] ? `<p class="sh-note dim">${whoName(ctx, others(p))} is ready</p>` : ''}</div>`;
@@ -111,7 +116,7 @@ export default {
     function startBattle() {
       phase = 'battle';
       ctx.sfx.hint();
-      if (ctx.local) showTurn(); else battleView();
+      if (pass) showTurn(); else { battleView(); computer(); }
     }
     // on one phone each turn starts behind a cover so the shooter's own fleet stays hidden from the other player
     function showTurn() {
@@ -126,7 +131,7 @@ export default {
       area.innerHTML = `<div class="sh-battle">
         <p class="sh-label">${esc(whoName(ctx, them))}'s waters</p>
         <div class="sh-grid big enemy" data-grid="enemy">${[...Array(100)].map((_, i) => { const r = shots[me].get(i); return `<i class="sh-c ${r ? 'shot ' + r : ''} ${theirSunk.has(i) ? 'sunkc' : ''}" data-i="${i}">${r === 'miss' ? MISS : r ? HIT : ''}</i>`; }).join('')}</div>
-        <div class="sh-lower"><div><p class="sh-label">Your fleet</p><div class="sh-grid small" data-grid="own">${[...Array(100)].map((_, i) => { const r = shots[them].get(i); return `<i class="sh-c ${r ? 'shot ' + r : ''}">${r === 'miss' ? MISS : r ? HIT : ''}</i>`; }).join('')}${fleets[me].map((s, k) => shipHtml(s, k, s.cells.every((x) => hitOn[me].has(x)))).join('')}</div></div>
+        <div class="sh-lower"><div><p class="sh-label">Your fleet</p><div class="sh-grid small" data-grid="own">${[...Array(100)].map((_, i) => { const r = shots[them].get(i); return `<i class="sh-c ${r ? 'shot ' + r : ''}${i === lastShot[them] ? ' last' : ''}">${r === 'miss' ? MISS : r ? HIT : ''}</i>`; }).join('')}${fleets[me].map((s, k) => shipHtml(s, k, s.cells.every((x) => hitOn[me].has(x)))).join('')}</div></div>
         <div class="sh-left"><p class="sh-label">Still afloat</p>${FLEET.map((len, k) => `<span class="${sunkShips[them].some((c) => c.length === len) && sunkShips[them].filter((c) => c.length === len).length > FLEET.slice(0, k).filter((x) => x === len).length ? 'gone' : ''}">${SHIP_NAMES[len]} (${len})</span>`).join('')}</div></div></div>`;
       sizeGrids();
       bar.set({ turn: over ? -1 : turn, score: [sunkShips[1].length, sunkShips[0].length] });
@@ -143,17 +148,24 @@ export default {
     // the shooter learns what happened; the defender has already marked its own board
     function applyResult(p, i, res) {
       waiting = false;
+      lastShot[p] = i;
       shots[p].set(i, res.r === 'miss' ? 'miss' : 'hit');
       if (res.r === 'sunk') { sunkShips[1 - p].push(res.ship); res.ship.forEach((x) => shots[p].set(x, 'sunk')); }
-      if (res.r === 'miss') ctx.sfx.erase(); else if (res.r === 'hit') { ctx.sfx.place(); ctx.buzz(25); } else { ctx.sfx.unit(); ctx.buzz([30, 40, 60]); ctx.toast(`${p === ctx.me || ctx.local ? 'You sank' : `${whoName(ctx, p)} sank`} ${ctx.local || p === ctx.me ? 'their' : 'your'} ${SHIP_NAMES[res.ship.length]}`); }
+      if (res.r === 'miss') ctx.sfx.erase(); else if (res.r === 'hit') { ctx.sfx.place(); ctx.buzz(25); } else { ctx.sfx.unit(); ctx.buzz([30, 40, 60]); ctx.toast(`${sankText(p)} ${SHIP_NAMES[res.ship.length]}`); }
       if (res.over) {
         over = true; battleView();
         setTimeout(() => ctx.end({ winner: p, text: 'The whole fleet is sunk' }), 1200);
         return;
       }
       turn = 1 - turn;
-      if (ctx.local) { battleView(); setTimeout(() => { if (ctx.alive() && !over) showTurn(); }, 1300); }
-      else battleView();
+      if (pass) { battleView(); setTimeout(() => { if (ctx.alive() && !over) showTurn(); }, 1300); }
+      else { battleView(); computer(); }
+    }
+    const sankText = (p) => (ctx.ai ? (p === 0 ? 'You sank the computer\'s' : 'The computer sank your') : p === ctx.me || ctx.local ? 'You sank their' : `${whoName(ctx, p)} sank your`);
+
+    // against the computer: it fires for player 1 after a short pause
+    function computer() {
+      if (ctx.ai && phase === 'battle' && turn === 1 && !over) aiTurn(ctx, () => shipsAi(shots[1], sunkShips[0], ctx.ai), (i) => fire(i, 1));
     }
 
     area.addEventListener('click', (e) => {
@@ -164,6 +176,7 @@ export default {
           if (!fleetValid(fleets[placing])) { ctx.sfx.error(); return; }
           ctx.sfx.hint();
           const p = placing;
+          if (ctx.ai) { fleets[1] = randomFleet(Math.random); ready[1] = true; markReady(p); return; }
           if (ctx.local && !ready[others(p)]) {
             ready[p] = true; placing = others(p);
             area.innerHTML = '';
@@ -177,7 +190,7 @@ export default {
       }
       const cell = e.target.closest('.enemy [data-i]');
       if (!cell || over) return;
-      if (ctx.local ? turn !== viewer : !mine(ctx, turn)) { if (!ctx.local) ctx.toast('Wait for your turn'); return; }
+      if (pass ? turn !== viewer : !mine(ctx, turn)) { if (!pass) ctx.toast('Wait for your turn'); return; }
       if (waiting) return;
       const i = +cell.dataset.i;
       if (shots[turn].has(i)) { ctx.sfx.error(); return; }
@@ -189,6 +202,7 @@ export default {
       else if (m.t === 'shot' && m.p === turn && m.p !== ctx.me) {
         // the other phone fired at this phone's fleet: answer honestly and mark our own board
         const res = answerShot(fleets[ctx.me], hitOn[ctx.me], m.i);
+        lastShot[m.p] = m.i;
         ctx.send({ t: 'res', i: m.i, p: m.p, ...res });
         shots[m.p].set(m.i, res.r === 'miss' ? 'miss' : 'hit');
         if (res.r === 'sunk') { sunkShips[ctx.me].push(res.ship); res.ship.forEach((x) => shots[m.p].set(x, 'sunk')); }
@@ -205,7 +219,7 @@ export default {
     const bot = () => {
       if (cover) { cover.querySelector('[data-ready]').click(); return true; }
       if (phase === 'place') { if (ctx.local || !ready[ctx.me]) { area.querySelector('[data-act="ready"]')?.click(); return true; } return false; }
-      if (over || waiting || (ctx.local ? turn !== viewer : !mine(ctx, turn))) return false;
+      if (over || waiting || (pass ? turn !== viewer : !mine(ctx, turn))) return false;
       const free = [...Array(100).keys()].filter((i) => !shots[turn].has(i));
       return fire(free[Math.floor(Math.random() * free.length)], turn);
     };

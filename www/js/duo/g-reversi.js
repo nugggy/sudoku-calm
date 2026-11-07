@@ -1,13 +1,14 @@
 // Reversi: place a disc to trap a line of your opponent's discs and flip them.
 import { rvNew, rvMoves, rvPlay, rvCount, rvNext } from './rules.js';
-import { mine, whoName } from './core.js';
+import { mine, who } from './core.js';
 import { playerBar, fitBoard } from './ui.js';
+import { rvAi, aiTurn } from './ai-board.js';
 
 // Player 0 is dark, player 1 is light, whoever moves first.
 const disc = (p) => `<i class="rv-disc p${p}"></i>`;
 
 export default {
-  id: 'reversi', name: 'Reversi', tag: 'Trap and flip your rival\'s discs', cat: 'board', realtime: false,
+  id: 'reversi', name: 'Reversi', tag: 'Trap and flip your rival\'s discs', cat: 'board', realtime: false, ai: true,
   art: () => `<div class="art-rv">${[0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 1].map((v) => `<i>${disc(v)}</i>`).join('')}</div>`,
   help: [
     'Place a disc so that one or more straight lines of your opponent\'s discs sit between it and another of your discs. Those discs flip to your colour.',
@@ -52,10 +53,16 @@ export default {
         const [a, c] = rvCount(b);
         setTimeout(() => ctx.end({ winner: a === c ? null : a > c ? 0 : 1, text: `${a} ${a === 1 ? 'disc' : 'discs'} to ${c}` }), 900);
       } else {
-        if (nx === p) ctx.toast(`${whoName(ctx, 1 - p)} has no move and passes`);
+        if (nx === p) ctx.toast(who(ctx, 1 - p, 'have no move and pass', 'has no move and passes'));
         turn = nx; draw(f);
+        computer();
       }
       return true;
+    }
+
+    // against the computer: it plays player 1's turns after a short pause
+    function computer() {
+      if (ctx.ai && turn === 1 && !over) aiTurn(ctx, () => rvAi(b, 1, ctx.ai), (i) => play(i, 1));
     }
 
     area.addEventListener('click', (e) => {
@@ -68,6 +75,7 @@ export default {
     });
     const off = ctx.onMsg((m) => { if (m.t === 'move') play(m.i, m.p); });
     draw();
+    computer();
     const bot = () => {
       if (over || !mine(ctx, turn)) return false;
       const mv = rvMoves(b, turn), i = mv[Math.floor(Math.random() * mv.length)], p = turn;

@@ -3,13 +3,14 @@ import { dbNew, dbPlay, dbOver, dbEdges } from './rules.js';
 import { mine, esc } from './core.js';
 import { playerBar } from './ui.js';
 import { pMark, pBadge } from './tbc-ui.js';
+import { dbAi, aiTurn } from './ai-board.js';
 
 const SIZES = [3, 4, 5, 6];
 const BOX = ['img/duo/box_red.webp', 'img/duo/box_blue.webp']; // claimed boxes (Kenney Puzzle Pack 2)
 const sw = (p) => `<i class="db-sw p${p}">${pBadge(p, 14)}</i>`;
 
 export default {
-  id: 'dots', name: 'Dots and Boxes', tag: 'Close a box, take another turn', cat: 'board', realtime: false,
+  id: 'dots', name: 'Dots and Boxes', tag: 'Close a box, take another turn', cat: 'board', realtime: false, ai: true,
   art: () => '<svg class="art-dots" viewBox="0 0 96 64"><image href="img/duo/box_red.webp" x="19" y="9" width="22" height="22"/><image href="img/duo/box_blue.webp" x="43" y="33" width="22" height="22"/><path d="M18 8h48M18 8v24h24M42 32V8M42 56h24V32H42M66 8v24" /><g>' +
     [18, 42, 66].map((x) => [8, 32, 56].map((y) => `<circle cx="${x}" cy="${y}" r="4"/>`).join('')).join('') + '</g></svg>',
   help: [
@@ -44,6 +45,7 @@ export default {
       const dots = [...Array((n + 1) * (n + 1))].map((_, i) => { const [x, y] = dot(Math.floor(i / (n + 1)), i % (n + 1)); return `<circle class="db-dot" cx="${x}" cy="${y}" r="5.5"/>`; }).join('');
       area.innerHTML = `<svg class="db-board" viewBox="0 0 ${W} ${W}">${boxes}${edgeSvg}${dots}</svg>`;
       draw();
+      computer();
     }
 
     function draw() {
@@ -70,7 +72,13 @@ export default {
         const [a, b] = s.score;
         setTimeout(() => ctx.end({ winner: a === b ? null : a > b ? 0 : 1, text: `${a} ${a === 1 ? 'box' : 'boxes'} to ${b}` }), 800);
       } else draw();
+      computer();
       return true;
+    }
+
+    // against the computer: it plays player 1's turns after a short pause, and again after closing a box
+    function computer() {
+      if (ctx.ai && s && turn === 1 && !over) aiTurn(ctx, () => dbAi(s, 1, ctx.ai), (e) => play(e, 1));
     }
 
     area.addEventListener('click', (e) => {

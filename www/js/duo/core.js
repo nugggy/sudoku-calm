@@ -84,6 +84,8 @@ export function makePair(game, opts = {}) {
 export const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const whoName = (ctx, p) => esc(ctx.names[p] || `Player ${p + 1}`);
 // The text for whose turn it is, from this phone's point of view.
-export const turnText = (ctx, p) => (ctx.local ? `${whoName(ctx, p)} to play` : p === ctx.me ? 'Your turn' : `${whoName(ctx, p)} is thinking`);
-// True when this phone may act for player p.
-export const mine = (ctx, p) => ctx.local || p === ctx.me;
+export const turnText = (ctx, p) => (ctx.ai ? (p === 0 ? 'Your turn' : 'The computer is thinking') : ctx.local ? `${whoName(ctx, p)} to play` : p === ctx.me ? 'Your turn' : `${whoName(ctx, p)} is thinking`);
+// True when this phone may act for player p. Against the computer the person only plays player 0.
+export const mine = (ctx, p) => (ctx.ai ? p === 0 : ctx.local || p === ctx.me);
+// A short line about player p, such as who(ctx, p, 'pass', 'passes'): "You pass", "The computer passes" or "Ann passes".
+export const who = (ctx, p, you, other) => (ctx.ai ? (p === 0 ? `You ${you}` : `The computer ${other}`) : `${whoName(ctx, p)} ${other}`);

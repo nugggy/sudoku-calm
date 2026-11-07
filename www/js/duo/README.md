@@ -39,10 +39,20 @@ Real-time games: the host is authoritative, simulates at a fixed step and sends 
 
 ## Playing the computer
 
-A game that sets `ai: true` gets a third choice in the hub's game sheet, Play the computer, which asks for Easy, Medium or Hard (the last choice is remembered in `store.duo.aiLevel`). The game then starts on this phone with `ctx.local` true, `ctx.ai` set to the level and names `['You', 'Computer']`. The person is always player 0 and the computer player 1; `ctx.first` still alternates on Play again. Because `local` is true, helpers such as `mine()` say this phone may act for both players, so the game must check `ctx.ai` itself: ignore the person's input on player 1's turns and play those turns with its own computer player. The result card says You win or The computer wins, and the running score is kept per level.
+A game that sets `ai: true` gets a third choice in the hub's game sheet, Play the computer, which asks for Easy, Medium or Hard (the last choice is remembered in `store.duo.aiLevel`), and a small Solo chip on its hub card. The game then starts on this phone with `ctx.local` true, `ctx.ai` set to the level and names `['You', 'Computer']`. The person is always player 0 and the computer player 1; `ctx.first` still alternates on Play again. The result card says You win or The computer wins, and the running score is kept per level.
 
-8 Ball (`g-pool.js`) is the example: its engine `rt-pool.js` has `aiThink(state, level, rng)`, a generator that simulates candidate shots a few at a time (so the screen keeps moving while it thinks), prefers pots of its own group and avoids fouls, then adds the level's aim and power error.
+The shared helpers already know about the computer: when `ctx.ai` is set, `mine(ctx, p)` and `canAct(ctx, p)` (tbc-ui.js) are only true for player 0, `turnText` says Your turn or The computer is thinking (the player bar pulses that line softly), `winText` says You win or The computer wins, and `who(ctx, p, 'pass', 'passes')` gives You pass, The computer passes or Ann passes for toasts. So taps on the computer's turns are already refused; the game only has to play player 1's turns itself. Anything that would hide a board for pass and play (such as Battleships' cover) should be skipped.
 
-Helpers in `core.js`: `makePair(game, opts)` wires two ctx objects together in one page for harnesses and tests (`opts.roots` = two elements, `latency` in ms), `makeCtx`, `seededRng`, `turnText`, `mine`, `esc`.
+Turn-based games keep their computer players in `ai-board.js`, which has no browser code so `tools/test-duo-ai.mjs` can test it in Node. Each function takes the game's own state, the level and `rng`, and returns a move in the same shape the game sends over the link (`c4Ai`, `tttAi`, `drAi`, `rvAi`, `kalahAi`, `dbAi`, `shipsAi`). Searches deepen one ply at a time under a time cap (about 80 to 260 ms by level), and every level takes a move that wins on the spot. `aiTurn(ctx, think, play)` runs the computer's turn after a short natural pause (400 to 900 ms including the thinking) and does nothing once the screen has gone. The pattern in each game is a `computer()` function, called after every move and once at the start:
+
+```js
+function computer() {
+  if (ctx.ai && turn === 1 && !over) aiTurn(ctx, () => c4Ai(b, 1, ctx.ai), (c) => play(c, 1));
+}
+```
+
+8 Ball (`g-pool.js`) is the real-time example: its engine `rt-pool.js` has `aiThink(state, level, rng)`, a generator that simulates candidate shots a few at a time (so the screen keeps moving while it thinks), prefers pots of its own group and avoids fouls, then adds the level's aim and power error.
+
+Helpers in `core.js`: `makePair(game, opts)` wires two ctx objects together in one page for harnesses and tests (`opts.roots` = two elements, `latency` in ms), `makeCtx`, `seededRng`, `turnText`, `mine`, `who`, `esc`.
 
 Messages between the phones are wrapped by the hub (`{ k: 'g', d: obj }`), so games can use any shape they like.

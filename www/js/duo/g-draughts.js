@@ -1,13 +1,14 @@
 // English draughts: men move forward diagonally, captures are compulsory and must be carried on, kings move both ways.
 import { drNew, drMoves, drPlay, drOwner, drKing, drCount, drKey } from './rules.js';
-import { mine, whoName } from './core.js';
+import { mine, who } from './core.js';
 import { playerBar, fitBoard } from './ui.js';
+import { drAi, aiTurn } from './ai-board.js';
 
 const CROWN = '<svg viewBox="0 0 24 24" class="dr-crown"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z"/></svg>';
 const QUIET_LIMIT = 80; // plies with no capture and no man moved before the game is drawn
 
 export default {
-  id: 'draughts', name: 'Draughts', tag: 'Jump, capture and crown your kings', cat: 'board', realtime: false,
+  id: 'draughts', name: 'Draughts', tag: 'Jump, capture and crown your kings', cat: 'board', realtime: false, ai: true,
   art: () => `<div class="art-dr">${[...Array(16)].map((_, i) => { const r = i >> 2, c = i & 3, d = (r + c) % 2; const v = d ? ['', 'a', '', 'b', 'a', '', 'b', '', '', 'a', '', '', 'b', '', 'b', ''][i] : ''; return `<i class="${d ? 'd' : ''}">${v ? `<b class="${v}"></b>` : ''}</i>`; }).join('')}</div>`,
   help: [
     'Move a piece one square diagonally forward onto an empty dark square.',
@@ -62,17 +63,23 @@ export default {
       lastMv = mv; sel = -1; path = [];
       quiet = mv.caps.length || man ? 0 : quiet + 1;
       if (mv.caps.length) { ctx.sfx.unit(); ctx.buzz(20); } else { ctx.sfx.place(); ctx.buzz(8); }
-      if (crowned) ctx.toast(`${whoName(ctx, p)} has a new king`);
+      if (crowned) ctx.toast(who(ctx, p, 'have a new king', 'has a new king'));
       turn = 1 - turn;
       legal = drMoves(b, turn);
       if (!legal.length) {
         over = true; draw();
-        setTimeout(() => ctx.end({ winner: p, text: drCount(b)[turn] ? `${whoName(ctx, turn)} has no move left` : 'Every piece taken' }), 800);
+        setTimeout(() => ctx.end({ winner: p, text: drCount(b)[turn] ? who(ctx, turn, 'have no move left', 'has no move left') : 'Every piece taken' }), 800);
       } else if (quiet >= QUIET_LIMIT) {
         over = true; draw();
         setTimeout(() => ctx.end({ winner: null, text: 'Forty moves each with no capture' }), 800);
       } else draw();
+      computer();
       return true;
+    }
+
+    // against the computer: it plays player 1's turns after a short pause
+    function computer() {
+      if (ctx.ai && turn === 1 && !over) aiTurn(ctx, () => drAi(b, 1, ctx.ai), (key) => play(key, 1));
     }
 
     area.addEventListener('click', (e) => {
@@ -94,6 +101,7 @@ export default {
     });
     const off = ctx.onMsg((m) => { if (m.t === 'move') play(m.key, m.p); });
     draw();
+    computer();
     const bot = () => {
       if (over || !mine(ctx, turn)) return false;
       const mv = legal[Math.floor(Math.random() * legal.length)], p = turn, key = drKey(mv);

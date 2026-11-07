@@ -14,6 +14,7 @@
 :root[data-cb="1"] .tbc-pl i { width: 16px; height: 16px; }
 .tbc-pl i .cb-sym, .mr-hand i .cb-sym { display: block; }
 .tbc-status { min-height: 22px; padding: 6px 14px 2px; text-align: center; font-size: 14px; font-weight: 700; color: var(--tbc-muted); flex-shrink: 0; }
+.tbc-status.ai-think { animation: dg-think 1.1s ease-in-out infinite alternate; } /* the computer is thinking (keyframes in duo.css) */
 .tbc-body { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 6px 12px calc(12px + var(--safe-bottom, 0px)); }
 .tbc-cover { position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; padding: 24px; background: color-mix(in srgb, var(--bg, #f5efe6) 96%, transparent); backdrop-filter: blur(10px); }
 .tbc-cover-in { max-width: 320px; text-align: center; display: flex; flex-direction: column; gap: 12px; }

@@ -9,6 +9,7 @@ export default {
   tag: 'Drop discs, line up four',
   cat: 'board',                 // 'board' | 'action' | 'party' (hub groups)
   realtime: false,
+  ai: false,                    // optional: true if the game has a computer player (see Playing the computer)
   art: () => '<svg ...>',       // card art, about 96 x 64; real images or drawn SVG, never emoji
   help: ['Paragraph one.', 'Paragraph two.'],
   create(ctx) { /* fill ctx.root */ return { destroy() {} }; },
@@ -31,9 +32,16 @@ The `ctx` object (built by `makeCtx` in `core.js`):
 | `sfx`, `buzz`, `toast` | The app's sound (`sfx.tap()`, `sfx.place()`, `sfx.error()`, `sfx.win()`, ...), vibration and toast helpers. |
 | `rng()` | Seeded random number in `[0, 1)`; both phones get the same seed. |
 | `alive()` | `false` once the game screen has gone; stop loops and timers. |
+| `ai` | `null`, or `'easy'`, `'medium'` or `'hard'` when one person plays the computer (see below). |
 
 Turn-based games run identical deterministic rules on both phones and send moves (`{ t: 'move', ... }`).
 Real-time games: the host is authoritative, simulates at a fixed step and sends snapshots about 20 to 30 times a second; the guest sends its input and draws the latest snapshot (interpolate if you like). Each phone must call `ctx.end` itself (the guest when the host's snapshot says the game is over).
+
+## Playing the computer
+
+A game that sets `ai: true` gets a third choice in the hub's game sheet, Play the computer, which asks for Easy, Medium or Hard (the last choice is remembered in `store.duo.aiLevel`). The game then starts on this phone with `ctx.local` true, `ctx.ai` set to the level and names `['You', 'Computer']`. The person is always player 0 and the computer player 1; `ctx.first` still alternates on Play again. Because `local` is true, helpers such as `mine()` say this phone may act for both players, so the game must check `ctx.ai` itself: ignore the person's input on player 1's turns and play those turns with its own computer player. The result card says You win or The computer wins, and the running score is kept per level.
+
+8 Ball (`g-pool.js`) is the example: its engine `rt-pool.js` has `aiThink(state, level, rng)`, a generator that simulates candidate shots a few at a time (so the screen keeps moving while it thinks), prefers pots of its own group and avoids fouls, then adds the level's aim and power error.
 
 Helpers in `core.js`: `makePair(game, opts)` wires two ctx objects together in one page for harnesses and tests (`opts.roots` = two elements, `latency` in ms), `makeCtx`, `seededRng`, `turnText`, `mine`, `esc`.
 

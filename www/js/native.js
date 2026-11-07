@@ -24,6 +24,14 @@ export const native = {
   exit() { if (N) N.exitApp(); },
   // While on, controller buttons the page ignores are not turned into Back by Android (older shells skip this).
   padCapture(on) { try { N && N.setPadCapture && N.setPadCapture(!!on); } catch { /* older shell */ } },
+  // Keeps the screen on (the app's window flag, or the browser's wake lock); older shells skip this.
+  keepAwake(on) {
+    try {
+      if (N) { if (N.setKeepAwake) N.setKeepAwake(!!on); return; }
+      if (on && navigator.wakeLock && !native._lock) navigator.wakeLock.request('screen').then((l) => { native._lock = l; }).catch(() => {});
+      if (!on && native._lock) { native._lock.release().catch(() => {}); native._lock = null; }
+    } catch { /* not supported */ }
+  },
   // Share a canvas as a PNG: Android's share sheet in the app (older shells and browsers fall back to the browser's
   // share sheet, then a download). Resolves to how it went.
   async shareImage(canvas, name, text) {

@@ -1,8 +1,9 @@
 // Play Together: the game module API and helpers shared by the hub, the games and test harnesses.
 //
 // Each game is www/js/duo/g-<id>.js:
-//   export default { id, name, tag, art: () => html, help: [paragraphs], realtime: bool, cat: 'board'|'action'|'party', twoPhones?: bool, create(ctx) }
+//   export default { id, name, tag, art: () => html, help: [paragraphs], realtime: bool, cat: 'board'|'action'|'party', twoPhones?: bool, ai?: bool, create(ctx) }
 //   twoPhones: the game needs a phone each (no "On this phone" option), for games whose camera follows one player.
+//   ai: the game has a computer player, so the hub also offers "Play the computer" (easy, medium or hard).
 // create(ctx) fills ctx.root and returns { destroy() }.
 //
 // ctx = {
@@ -18,6 +19,8 @@
 //   sfx, buzz, toast   the app's sound, vibration and toast helpers
 //   rng()     seeded random number in [0, 1), the same sequence on both phones
 //   alive()   false once the screen has gone (stop timers and animation loops)
+//   ai        null, or 'easy' | 'medium' | 'hard' when one person plays the computer on this phone. The person is
+//             player 0 and the computer player 1; local is true, so the game itself plays player 1's turns.
 // }
 // Turn-based games run the same deterministic rules on both phones and send moves.
 // Real-time games: the host simulates and sends snapshots (about 20 to 30 a second); the guest sends input.
@@ -29,11 +32,11 @@ const noop = () => {};
 const quiet = new Proxy({}, { get: () => noop });
 
 // Builds a ctx. link: { send(obj), listen(fn) -> unsubscribe } or null for local mode.
-export function makeCtx({ root, me = null, local = me === null, isHost = true, first = 0, names = ['Player 1', 'Player 2'], seed = 1, link = null, onEnd = noop, sfx = quiet, buzz = noop, toast = noop }) {
+export function makeCtx({ root, me = null, local = me === null, isHost = true, first = 0, names = ['Player 1', 'Player 2'], seed = 1, link = null, onEnd = noop, sfx = quiet, buzz = noop, toast = noop, ai = null }) {
   let alive = true, ended = false;
   const subs = [];
   const ctx = {
-    root, me, local, isHost, first, names, sfx, buzz, toast,
+    root, me, local, isHost, first, names, sfx, buzz, toast, ai,
     rng: seededRng(seed),
     send: (obj) => { if (alive && link && !local) link.send(obj); },
     onMsg(fn) {

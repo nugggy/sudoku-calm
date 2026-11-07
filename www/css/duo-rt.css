@@ -54,3 +54,31 @@
 .tk-fire:active { transform: translateY(2px); box-shadow: 0 2px 0 #9c2e12; }
 .tk-fire:disabled { background: #9aa0a6; box-shadow: 0 4px 0 #6b7075; }
 .rt-tanks.waiting .tk-panel { opacity: .75; }
+
+/* ----- 8 Ball ----- */
+.pool-bar { display: flex; gap: 8px; padding: 6px 12px 0; flex-shrink: 0; }
+.pool-p { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; padding: 6px 10px; border-radius: 12px; background: var(--duo-panel, var(--card)); box-shadow: 0 2px 0 var(--duo-line, rgba(0, 0, 0, .1)); border: 2px solid transparent; transition: border-color .2s; }
+.pool-p.on { border-color: var(--duo-accent, #6c4ad6); }
+.pool-n { font-size: 13px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pool-g { display: flex; flex-wrap: wrap; gap: 3px; min-height: 14px; align-items: center; }
+.pool-g small { font-size: 11px; font-weight: 700; opacity: .65; }
+.pool-g i { width: 13px; height: 13px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, .55), transparent 45%), var(--c); box-shadow: inset 0 -2px 2px rgba(0, 0, 0, .25); }
+.pool-g i.st { background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, .55), transparent 45%), linear-gradient(#f6f3e8 26%, var(--c) 26% 74%, #f6f3e8 74%); }
+.pool-msg { flex-shrink: 0; min-height: 20px; padding: 4px 14px 0; font-size: 13px; font-weight: 700; text-align: center; opacity: .8; }
+.pool .rt-stage { margin: 2px 0; }
+.pool-banner { position: absolute; left: 50%; top: 42%; z-index: 2; transform: translate(-50%, -50%) scale(.9); padding: 10px 18px; border-radius: 14px; background: rgba(15, 20, 30, .82); color: #fff; text-align: center; pointer-events: none; opacity: 0; transition: opacity .2s, transform .2s; white-space: nowrap; }
+.pool-banner.show { opacity: 1; transform: translate(-50%, -50%); }
+.pool-banner b { display: block; font-size: 17px; font-weight: 900; }
+.pool-banner small { display: block; font-size: 12.5px; font-weight: 600; opacity: .85; }
+.pool-banner small:empty { display: none; }
+.pool-panel { flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 6px 12px calc(10px + var(--safe-bottom, 0px)); transition: opacity .2s; }
+.pool-panel.off { opacity: .4; pointer-events: none; }
+.pool-spin { flex-shrink: 0; width: 42px; height: 42px; border-radius: 50%; border: 0; position: relative; background: radial-gradient(circle at 35% 30%, #fff, #e9e5d6 55%, #b9b4a2); box-shadow: 0 2px 4px rgba(0, 0, 0, .3); }
+.pool-spin i { position: absolute; left: 50%; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: #d33; transform: translateY(calc(var(--s, 0) * -13px)); transition: transform .15s; }
+.pool-nudge { flex-shrink: 0; width: 34px; height: 42px; border: 0; border-radius: 12px; background: var(--duo-panel, var(--card)); color: inherit; display: grid; place-items: center; box-shadow: 0 2px 0 var(--duo-line, rgba(0, 0, 0, .1)); }
+.pool-nudge svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.pool-power { flex: 1; min-width: 60px; height: 42px; position: relative; border-radius: 12px; overflow: hidden; background: var(--duo-panel, var(--card)); box-shadow: inset 0 0 0 2px var(--duo-line, rgba(0, 0, 0, .12)); touch-action: none; }
+.pool-power i { position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--p, .5) * 100%); background: linear-gradient(90deg, #3fbf6a, #f2c014 60%, #e8483a); }
+.pool-power span { position: absolute; inset: 0; display: grid; place-items: center; font-size: 12px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--duo-ink, var(--text)); mix-blend-mode: normal; text-shadow: 0 1px 0 rgba(255, 255, 255, .4); pointer-events: none; }
+.pool-shoot { flex-shrink: 0; min-width: 78px; height: 42px; border: 0; border-radius: 21px; background: var(--duo-accent, #6c4ad6); color: #fff; font-size: 16px; font-weight: 900; box-shadow: 0 3px 0 #46299e; }
+.pool-shoot:active { transform: translateY(2px); box-shadow: 0 1px 0 #46299e; }

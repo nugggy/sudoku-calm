@@ -1,9 +1,10 @@
 // Play Together: two-player games on one phone (pass and play) or two phones over wifi, a hotspot or Bluetooth.
 //
 // Game module API (full details in www/js/duo/README.md and core.js):
-//   www/js/duo/g-<id>.js exports default { id, name, tag, cat: 'board' | 'action' | 'party', realtime, art: () => html, help: [..], create(ctx) }
+//   www/js/duo/g-<id>.js exports default { id, name, tag, cat: 'board' | 'action' | 'party', realtime, ai?, art: () => html, help: [..], create(ctx) }
 //   ctx = { root, me: 0 | 1 | null (null on one phone), local, isHost, first, names: [n0, n1], send(obj), onMsg(fn), end({winner, text}),
-//           sfx, buzz, toast, rng, alive() };  create returns { destroy() }.
+//           sfx, buzz, toast, rng, alive(), ai: null | 'easy' | 'medium' | 'hard' };  create returns { destroy() }.
+//   Games with ai: true also get "Play the computer" on this phone: the person is player 0, the game plays player 1.
 //   Turn-based: both phones run the same rules and send moves. Real-time: the host simulates and sends snapshots, the guest sends input.
 //   makePair(game, opts) (from core.js, re-exported here) wires two ctx objects together in one page for tests.
 //
@@ -22,7 +23,7 @@ export { makePair, makeCtx } from './core.js';
 // The single list of games, in hub order. Each loads from g-<id>.js; one that is missing or fails to load is skipped.
 const GAME_IDS = [
   'connect4', 'chess', 'draughts', 'reversi', 'ships', 'dots', 'mancala', 'morris', 'gomoku',
-  'hockey', 'tanks', 'paddle', 'cycles', 'snake', 'landgrab', 'tug', 'quickdraw', 'sumo', 'penalty',
+  'hockey', 'tanks', 'pool', 'paddle', 'cycles', 'snake', 'landgrab', 'tug', 'quickdraw', 'sumo', 'penalty',
   'ttt', 'memory', 'wordduel',
 ];
 const GROUPS = [['board', 'Board games'], ['action', 'Action'], ['party', 'Party']];
@@ -142,6 +143,7 @@ export function duoHubScreen(app) {
     sheet(`<h2>${esc(g.name)}</h2><p class="duo-sheet-tag">${esc(g.tag)}</p>
       ${g.twoPhones ? '' : `<button class="sheet-item" data-m="local"><b>On this phone</b><small>${g.realtime ? 'Share the screen, one side each' : 'Take turns passing the phone'}</small></button>`}
       <button class="sheet-item" data-m="net"><b>Two phones</b><small>Connect over wifi, a hotspot or Bluetooth</small></button>
+      ${g.ai ? '<button class="sheet-item" data-m="ai"><b>Play the computer</b><small>Easy, medium or hard</small></button>' : ''}
       <button class="sheet-item" data-m="help"><b>How to play</b></button>`, {
       onMount(node, close) {
         node.addEventListener('click', (ev) => {
@@ -150,6 +152,7 @@ export function duoHubScreen(app) {
           close();
           if (m === 'local') app.go('duogame', { id: g.id, local: true });
           else if (m === 'net') app.go('duolobby', { id: g.id });
+          else if (m === 'ai') aiLevelSheet(app, g);
           else gameHelp(g);
         });
       },
@@ -157,6 +160,23 @@ export function duoHubScreen(app) {
   });
   render();
   return { root, refresh: render };
+}
+
+// Play the computer: pick how strong it is (the last choice is ticked).
+const AI_LEVELS = [['easy', 'Easy', 'Misses often, good for learning'], ['medium', 'Medium', 'A fair game'], ['hard', 'Hard', 'Rarely misses']];
+function aiLevelSheet(app, g) {
+  const last = DB().aiLevel || 'medium';
+  sheet(`<h2>Play the computer</h2><p class="duo-sheet-tag">${esc(g.name)}</p>
+    ${AI_LEVELS.map(([v, l, t]) => `<button class="sheet-item${v === last ? ' on' : ''}" data-lv="${v}"><b>${l}</b><small>${t}</small></button>`).join('')}`, {
+    onMount(node, close) {
+      node.addEventListener('click', (ev) => {
+        const lv = ev.target.closest('[data-lv]')?.dataset.lv;
+        if (!lv) return;
+        DB().aiLevel = lv; save(); close();
+        app.go('duogame', { id: g.id, local: true, ai: lv });
+      });
+    },
+  });
 }
 
 function gameHelp(g) {
@@ -280,7 +300,7 @@ export function duoLobbyScreen(app, { id = null } = {}) {
 }
 
 // ---------- Game screen ----------
-export function duoGameScreen(app, { id, local = false, net = false, first = 0, seed = 1 }) {
+export function duoGameScreen(app, { id, local = false, net = false, first = 0, seed = 1, ai = null }) {
   appRef = app;
   const root = el(`<section class="screen duo-theme duo-game">
     <header class="topbar"><button class="icon-btn" data-act="back" aria-label="Back">${icon.back}</button><div class="title"></div>
@@ -289,9 +309,13 @@ export function duoGameScreen(app, { id, local = false, net = false, first = 0, 
   const stage = $('.duo-stage', root);
   let inst = null, ctx = null, alive = true, result = null, offMsg = null, offSession = null;
   const isNet = net && session.connected;
-  const names = isNet ? [session.names[0] || 'Host', session.names[1] || 'Guest'] : ['Player 1', 'Player 2'];
+  if (isNet) ai = null;
+  const names = isNet ? [session.names[0] || 'Host', session.names[1] || 'Guest'] : ai ? ['You', 'Computer'] : ['Player 1', 'Player 2'];
   const me = isNet ? (session.role === 'host' ? 0 : 1) : null;
-  const score = isNet ? session.score : (localScore.key === id ? localScore.score : (localScore.key = id, localScore.score = [0, 0]));
+  // the running score on one phone is kept per game (and per computer level)
+  const scoreKey = ai ? `${id}:${ai}` : id;
+  const score = isNet ? session.score : (localScore.key === scoreKey ? localScore.score : (localScore.key = scoreKey, localScore.score = [0, 0]));
+  const firstText = (p) => (ai ? (p === 0 ? 'You go first' : 'The computer goes first') : `${names[p]} goes first`);
 
   function begin(g, f, sd) {
     stage.innerHTML = '';
@@ -301,7 +325,7 @@ export function duoGameScreen(app, { id, local = false, net = false, first = 0, 
       send: (d) => sendRaw({ k: 'g', d }),
       listen: (fn) => lan.on('msg', (m) => { if (m && m.k === 'g') fn(m.d); }),
     } : null;
-    ctx = makeCtx({ root: stage, me, local: !isNet, isHost: !isNet || session.role === 'host', first: f, names, seed: sd, link, onEnd: finish, sfx, buzz, toast });
+    ctx = makeCtx({ root: stage, me, local: !isNet, isHost: !isNet || session.role === 'host', first: f, names, seed: sd, link, onEnd: finish, sfx, buzz, toast, ai });
     try { inst = g.create(ctx); } catch (err) { console.error(err); stage.innerHTML = '<p class="duo-note">This game could not start.</p>'; }
     DB().played[g.id] = (DB().played[g.id] || 0) + 1; save();
   }
@@ -311,16 +335,17 @@ export function duoGameScreen(app, { id, local = false, net = false, first = 0, 
     result = res;
     const g = gameById(id);
     if (res.winner === 0 || res.winner === 1) score[res.winner]++;
-    const won = isNet && res.winner === me;
-    if (won) DB().wins[id] = (DB().wins[id] || 0) + 1;
+    // against the computer this phone is player 0
+    const won = (isNet || ai) && res.winner === (ai ? 0 : me);
+    if (won && isNet) DB().wins[id] = (DB().wins[id] || 0) + 1;
     save();
-    if (res.winner === null) sfx.unit(); else if (!isNet || won) { sfx.win(); confetti(); } else sfx.error();
-    const head = res.winner === null ? 'It\'s a draw' : isNet ? (won ? 'You win' : `${esc(names[res.winner])} wins`) : `${esc(names[res.winner])} wins`;
+    if (res.winner === null) sfx.unit(); else if (!(isNet || ai) || won) { sfx.win(); confetti(); } else sfx.error();
+    const head = res.winner === null ? 'It\'s a draw' : (isNet || ai) && won ? 'You win' : ai ? 'The computer wins' : `${esc(names[res.winner])} wins`;
     const host = !isNet || session.role === 'host';
     const box = el(`<div class="duo-result"><div class="duo-result-box">
       <h2>${head}</h2>${res.text ? `<p>${esc(res.text)}</p>` : ''}
       <div class="duo-vs small"><span class="a">${esc(names[0])}</span><b>${score[0]} : ${score[1]}</b><span class="b">${esc(names[1])}</span></div>
-      ${host ? `<button class="btn duo-btn" data-act="again">${isNet ? 'Rematch' : 'Play again'}<small>${esc(names[1 - ctx.first])} goes first</small></button>
+      ${host ? `<button class="btn duo-btn" data-act="again">${isNet ? 'Rematch' : 'Play again'}<small>${esc(firstText(1 - ctx.first))}</small></button>
         <button class="btn secondary" data-act="pick">${isNet ? 'Choose another game' : 'Back to the games'}</button>`
         : `<p class="duo-note">Waiting for ${esc(names[0])} to choose a rematch or another game</p><button class="btn secondary" data-act="pick">Back to the game list</button>`}
       </div></div>`);

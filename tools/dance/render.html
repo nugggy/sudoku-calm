@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en-AU"><head><meta charset="utf-8"><base href="/www/"><title>Dance Party pictures</title>
+<style>body{background:#333;color:#fff;font:14px system-ui;padding:16px}canvas{background:repeating-conic-gradient(#555 0 25%,#444 0 50%) 0 0/16px 16px;margin:8px}</style></head>
+<body><p>Draws the Dance Party card picture (two coaches mid-move, transparent background) and saves it as www/img/dance/card.webp.</p>
+<canvas id="c" width="240" height="160"></canvas><p id="out"></p>
+<script type="module">
+// Served by tools/dance/server.mjs from the repo root; the base tag points pictures and modules at /www.
+const { loadDance } = await import('./js/dance/draw.js');
+const { drawHero } = await import('./js/hero/kit.js');
+const { MOVES } = await import('./js/dance/moves.js');
+const { SONGS } = await import('./js/dance/songs.js');
+await loadDance();
+const c = document.getElementById('c'), g = c.getContext('2d');
+const draw = (song, move, t, x, h, flip) => { g.save(); g.shadowColor = song.colours[2]; g.shadowBlur = 10; drawHero(g, x, 154, h, { look: song.look, pose: MOVES[move].pose(t), flip }); g.restore(); };
+draw(SONGS[1], 'disco', 0, 78, 138, true);
+draw(SONGS[3], 'star', 0.6, 162, 146, false);
+const blob = await new Promise((ok) => c.toBlob(ok, 'image/webp', 0.9));
+const r = await fetch('/save?file=card.webp', { method: 'POST', body: blob });
+document.getElementById('out').textContent = `saved card.webp (${blob.size} bytes): ${await r.text()}`;
+</script></body></html>

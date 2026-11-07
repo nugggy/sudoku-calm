@@ -2,6 +2,11 @@
 // tools/release.mjs uses the same text for the GitHub release notes (it will not publish a version missing here).
 // Keep each line short and plain: what was added or changed, from the player's point of view.
 export const WHATS_NEW = [
+  { v: '1.24.0', items: [
+    'New: Dance Party. Dance along with a coach to six songs, from Easy to Hard. Hold the phone in your hand and it scores your moves, or play Tap along with taps, holds and swipes on the beat. Earn up to five stars a song.',
+    'New in Play Together: 8 Ball. Pool on a tall table for two players on one phone or two phones, with a break, solids and stripes, fouls and ball in hand. Drag to aim with a guide line, set the power and spin, and pot the 8 to win.',
+    'Play the computer: 8 Ball can also be played on your own against the computer, at easy, medium or hard.',
+  ] },
   { v: '1.23.0', items: [
     'Jump Mates: play on two phones over the same wifi or a phone hotspot, no internet needed. One phone hosts as Pip and picks the games, the other joins as Bo. A friend without the app can join from their browser.',
     'Meowdoku: crossed-out squares are darker and easier to see.',

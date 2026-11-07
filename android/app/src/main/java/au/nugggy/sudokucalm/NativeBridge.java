@@ -88,6 +88,14 @@ public class NativeBridge {
     /** Jump Mates: keep controller buttons from turning into Back while a level is being played. */
     @JavascriptInterface public void setPadCapture(boolean on) { activity.padCapture = on; }
 
+    /** Dance Party: keep the screen on while a song plays (nobody touches it while dancing). */
+    @JavascriptInterface public void setKeepAwake(boolean on) {
+        activity.runOnUiThread(() -> {
+            if (on) activity.getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            else activity.getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        });
+    }
+
     @JavascriptInterface
     public void vibrate(int ms) {
         Vibrator v = (Vibrator) activity.getSystemService(Context.VIBRATOR_SERVICE);

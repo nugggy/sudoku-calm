@@ -52,6 +52,7 @@ const defaults = () => ({
   snip: { level: 0, done: {}, name: '', seenHelp: false },
   turtle: { best: {}, played: {}, seen: {}, trek: { level: 0, stars: {} } },
   mates: { done: {}, best: {}, played: {}, seen: {}, padSwap: false }, // Jump Mates: done[game][level] = { s: star bits, t: best seconds }
+  dance: { best: {}, played: {}, mode: 'motion', hand: 'right', offset: 0, seenHelp: false }, // Dance Party: best[song] = score out of 10,000; offset = timing nudge in ms
   hero: { best: {}, played: {}, seen: {}, level: {}, stars: {}, coins: 0, look: null, owned: [], pick: 'spidey', name: '' },
   duo: { name: '', wins: {}, played: {}, seen: {}, via: 'wifi' },
   casino: { chips: 1000, best: 1000, topups: 0, lastTopup: 0, stats: {}, seenHelp: false, seenGames: {} },

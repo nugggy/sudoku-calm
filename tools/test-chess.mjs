@@ -48,7 +48,8 @@ check(!legalMoves(fromFEN('8/8/8/K2pP2r/8/8/8/7k w - d6 0 2')).some((m) => toUci
 { const p = fromFEN(START_FEN), lo = p.lo; for (const m of legalMoves(p)) { makeMove(p, m); undoMove(p); } check(p.lo === lo, 'hash restored'); }
 
 // The computer player.
-const best = (fen, level, u, msg) => { const p = fromFEN(fen); const r = search(p, { level }); check(toUci(r.move) === u, `${msg}: played ${r.move ? toUci(r.move) : 'nothing'} (depth ${r.depth})`); };
+// rng 0.999: never the deliberate blunder of the easier levels, so these check the search itself
+const best = (fen, level, u, msg) => { const p = fromFEN(fen); const r = search(p, { level, rng: () => 0.999 }); check(toUci(r.move) === u, `${msg}: played ${r.move ? toUci(r.move) : 'nothing'} (depth ${r.depth})`); };
 for (const lv of [3, 5, 8]) best('6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1', lv, 'a1a8', `level ${lv} finds back-rank mate in 1`);
 best('r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 4 4', 6, 'h5f7', 'level 6 finds scholar\'s mate');
 best('6k1/8/8/8/3q4/8/3R4/3K4 w - - 0 1', 6, 'd2d4', 'level 6 takes a free queen');

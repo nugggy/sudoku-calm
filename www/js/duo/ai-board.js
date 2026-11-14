@@ -1,14 +1,17 @@
 // Computer players for the turn-based Play Together games: Connect Four, Noughts and Crosses, Draughts, Reversi,
-// Mancala, Dots and Boxes and Battleships. No browser dependencies, so tools/test-duo-ai.mjs can check them in Node.
+// Mancala, Dots and Boxes, Battleships and Ludo. No browser dependencies, so tools/test-duo-ai.mjs (and
+// tools/test-duo-ludo.mjs for Ludo) can check them in Node.
 //
-// Each takes the game's own state (as rules.js and tbc-rules.js keep it), the computer's player number, the level
-// ('easy' | 'medium' | 'hard') and rng() in [0, 1), and returns a legal move in the shape the game already sends.
+// Each takes the game's own state (as rules.js, tbc-rules.js and ludo-rules.js keep it), the computer's player
+// number, the level ('easy' | 'medium' | 'hard') and rng() in [0, 1), and returns a legal move in the shape the
+// game already sends.
 // opts.ms caps the thinking time (searches deepen one ply at a time and keep the last finished answer), so a turn
 // never holds up the screen for long; opts.depth overrides the level's search depth (tests).
 // Every level takes a move that wins on the spot; Easy then blunders at random, Medium searches a few plies and
 // Hard searches as deep as its time allows.
 import { C4, c4CanDrop, tttWin, drMoves, drPlay, drKey, drOwner, drKing, rvMoves, rvPlay, dbEdges, FLEET } from './rules.js';
 import { kalahPlay, kalahMoves, storeOf, pitsOf } from './tbc-rules.js';
+import { LUDO, ludoMoves, ludoTarget, ludoAbs, ludoSafe, ludoThreats, ludoRoll, ludoMove } from './ludo-rules.js';
 
 const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 const pick = (a, rng) => a[Math.floor(rng() * a.length)];
@@ -520,6 +523,52 @@ export function shipsAi(shots, sunk, level = 'medium', rng = Math.random) {
   }
   const scored = unknown.map((i) => ({ move: i, score: heat[i] + ((Math.floor(i / 10) + (i % 10)) % 2 === 0 ? 0.5 : 0) }));
   return choose(scored, rng);
+}
+
+// ---------- Ludo: the dice decide a lot, so the computer looks only one roll ahead ----------
+// s: the Ludo state from ludo-rules.js after the computer has rolled (s.turn is the computer). Returns the pawn to
+// move. Easy picks any legal move. Medium follows rules of thumb: capture, get a pawn home, bring one out, head
+// up the home column, and do not stop just in front of the other player's pawns. Hard looks one roll ahead: for
+// each move it averages, over the other player's six possible rolls, the position after their best reply.
+// A position is scored by each pawn's progress (getting out of the yard is worth a good start), the home column,
+// and the risk to each pawn (how many of the other side's pawns could land on it next turn, times what it would lose).
+const LUDO_W = { out: 40, col: 6, home: 6 };
+const lClone = (s) => ({ ...s, pos: [s.pos[0].slice(), s.pos[1].slice()] });
+function ludoEval(s, p) {
+  let e = 0;
+  for (const who of [p, 1 - p]) for (const r of s.pos[who]) {
+    if (r < 0) continue;
+    let v = LUDO_W.out + r + (r > LUDO.LAST ? LUDO_W.col : 0) + (r === LUDO.HOME ? LUDO_W.home : 0);
+    const a = ludoAbs(who, r);
+    if (a >= 0) v -= (ludoThreats(s, 1 - who, a) * (LUDO_W.out + r)) / 6;
+    e += who === p ? v : -v;
+  }
+  return e;
+}
+export function ludoAi(s, level = 'medium', rng = Math.random) {
+  const moves = ludoMoves(s), p = s.turn, q = 1 - p, d = s.roll;
+  if (moves.length === 1 || level === 'easy') return pick(moves, rng);
+  const scored = moves.map((k) => {
+    if (level === 'medium') {
+      const from = s.pos[p][k], to = ludoTarget(s, p, k, d), a = ludoAbs(p, to);
+      const cap = a >= 0 && !ludoSafe(a) && s.pos[q].some((r) => ludoAbs(q, r) === a);
+      const score = (cap ? 100 : 0) + (to === LUDO.HOME ? 80 : 0) + (from === -1 ? 60 : 0) + (to > LUDO.LAST && from <= LUDO.LAST ? 40 : 0)
+        + (ludoSafe(a) ? 15 : 0) - (ludoThreats(s, q, a) ? 50 : 0) + to / 10;
+      return { move: k, score };
+    }
+    const c = lClone(s);
+    ludoMove(c, k);
+    if (c.over) return { move: k, score: WIN };
+    if (c.turn === p) return { move: k, score: ludoEval(c, p) }; // a 6: the computer rolls again
+    let sum = 0;
+    for (let r = 1; r <= 6; r++) {
+      const o = lClone(c), res = ludoRoll(o, r);
+      if (res.pass || res.forfeit) { sum += ludoEval(o, p); continue; }
+      sum += Math.min(...ludoMoves(o).map((j) => { const o2 = lClone(o); ludoMove(o2, j); return o2.over ? -WIN : ludoEval(o2, p); }));
+    }
+    return { move: k, score: sum / 6 };
+  });
+  return choose(scored, rng, 0.01);
 }
 
 // ---------- Shared by the games: how long the computer pauses before its move ----------

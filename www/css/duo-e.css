@@ -1,0 +1,58 @@
+/* ---------- Play Together: Ludo and Snakes and Ladders ---------- */
+.tbc-ludo .tbc-body, .tbc-snakes .tbc-body { gap: 14px; }
+
+/* Ludo board: an SVG in board units with the pawns laid over it */
+.ld-board { position: relative; flex: none; width: 300px; height: 300px; border-radius: 14px; box-shadow: 0 8px 20px rgba(40, 30, 90, .16), 0 2px 0 rgba(40, 30, 90, .08); }
+.ld-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.ld-bg { fill: #d6d1e4; }
+.ld-sq, .ld-in { fill: #fffdf8; }
+.ld-star { fill: #b5adc8; }
+.ld-edge { stroke: rgba(0, 0, 0, .1); stroke-width: .04; }
+/* dark boards in the game only; the hub card keeps the light board like the other cards */
+:root[data-theme="dark"] .tbc-ludo .ld-bg { fill: #3b3954; }
+:root[data-theme="dark"] .tbc-ludo .ld-sq, :root[data-theme="dark"] .tbc-ludo .ld-in { fill: #25243a; }
+:root[data-theme="dark"] .tbc-ludo .ld-star { fill: #6f6b8c; }
+.ld-layer { position: absolute; inset: 0; }
+/* pawns: the picture sits on ::after so the glow ring (::before) can go underneath it */
+.ld-pawn { position: absolute; width: calc(100% / 15 * 1.15); height: calc(100% / 15 * 1.15); padding: 0; border: 0; background: none !important; transform: translate(-50%, -64%) scale(var(--sc, 1));
+  transition: left .15s ease, top .15s ease, transform .2s; -webkit-tap-highlight-color: transparent; }
+.ld-pawn.p0 { --pc: #e8604c; --pawn: url(../img/duo/pawn_red.webp); } .ld-pawn.p1 { --pc: #3b7ddd; --pawn: url(../img/duo/pawn_blue.webp); }
+.ld-pawn::after { content: ''; position: absolute; inset: 0; background: var(--pawn) center / contain no-repeat; filter: drop-shadow(0 1.5px 1px rgba(0, 0, 0, .35)); }
+.ld-pawn.back { transition: left .6s cubic-bezier(.5, 0, .3, 1), top .6s cubic-bezier(.5, 0, .3, 1), transform .2s; }
+.ld-pawn.hop::after, .sn-pawn.hop::after { animation: ld-hop .2s ease-out; }
+@keyframes ld-hop { 50% { transform: translateY(-22%); } }
+.ld-pawn.go::before { content: ''; position: absolute; left: 50%; top: 80%; width: 118%; height: 62%; border-radius: 50%; transform: translate(-50%, -50%);
+  background: color-mix(in srgb, var(--pc) 40%, transparent); box-shadow: 0 0 0 2px #fff, 0 0 0 4.5px var(--pc), 0 0 10px 4px color-mix(in srgb, var(--pc) 45%, transparent); animation: ld-glow .9s ease-in-out infinite alternate; }
+/* the only legal move: a bigger ring and a little bob, so it is clear what to tap */
+.ld-pawn.only::before { width: 140%; height: 72%; }
+.ld-pawn.only::after { animation: ld-bob .9s ease-in-out infinite alternate; }
+@keyframes ld-glow { from { opacity: .7; } to { opacity: 1; } }
+@keyframes ld-bob { to { transform: translateY(-12%); } }
+.ld-dest { position: absolute; z-index: 1; width: calc(100% / 15 * .64); aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%); border: 2px dashed var(--pc); pointer-events: none; opacity: .9; }
+.ld-sym { position: absolute; z-index: 1; left: 50%; top: 60%; width: 44%; height: auto; transform: translate(-50%, -50%); pointer-events: none; }
+
+/* the die, shared by both games: tap it to roll when it glows */
+.ld-tray { flex: none; display: flex; align-items: center; justify-content: center; }
+.ld-die { width: 66px; height: 66px; padding: 7px; border: 0; border-radius: 18px; background: var(--tbc-card); box-shadow: 0 0 0 3px var(--pc), 0 6px 14px rgba(0, 0, 0, .14); transition: box-shadow .2s; -webkit-tap-highlight-color: transparent; }
+.ld-die img { width: 100%; height: 100%; display: block; }
+.ld-die.can { animation: ld-pulse 1.1s ease-in-out infinite alternate; }
+.ld-die.roll img { animation: ld-tumble .46s linear; }
+@keyframes ld-pulse { to { box-shadow: 0 0 0 3px var(--pc), 0 0 0 9px color-mix(in srgb, var(--pc) 22%, transparent), 0 6px 14px rgba(0, 0, 0, .14); } }
+@keyframes ld-tumble { 0% { transform: rotate(0) scale(.92); } 35% { transform: translateY(-10px) rotate(150deg) scale(1.08); } 70% { transform: rotate(280deg) scale(.96); } 100% { transform: rotate(360deg) scale(1); } }
+
+/* card art */
+.ld-art { position: relative; width: 96px; height: 64px; }
+.ld-art .ld-svg { left: 6px; width: 64px; height: 64px; border-radius: 5px; box-shadow: 0 3px 8px rgba(40, 30, 90, .2); }
+.ld-art i { position: absolute; width: 17px; height: 17px; background: center / contain no-repeat; transform: translate(-50%, -60%); filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .3)); }
+.ld-art img { position: absolute; right: 0; bottom: 2px; width: 34px; height: 34px; transform: rotate(-12deg); filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .25)); }
+
+/* Snakes and Ladders: the board is drawn on a canvas, the counters are laid over it */
+.sn-board { position: relative; flex: none; width: 300px; height: 330px; }
+.sn-board canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; border-radius: 12px; }
+.sn-board::before { content: ''; position: absolute; left: 0; top: 0; width: 100%; aspect-ratio: 1; border-radius: 12px; box-shadow: 0 8px 20px rgba(40, 30, 90, .16), 0 2px 0 rgba(40, 30, 90, .08); }
+.sn-layer { position: absolute; inset: 0; pointer-events: none; }
+.sn-pawn { position: absolute; width: 7%; aspect-ratio: 1; background: none !important; transform: translate(-50%, -66%) scale(var(--sc, 1)); transition: left .18s ease, top .18s ease, transform .2s; }
+.sn-pawn.p0 { --pawn: url(../img/duo/pawn_red.webp); } .sn-pawn.p1 { --pawn: url(../img/duo/pawn_blue.webp); }
+.sn-pawn::after { content: ''; position: absolute; inset: 0; background: var(--pawn) center / contain no-repeat; filter: drop-shadow(0 2px 1.5px rgba(0, 0, 0, .4)); }
+.sn-pawn.glide { transition: transform .2s; }
+.sn-art { width: 96px; height: 64px; border-radius: 8px; box-shadow: 0 3px 8px rgba(40, 30, 90, .18); }

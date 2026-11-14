@@ -5,6 +5,9 @@ kenney_boardgame-pack|https://kenney.nl/media/pages/assets/boardgame-pack/a16568
   PNG/Chips/chipRedWhite_border.png -> draught_red
   PNG/Chips/chipWhiteBlue_border.png -> draught_white
   PNG/Cards/cardBack_blue2.png -> card_back
+  PNG/Pieces (Red)/pieceRed_border00.png, PNG/Pieces (Blue)/pieceBlue_border01.png -> pawn_red, pawn_blue
+  Vector/diceWhite.svg (the bordered row, drawn at 3x by Chrome) -> die_1 .. die_6
+kenney_animal-pack (already in the app at www/img/kenney/animals/snake.png, used as it is for the snake heads in Snakes and Ladders)
 kenney_ui-pack|https://kenney.nl/media/pages/assets/ui-pack/f651646eab-1718203990/kenney_ui-pack.zip
   Vector/Red/icon_cross.svg -> mark_x.svg
   Vector/Blue/icon_outline_circle.svg -> mark_o.svg

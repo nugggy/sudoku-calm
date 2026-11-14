@@ -45,6 +45,7 @@ import { stickerHomeScreen, stickerGameScreen, stickerHelp, stickerCardArt } fro
 import { paintHomeScreen, paintGameScreen, paintHelp, paintCardArt, paintProgress } from './paint-game.js';
 import { crossHomeScreen, crossGameScreen, crossHelp } from './crossword-game.js';
 import { wsHomeScreen, wsGameScreen, wsHelp } from './wordsearch-game.js';
+import { gymScreen, gymSkillScreen, gymSafety, gymCardArt, gymProgress } from './gym-game.js';
 import { meowHomeScreen, meowGameScreen, meowLevelsScreen, meowCatsScreen, loadLevels, meowHelp } from './meow-game.js';
 
 // ---------- Theme ----------
@@ -79,7 +80,7 @@ const SCREENS = {
   games: landingScreen, home: homeScreen, meow: meowHomeScreen, me: statsScreen,
   sort: sortHomeScreen, sortgame: sortGameScreen, sortlevels: sortLevelsScreen,
   solitaire: solitaireScreen,
-  treat: treatHomeScreen, treatgame: treatGameScreen, block: blockScreen, bubble: bubbleHomeScreen, bubblegame: bubbleGameScreen,
+  treat: treatHomeScreen, treatgame: treatGameScreen, block: blockScreen, gym: gymScreen, gymskill: gymSkillScreen, bubble: bubbleHomeScreen, bubblegame: bubbleGameScreen,
   cross: crossHomeScreen, crossgame: crossGameScreen, ws: wsHomeScreen, wsgame: wsGameScreen,
   g2048: screen2048, mines: minesHomeScreen, minesgame: minesGameScreen, guess: guessHomeScreen, guessgame: guessGameScreen,
   hashi: hashiHomeScreen, hashigame: hashiGameScreen, gridlock: gridlockHomeScreen, gridlockgame: gridlockGameScreen, crate: crateHomeScreen, crategame: crateGameScreen, potion: potionHomeScreen, potiongame: potionGameScreen, arrow: arrowHomeScreen, arrowgame: arrowGameScreen, chess: chessHomeScreen, chessgame: chessGameScreen, rope: ropeHomeScreen, ropegame: ropeGameScreen, snip: snipHomeScreen, sniplobby: snipLobbyScreen, snipgame: snipGameScreen, mates: matesHubScreen, mateslobby: matesLobbyScreen, matesgame: matesGameScreen, turtle: turtleHubScreen, turtlegame: turtleGameScreen, hero: heroHubScreen, herobuilder: heroBuilderScreen, herogame: heroGameScreen, duo: duoHubScreen, duolobby: duoLobbyScreen, duogame: duoGameScreen, casino: casinoHubScreen, casinogame: casinoGameScreen, press: pressHomeScreen, pressgame: pressGameScreen, yeti: yetiHubScreen, yetigame: yetiGameScreen, moto: motoHubScreen, motogarage: motoGarageScreen, motogame: motoGameScreen, landgrab: landgrabHomeScreen, landgrabgame: landgrabGameScreen, snake: snakeHomeScreen, snakegame: snakeGameScreen,
@@ -211,7 +212,7 @@ function sudokuRules() {
 // ---------- Game picker (landing page) ----------
 // Each game: where it opens, its artwork, and a short progress line.
 export const GAMES = [];
-const CATEGORIES = ['Numbers', 'Logic', 'Words', 'Cards and tiles', 'Casual'];
+const CATEGORIES = ['Numbers', 'Logic', 'Words', 'Cards and tiles', 'Casual', 'Learn and move'];
 export function registerGame(g) { GAMES.push(g); }
 
 registerGame({
@@ -248,6 +249,11 @@ registerGame({
   id: 'block', cat: 'Casual', screen: 'block', name: 'Block Pounce', tag: 'Fit the blocks, clear the lines', theme: 'g-block',
   art: () => `<div class="art-block">${'1100011101111011001110011'.split('').map((v, i) => `<i style="${v === '1' ? `background:${['#ff5d73', '#38b6ff', '#ffd23f', '#3ddc84', '#8f6bff'][i % 5]}` : ''}"></i>`).join('')}</div>`,
   progress: () => (store.block.best ? `Best ${store.block.best.toLocaleString('en-AU')}` : 'New game'),
+});
+registerGame({
+  id: 'gym', cat: 'Learn and move', screen: 'gym', name: 'Tumble Coach', tag: 'Gymnastics skills step by step', theme: 'g-gym',
+  art: () => gymCardArt(),
+  progress: () => gymProgress(),
 });
 registerGame({
   id: 'bubble', cat: 'Casual', screen: 'bubble', name: 'Bubble Pop', tag: 'Aim, match three, pop', theme: 'g-bubble',
@@ -353,7 +359,7 @@ registerGame({
 registerGame({
   id: 'duo', cat: 'Casual', screen: 'duo', name: 'Play Together', tag: 'Two-player games over wifi or Bluetooth', theme: 'g-duo',
   art: () => duoCardArt(),
-  progress: () => { const n = Object.values(store.duo.played).reduce((a, b) => a + b, 0); return n ? `${n} games played` : '23 games for two'; },
+  progress: () => { const n = Object.values(store.duo.played).reduce((a, b) => a + b, 0); return n ? `${n} games played` : '25 games for two'; },
 });
 registerGame({
   id: 'snip', cat: 'Casual', screen: 'snip', name: 'Snip Buddies', tag: 'Team up, snip each other into shape', theme: 'g-snip',
@@ -425,7 +431,7 @@ const isNew = (g) => !store.meta.opened[g.id];
 
 // Extra words the search box matches: the games inside each collection, and other names people use.
 const SEARCH_WORDS = {
-  duo: 'two player friend multiplayer wifi bluetooth connect four chess draughts checkers reversi othello battleships dots boxes noughts crosses tic tac toe mancala nine mens morris five in a row gomoku memory duel air hockey paddle ball pong tank duel light cycles tron sumo bumpers penalty shootout soccer football word duel tug of war quick draw 8 ball eight ball pool billiards snooker computer',
+  duo: 'two player friend multiplayer wifi bluetooth connect four chess draughts checkers reversi othello battleships dots boxes noughts crosses tic tac toe mancala nine mens morris five in a row gomoku memory duel air hockey paddle ball pong tank duel light cycles tron sumo bumpers penalty shootout soccer football word duel tug of war quick draw 8 ball eight ball pool billiards snooker ludo snakes and ladders dice computer',
   casino: 'blackjack poker texas holdem roulette craps dice baccarat video poker jacks or better pokies slots chips cards',
   mates: 'two player co-op coop platformer platform jump controller gamepad pip bo twin trek ember frost tall order rope mates flip side colour blocks key keepers seesaw night lights lava climb coin rush heavy lifting swap shop scroll sprint bug stomp updraft slippery slopes block builders jetpack pals bomb squad',
   turtle: 'hatchling dash reef glide jelly snack shell stack river hop shell match tortoise trek turtle race',
@@ -451,6 +457,7 @@ const SEARCH_WORDS = {
   2048: 'merge tiles',
   sol: 'klondike patience cards', spider: 'patience cards', mahjong: 'tiles solitaire', block: 'blocks tetris puzzle', bubble: 'bubble shooter pop match three balls aim endless', pipe: 'flow connect the dots',
   potion: 'water sort colours', crate: 'sokoban boxes push', press: 'button reaction', jigsaw: 'puzzle picture pieces', sticker: 'stickers scenes',
+  gym: 'gymnastics tumbling tumble freestyle parkour cartwheel handstand forward roll backward roll bridge walkover round off handspring split leap jump vault kong safety roll coach learn skills exercise',
   paint: 'colour by numbers color pixel art painting pictures colouring',
 };
 const norm = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
@@ -656,6 +663,11 @@ function statsScreen() {
         ${row('trophy', 'Levels finished', store.treat.level)}
         ${row('star', 'Stars collected', Object.values(store.treat.stars).reduce((a, b) => a + b, 0))}
       </div>
+      <div class="section-title">Tumble Coach</div>
+      <div class="card stat-group">
+        ${row('trophy', 'Skills learnt', Object.values(store.gym.status).filter((v) => v === 2).length)}
+        ${row('star', 'Skills you are learning', Object.values(store.gym.status).filter((v) => v === 1).length)}
+      </div>
       <div class="section-title">Block Pounce</div>
       <div class="card stat-group">
         ${row('crown', 'Best score', (store.block.best || 0).toLocaleString('en-AU'))}
@@ -757,6 +769,7 @@ function settingsScreen() {
         <button class="set-row" data-act="treatrules"><div class="txt">How to play Treat Twist</div></button>
         <button class="set-row" data-act="blockrules"><div class="txt">How to play Block Pounce</div></button>
         <button class="set-row" data-act="whatsnew"><div class="txt">What's new</div></button>
+        <button class="set-row" data-act="gymsafety"><div class="txt">Tumble Coach safety tips</div></button>
         <button class="set-row" data-act="about"><div class="txt">About and credits</div></button>
         <button class="set-row" data-act="reset"><div class="txt" style="color:var(--err)">Reset all progress</div></button>
       </div>`;
@@ -789,6 +802,7 @@ function settingsScreen() {
     });
     else if (a === 'wsrules') wsHelp();
     else if (a === 'blockrules') blockHelp();
+    else if (a === 'gymsafety') gymSafety();
     else if (a === 'about') app.go('about');
     else if (a === 'whatsnew') whatsNewSheet(WHATS_NEW.slice(0, 2));
     else if (a === 'reset') {
@@ -815,7 +829,7 @@ function aboutScreen() {
         <p><b>Treat Twist.</b> The candies, jelly, biscuits, chocolate, bow, sweets, scenery and burst are from Melissa Krautheim's Candy Match 3, and the lollipop is from lumimae's candy pack 1, both CC0 from opengameart.org. The pink star, wrapped treats and liquorice lock were drawn for GameHub.</p><br>
         <p><b>Chess.</b> The chess pieces are the Cburnett set by Colin M.L. Burnett, from Wikimedia Commons, used under the BSD licence (see img/chess/LICENSE.txt).</p><br>
         <p><b>Sweet Drop.</b> The sweet, stars, bubbles and spikes are from Kenney's Platformer Art Candy and Jumper Pack, and the frog is from Kenney's Animal Pack (kenney.nl, CC0).</p><br>
-        <p><b>Play Together.</b> Discs, stones, chips, beads, box tiles, card backs, X and O marks, paddles, motorbikes and explosions are from Kenney's Puzzle Pack 2, Boardgame Pack, UI Pack, Racing Pack and Pirate Pack (kenney.nl, CC0). The warships are the Sea Warfare set by Lowder2, the balloons are by emacsabino and the football is by gothicfan95, all CC0 from opengameart.org. The chess pieces are the Cburnett set (see Chess above). Memory Duel's animal pictures are from Kenney's Animal Pack (kenney.nl, CC0). Word Duel checks words against the SCOWL lists used across the app. The pullers, cowboys and goalkeepers in Tug of War, Quick Draw and Penalty Shootout are from Kenney's Toon Characters, and the Sumo Bumpers are from Kenney's Shape Characters, and the tanks, shells and explosions in Tank Duel are from Kenney's Tanks pack (kenney.nl, CC0). Air Hockey, Paddle Ball, 8 Ball and the boards are drawn by the app.</p><br>
+        <p><b>Play Together.</b> Discs, stones, chips, beads, box tiles, card backs, X and O marks, paddles, motorbikes and explosions are from Kenney's Puzzle Pack 2, Boardgame Pack, UI Pack, Racing Pack and Pirate Pack (kenney.nl, CC0). The warships are the Sea Warfare set by Lowder2, the balloons are by emacsabino and the football is by gothicfan95, all CC0 from opengameart.org. The chess pieces are the Cburnett set (see Chess above). Memory Duel's animal pictures are from Kenney's Animal Pack (kenney.nl, CC0). The pawns and dice in Ludo and Snakes and Ladders are from Kenney's Boardgame Pack and the snake heads from Kenney's Animal Pack (kenney.nl, CC0); the boards, snakes and ladders are drawn by the app. Word Duel checks words against the SCOWL lists used across the app. The pullers, cowboys and goalkeepers in Tug of War, Quick Draw and Penalty Shootout are from Kenney's Toon Characters, and the Sumo Bumpers are from Kenney's Shape Characters, and the tanks, shells and explosions in Tank Duel are from Kenney's Tanks pack (kenney.nl, CC0). Air Hockey, Paddle Ball, 8 Ball and the boards are drawn by the app.</p><br>
         <p><b>Playing in a browser.</b> The QR code that lets a friend join from their browser is made with QR Code Generator by Kazuhiko Arase (MIT licence). "QR Code" is a registered trademark of DENSO WAVE INCORPORATED.</p><br>
         <p><b>Snip Buddies.</b> Faces, tiles, balloons and clouds are from Kenney's Shape Characters and Background Elements (kenney.nl, CC0). Snipping uses polygon-clipping by Mike Fogel (MIT licence), with splaytree (MIT) and robust-predicates (Unlicense).</p><br>
         <p><b>Turtle Bay.</b> The turtles, tortoises, crab, jellyfish, gull, kelp, coral and lily pad are by Poly by Google, the green turtle by jeremy, the long-necked turtle by Crispy_Prawn and the seagrass by Laney XR Labs, all under CC-BY 3.0 (creativecommons.org/licenses/by/3.0). The fish, lettuce, log and rock are by Quaternius and the bag by Kenney (CC0). All were found on poly.pizza and rendered into pictures for this app. River Hop's cars and trees come from Moto Mania.</p><br>
@@ -825,6 +839,7 @@ function aboutScreen() {
         <p><b>Land Grab.</b> The animals are from Kenney's Animal Pack (kenney.nl, CC0). The field and land are drawn by the app.</p><br>
         <p><b>Slither Snacks.</b> The snakes' faces are from Kenney's Shape Characters, and the glow on the snacks is from Kenney's Particle Pack (kenney.nl, CC0). The arena and snakes are drawn by the app.</p><br>
         <p><b>Paint Pixels.</b> The cartoon animals were drawn for this app (CC0). Every other picture is in the public domain, from Wikimedia Commons: natural history plates by John Gould, Edward Lear, Levaillant, Lilford, Thorburn, Hewitson, Hübner and Bloch, flowers by Pierre-Joseph Redouté, Curtis's Botanical Magazine, Thomé and Köhler, the USDA Pomological Watercolor Collection, Ernst Haeckel, storybook pictures by Beatrix Potter, Walter Crane and Kate Greenaway, and prints by Hokusai, Hiroshige and Kōno Bairei. Each picture's menu links to its original file.</p><br>
+        <p><b>Tumble Coach.</b> The coach figure and its animations are drawn by the app. The step-by-step sequence pictures (forward roll, backward roll, straight-leg forward roll, straddle backward roll, bridge, handstand, cartwheel, round-off, handstand to bridge, front handspring and front scale) are by Kingfiser, from Wikimedia Commons, under CC BY-SA 4.0 (creativecommons.org/licenses/by-sa/4.0). Tumble Coach is a practice guide, not a replacement for a qualified coach.</p><br>
         <p><b>Yeti Games.</b> The yeti, llama, ox and snake are by Quaternius (CC0). The penguin, orca, seal, albatross (a gull), giraffe, elephant, vulture, acacia, ibex, bighorn ram, surfboard and icicle are by Poly by Google, and the flamingo is by Хмара Сергей, all under CC-BY 3.0 (creativecommons.org/licenses/by/3.0). The snowboard is by Geldvillager and the bat by CreativeTrio (CC0). All were found on poly.pizza and rendered into pictures for this app.</p><br>
         <p><b>Artwork.</b> Animal, scenery and vehicle pictures are by Kenney (kenney.nl), released into the public domain under CC0. All other illustrations, including the cats, icons and Mahjong tiles, are original to GameHub.</p><br>
         <p><b>Inspiration.</b> GameHub is an independent app. It is not made by, endorsed by or affiliated with Easybrain, Oakever Games, Easetouch, King, Hungry Studio or any other game maker. Its games are our own takes on popular puzzle styles, with original artwork and names.</p><br>

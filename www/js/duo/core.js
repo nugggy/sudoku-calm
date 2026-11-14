@@ -4,6 +4,7 @@
 //   export default { id, name, tag, art: () => html, help: [paragraphs], realtime: bool, cat: 'board'|'action'|'party', twoPhones?: bool, ai?: bool, create(ctx) }
 //   twoPhones: the game needs a phone each (no "On this phone" option), for games whose camera follows one player.
 //   ai: the game has a computer player, so the hub also offers "Play the computer" (easy, medium or hard).
+//   aiLevels: false skips that level choice for games of pure luck (ctx.ai is then 'medium').
 // create(ctx) fills ctx.root and returns { destroy() }.
 //
 // ctx = {

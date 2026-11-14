@@ -5,6 +5,7 @@
 //   ctx = { root, me: 0 | 1 | null (null on one phone), local, isHost, first, names: [n0, n1], send(obj), onMsg(fn), end({winner, text}),
 //           sfx, buzz, toast, rng, alive(), ai: null | 'easy' | 'medium' | 'hard' };  create returns { destroy() }.
 //   Games with ai: true also get "Play the computer" on this phone: the person is player 0, the game plays player 1.
+//   aiLevels: false skips the Easy, Medium or Hard choice, for games of pure luck (ctx.ai is then 'medium').
 //   Turn-based: both phones run the same rules and send moves. Real-time: the host simulates and sends snapshots, the guest sends input.
 //   makePair(game, opts) (from core.js, re-exported here) wires two ctx objects together in one page for tests.
 //
@@ -22,7 +23,7 @@ export { makePair, makeCtx } from './core.js';
 
 // The single list of games, in hub order. Each loads from g-<id>.js; one that is missing or fails to load is skipped.
 const GAME_IDS = [
-  'connect4', 'chess', 'draughts', 'reversi', 'ships', 'dots', 'mancala', 'morris', 'gomoku',
+  'connect4', 'chess', 'draughts', 'reversi', 'ships', 'dots', 'mancala', 'morris', 'gomoku', 'ludo', 'snakes',
   'hockey', 'tanks', 'pool', 'paddle', 'cycles', 'snake', 'landgrab', 'tug', 'quickdraw', 'sumo', 'penalty',
   'ttt', 'memory', 'wordduel',
 ];
@@ -147,7 +148,7 @@ export function duoHubScreen(app) {
     sheet(`<h2>${esc(g.name)}</h2><p class="duo-sheet-tag">${esc(g.tag)}</p>
       ${g.twoPhones ? '' : `<button class="sheet-item" data-m="local"><b>On this phone</b><small>${g.realtime ? 'Share the screen, one side each' : 'Take turns passing the phone'}</small></button>`}
       <button class="sheet-item" data-m="net"><b>Two phones</b><small>Connect over wifi, a hotspot or Bluetooth</small></button>
-      ${g.ai ? '<button class="sheet-item" data-m="ai"><b>Play the computer</b><small>Easy, medium or hard</small></button>' : ''}
+      ${g.ai ? `<button class="sheet-item" data-m="ai"><b>Play the computer</b><small>${g.aiLevels === false ? 'Take turns with the computer' : 'Easy, medium or hard'}</small></button>` : ''}
       <button class="sheet-item" data-m="help"><b>How to play</b></button>`, {
       onMount(node, close) {
         node.addEventListener('click', (ev) => {
@@ -156,7 +157,8 @@ export function duoHubScreen(app) {
           close();
           if (m === 'local') app.go('duogame', { id: g.id, local: true });
           else if (m === 'net') app.go('duolobby', { id: g.id });
-          else if (m === 'ai') aiLevelSheet(app, g);
+          // a game of pure luck has no levels to choose from
+          else if (m === 'ai') { if (g.aiLevels === false) app.go('duogame', { id: g.id, local: true, ai: 'medium' }); else aiLevelSheet(app, g); }
           else gameHelp(g);
         });
       },

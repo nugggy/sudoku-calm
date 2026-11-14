@@ -2,6 +2,11 @@
 // tools/release.mjs uses the same text for the GitHub release notes (it will not publish a version missing here).
 // Keep each line short and plain: what was added or changed, from the player's point of view.
 export const WHATS_NEW = [
+  { v: '1.26.0', items: [
+    'New in Play Together: Ludo. Roll a 6 to bring your pawns out, race all four round the board and up your home column, and send the other player\'s pawns back to their corner. Play on one phone, on two phones or against the computer at easy, medium or hard.',
+    'New: Tumble Coach. Learn 32 gymnastics and freestyle skills step by step, from body shapes and rolls to cartwheels, walkovers, leaps and vaults. Watch the coach figure play each skill or pause on any step, slow it down, flip it to your other side, and tick off what you can do.',
+    'New in Play Together: Snakes and Ladders. Roll and race from 1 to 100, climbing the ladders and sliding down the snakes. Play on one phone, on two phones or against the computer.',
+  ] },
   { v: '1.25.0', items: [
     'New: Bubble Pop. Aim and shoot glossy bubbles to pop groups of three or more and drop everything hanging below. 60 levels with stars, plus an endless mode.',
     'Play the computer: Connect Four, Draughts, Reversi, Battleships, Dots and Boxes, Mancala and Noughts and Crosses in Play Together can now be played on your own against the computer, at easy, medium or hard.',

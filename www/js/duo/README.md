@@ -10,6 +10,7 @@ export default {
   cat: 'board',                 // 'board' | 'action' | 'party' (hub groups)
   realtime: false,
   ai: false,                    // optional: true if the game has a computer player (see Playing the computer)
+  aiLevels: false,              // optional: no Easy, Medium or Hard choice, for games of pure luck (Snakes and Ladders)
   art: () => '<svg ...>',       // card art, about 96 x 64; real images or drawn SVG, never emoji
   help: ['Paragraph one.', 'Paragraph two.'],
   create(ctx) { /* fill ctx.root */ return { destroy() {} }; },
@@ -35,15 +36,16 @@ The `ctx` object (built by `makeCtx` in `core.js`):
 | `ai` | `null`, or `'easy'`, `'medium'` or `'hard'` when one person plays the computer (see below). |
 
 Turn-based games run identical deterministic rules on both phones and send moves (`{ t: 'move', ... }`).
+Dice games (Ludo, Snakes and Ladders) roll on the phone whose turn it is: it draws the number from `ctx.rng` and sends it with the roll (`{ k: 'roll', d }`), and the other phone applies exactly that number. Both phones have the same seed, but sending the number means they can never disagree even if one of them draws from `ctx.rng` for something else.
 Real-time games: the host is authoritative, simulates at a fixed step and sends snapshots about 20 to 30 times a second; the guest sends its input and draws the latest snapshot (interpolate if you like). Each phone must call `ctx.end` itself (the guest when the host's snapshot says the game is over).
 
 ## Playing the computer
 
-A game that sets `ai: true` gets a third choice in the hub's game sheet, Play the computer, which asks for Easy, Medium or Hard (the last choice is remembered in `store.duo.aiLevel`), and a small Solo chip on its hub card. The game then starts on this phone with `ctx.local` true, `ctx.ai` set to the level and names `['You', 'Computer']`. The person is always player 0 and the computer player 1; `ctx.first` still alternates on Play again. The result card says You win or The computer wins, and the running score is kept per level.
+A game that sets `ai: true` gets a third choice in the hub's game sheet, Play the computer, which asks for Easy, Medium or Hard (the last choice is remembered in `store.duo.aiLevel`), and a small Solo chip on its hub card. A game of pure luck can also set `aiLevels: false`: Play the computer then starts straight away with `ctx.ai` set to `'medium'`, and the game ignores the level (Snakes and Ladders, where the computer only rolls). The game then starts on this phone with `ctx.local` true, `ctx.ai` set to the level and names `['You', 'Computer']`. The person is always player 0 and the computer player 1; `ctx.first` still alternates on Play again. The result card says You win or The computer wins, and the running score is kept per level.
 
 The shared helpers already know about the computer: when `ctx.ai` is set, `mine(ctx, p)` and `canAct(ctx, p)` (tbc-ui.js) are only true for player 0, `turnText` says Your turn or The computer is thinking (the player bar pulses that line softly), `winText` says You win or The computer wins, and `who(ctx, p, 'pass', 'passes')` gives You pass, The computer passes or Ann passes for toasts. So taps on the computer's turns are already refused; the game only has to play player 1's turns itself. Anything that would hide a board for pass and play (such as Battleships' cover) should be skipped.
 
-Turn-based games keep their computer players in `ai-board.js`, which has no browser code so `tools/test-duo-ai.mjs` can test it in Node. Each function takes the game's own state, the level and `rng`, and returns a move in the same shape the game sends over the link (`c4Ai`, `tttAi`, `drAi`, `rvAi`, `kalahAi`, `dbAi`, `shipsAi`). Searches deepen one ply at a time under a time cap (about 80 to 260 ms by level), and every level takes a move that wins on the spot. `aiTurn(ctx, think, play)` runs the computer's turn after a short natural pause (400 to 900 ms including the thinking) and does nothing once the screen has gone. The pattern in each game is a `computer()` function, called after every move and once at the start:
+Turn-based games keep their computer players in `ai-board.js`, which has no browser code so `tools/test-duo-ai.mjs` can test it in Node. Each function takes the game's own state, the level and `rng`, and returns a move in the same shape the game sends over the link (`c4Ai`, `tttAi`, `drAi`, `rvAi`, `kalahAi`, `dbAi`, `shipsAi`, `ludoAi`). Ludo has no search: Medium follows rules of thumb and Hard looks one roll ahead, and `tools/test-duo-ludo.mjs` checks it. Searches deepen one ply at a time under a time cap (about 80 to 260 ms by level), and every level takes a move that wins on the spot. `aiTurn(ctx, think, play)` runs the computer's turn after a short natural pause (400 to 900 ms including the thinking) and does nothing once the screen has gone. The pattern in each game is a `computer()` function, called after every move and once at the start:
 
 ```js
 function computer() {

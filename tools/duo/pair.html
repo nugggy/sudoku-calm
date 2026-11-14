@@ -22,7 +22,7 @@
 // ?games=connect4,ttt  ?show=1 keeps the last pair on screen.
 import { makePair } from '../../www/js/duo/core.js';
 const q = new URLSearchParams(location.search);
-const ids = (q.get('games') || 'connect4,ttt,dots,reversi,draughts,chess,ships').split(',');
+const ids = (q.get('games') || 'connect4,ttt,dots,reversi,draughts,chess,ships,ludo,snakes').split(',');
 const log = (s) => { document.getElementById('log').textContent += s + '\n'; };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let fails = 0;

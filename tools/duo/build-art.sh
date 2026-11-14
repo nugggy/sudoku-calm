@@ -59,4 +59,12 @@ w "$PP/Balls/Grey/ballGrey_10.png" paddle_ball 64
 for c in red blue; do w "$K/kenney_racing-pack/PNG/Motorcycles/motorcycle_$c.png" cycle_$c 100; done
 # penalty shootout ball
 w "$K/soccer-ball/SoccerBall.png" penalty_ball 96
+# ludo and snakes and ladders: pawns (the blue set is numbered one higher), and the white dice drawn from the vector sheet at 3x by Chrome (the PNGs are only 68 px)
+w "$BG/Pieces (Red)/pieceRed_border00.png" pawn_red 64
+w "$BG/Pieces (Blue)/pieceBlue_border01.png" pawn_blue 64
+CHROME=${CHROME:-"/c/Program Files/Google/Chrome/Application/chrome.exe"}
+TMP=tools/duo/art-out; mkdir -p $TMP; ABS=$(pwd -W 2>/dev/null || pwd)
+{ echo '<html><body style="margin:0;display:flex">'; for k in 0 1 2 3 4 5; do sed "s/<svg /<svg width=\"216\" height=\"216\" viewBox=\"$((80*k-2)) 70 72 72\" /" "$K/kenney_boardgame-pack/Vector/diceWhite.svg"; done; echo '</body></html>'; } > $TMP/dice.html
+"$CHROME" --headless=new --disable-gpu --default-background-color=00000000 --hide-scrollbars --screenshot="$ABS/$TMP/dice.png" --window-size=1296,216 "file:///$ABS/$TMP/dice.html" 2>/dev/null
+for k in 1 2 3 4 5 6; do ffmpeg -loglevel error -y -i $TMP/dice.png -vf "crop=216:216:$((216*(k-1))):0,scale=144:144,format=rgba" -c:v libwebp -lossless 0 -quality 90 -compression_level 6 "$OUT/die_$k.webp"; done
 echo "built into $OUT"
